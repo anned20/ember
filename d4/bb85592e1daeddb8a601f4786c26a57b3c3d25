@@ -1,0 +1,37 @@
+src/js/aerial-videos.json
+  s_9939fcd89de15b::t_e920708ca839ab 1,3-1006
+  s_9939fcd89de15b::t_7353f5ae8e46ca 2
+scripts/update-aerials.js
+  s_9939fcd89de15b::t_312682449d9f6f 66
+  s_9939fcd89de15b::t_3aaf021f1e2554 14-17,19-20,22-28
+  s_9939fcd89de15b::t_f62299682e2bfa 240-247,256-262
+  s_9939fcd89de15b::t_233e1df58b6c40 138-139,152-154
+  s_9939fcd89de15b::t_41aec2390f2790 1-13,18,21,29-31,33-65,67-137,140-151,155-239,248-255,263-319
+  s_9939fcd89de15b::t_f088c886cf7049 32
+test/fixtures/aerial-entries.json
+  s_9939fcd89de15b::t_9f227e1e94b127 1-75,82-84
+  s_9939fcd89de15b::t_0f1e05d16df38d 76-81
+test/update-aerials.test.js
+  s_9939fcd89de15b::t_3d93449cb3d89f 58
+  s_9939fcd89de15b::t_d5bb18a7bd7136 15,18-22
+  s_9939fcd89de15b::t_cb5f846d71b2fa 1-14,16-17,23-57,59-67,69
+  s_9939fcd89de15b::t_508aea9ce8785e 68
+package.json
+  s_9939fcd89de15b::t_6ca192713a184b 10-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d4bb85592e1daeddb8a601f4786c26a57b3c3d25",
+  "prompts": {},
+  "sessions": {
+    "s_9939fcd89de15b": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed8e3c56dffeD6xgfIvtuJqZR7",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

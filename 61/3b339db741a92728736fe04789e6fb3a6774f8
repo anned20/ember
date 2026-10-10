@@ -1,0 +1,19 @@
+AGENTS.md
+  s_f1902287b19210::t_5e8428289f5456 3-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "613b339db741a92728736fe04789e6fb3a6774f8",
+  "prompts": {},
+  "sessions": {
+    "s_f1902287b19210": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed8ad85edffeuSH1u1YkOUAfvy",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

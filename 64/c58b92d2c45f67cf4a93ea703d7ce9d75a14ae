@@ -1,0 +1,25 @@
+docs/agents/domain.md
+  s_9939fcd89de15b::t_ba62eb7367b58d 1-51
+AGENTS.md
+  s_9939fcd89de15b::t_15979b7bafd678 1-15
+docs/agents/triage-labels.md
+  s_9939fcd89de15b::t_4e8e8aede32b3c 1-15
+docs/agents/issue-tracker.md
+  s_9939fcd89de15b::t_6c1b1df2b10bfd 1-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "64c58b92d2c45f67cf4a93ea703d7ce9d75a14ae",
+  "prompts": {},
+  "sessions": {
+    "s_9939fcd89de15b": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed8e3c56dffeD6xgfIvtuJqZR7",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

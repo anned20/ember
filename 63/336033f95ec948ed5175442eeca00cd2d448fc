@@ -1,0 +1,36 @@
+src/js/app-catalog.js
+  s_d1749cdfc700e8::t_0225af326776aa 360-374
+src/js/main.js
+  s_d1749cdfc700e8::t_a51a2006643083 1209-1219
+  s_d1749cdfc700e8::t_139805471860ad 1407-1412,1418-1426
+  s_d1749cdfc700e8::t_729c5566a6b71a 1413-1417
+  s_d1749cdfc700e8::t_78b947a76429b7 1150,1157,1165,1169,1174
+  s_d1749cdfc700e8::t_430bb683a5f49a 1228-1235
+scripts/boot-launch.sh
+  s_d1749cdfc700e8::t_591598e1e8c122 5-7,18-23,43-58,63,70-90,95,98-101
+src/js/apps.js
+  s_d1749cdfc700e8::t_75e67673d0dc89 5
+  s_d1749cdfc700e8::t_ad878e88eff256 361-363,367-372,375-377,379-390,393-394,404,413
+  s_d1749cdfc700e8::t_9f6bb47c8991d1 206-317
+  s_d1749cdfc700e8::t_34278c8c2795a8 396-397,400-402
+test/apps.test.js
+  s_d1749cdfc700e8::t_e393e64b6cc419 130-157,159-179
+  s_d1749cdfc700e8::t_33e7e0228a60b4 45
+  s_d1749cdfc700e8::t_51943aa1cbde65 158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "63336033f95ec948ed5175442eeca00cd2d448fc",
+  "prompts": {},
+  "sessions": {
+    "s_d1749cdfc700e8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed4ae049bffe87zAf0eSXnU7dk",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

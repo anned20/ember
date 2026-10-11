@@ -142,6 +142,25 @@ export function createBackgroundController(elements, getConfig) {
 
   // What the wallpaper on screen was made from (see refresh reuse).
   let appliedSignature = '';
+  // The online wallpaper link last reported as not loading (once per link).
+  let reportedFailure = '';
+
+  /**
+   * An online wallpaper didn't load: say so once per link. Without this the
+   * home screen quietly showed a gradient, which read as "the wallpaper
+   * setting does nothing" (seen with an image host's page link pasted in
+   * place of the image's own link).
+   */
+  function reportOnlineFailure(bg, images) {
+    if (bg.source !== 'url') return;
+    const key = images.join(' ');
+    if (key === reportedFailure) return;
+    reportedFailure = key;
+    if (elements.onToast) {
+      elements.onToast('The wallpaper link didn\u2019t load as an image. Use a direct image link ' +
+        '(it usually ends in .jpg or .png), and check the TV is online.');
+    }
+  }
 
   /**
    * @param {{reuse?: boolean}} [opts] reuse: returning from an app. When the
@@ -196,6 +215,7 @@ export function createBackgroundController(elements, getConfig) {
       if (gen !== refreshGen) return false;
       if (!first) {
         applyPreset(bg.preset || 'warm-gradient', false);
+        reportOnlineFailure(bg, images);
         return false;
       }
       startSlideshow(images, bg.slideshowIntervalSec || 300);
@@ -206,8 +226,10 @@ export function createBackgroundController(elements, getConfig) {
     if (gen !== refreshGen) return false;
     if (!loaded) {
       applyPreset(bg.preset || 'warm-gradient', false);
+      reportOnlineFailure(bg, images);
       return false;
     }
+    reportedFailure = '';
     return true;
   }
 

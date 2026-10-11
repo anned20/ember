@@ -2182,7 +2182,8 @@ export function createSettingsPanel(panel, getConfig, options) {
     const aerialHint = document.createElement('p');
     aerialHint.className = 'settings-hint';
     aerialHint.textContent =
-      'Clips stream from Apple\u2019s network (nothing is packaged) and play muted, full-screen and looping. The TV must be online; if a clip will not play, the gradient above is used instead.';
+      'Clips stream from Apple\u2019s network (nothing is packaged) and play muted, full-screen and looping. The TV must be online; if a clip will not play, the gradient above is used instead. ' +
+      'Aerials are the heaviest background source (network plus continuous video decode), and Performance mode has no effect on video.';
     aerialRow.appendChild(aerialHint);
     section.appendChild(aerialRow);
 

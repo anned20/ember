@@ -90,19 +90,26 @@ export function createCustomScreensaver(options) {
   let decodingPhoto = null;
   let usbBackgroundPath = '';
 
-  // Aerial clip: one <video> over the photo layers while the source is "aerial".
-  // Single loops the chosen clip (retrying once, like the home wallpaper) and
-  // Slideshow rides "ended" onto the next. The two ids guard against an error
-  // event and a rejected play() for the same load being handled twice; the
-  // failure count drops to a gradient only after every attempt has failed.
-  let videoEl = null;
+  // Aerial clips: two <video> elements double-buffered over the photo layers
+  // while the source is "aerial". Single loops the chosen clip (retrying once,
+  // like the home wallpaper); Slideshow rides "ended" onto the next, which is
+  // preloaded into the idle element near the end of the current one — so the
+  // swap cross-fades instead of showing the black frame of a freshly-set src.
+  // The two ids guard against an error event and a rejected play() for the same
+  // load being handled twice; the failure count drops to a gradient only after
+  // every attempt has failed.
+  const PRELOAD_LEAD_SEC = 15;
+  let videoEls = [];
+  let videoFront = 0;
   let videoClips = [];
   let videoSlideshow = false;
   let videoIndex = 0;
+  let videoPreloaded = -1;
   let videoAttempt = 0;
   let videoHandledAttempt = 0;
   let videoErrorListener = null;
   let videoFailures = 0;
+  let videoSwapTimer = null;
 
   // app-inactive is a class flip (main.js) with no event of its own; a body
   // observer catches it the same way the home wallpaper's does.
@@ -355,8 +362,21 @@ export function createCustomScreensaver(options) {
     startSlideshow();
   }
 
-  function ensureVideo() {
-    if (videoEl) return videoEl;
+  // The two buffers: the front element is on screen, the back one idles as the
+  // preload target for the clip after this one.
+  function frontVideo() {
+    return videoEls[videoFront] || null;
+  }
+
+  function backVideo() {
+    return videoEls.length > 1 ? videoEls[videoFront ? 0 : 1] : null;
+  }
+
+  function nextVideoIndex() {
+    return videoClips.length ? (videoIndex + 1) % videoClips.length : 0;
+  }
+
+  function makeVideo() {
     const v = document.createElement('video');
     v.className = 'custom-screensaver-video';
     v.muted = true;
@@ -370,12 +390,18 @@ export function createCustomScreensaver(options) {
     v.loop = true;
     v.addEventListener('playing', onVideoPlaying);
     v.addEventListener('ended', onVideoEnded);
+    v.addEventListener('timeupdate', onVideoTimeUpdate);
     rootEl.appendChild(v);
-    videoEl = v;
     return v;
   }
 
-  // Release the decoder and the network request (leaving the saver, or the
+  function ensureVideo() {
+    if (videoEls.length) return;
+    videoEls = [makeVideo(), makeVideo()];
+    videoFront = 0;
+  }
+
+  // Release the decoders and the network requests (leaving the saver, or the
   // surface backgrounding — main.js hides the saver when document.hidden).
   function teardownVideo() {
     videoAttempt += 1; // drop any play()/error still in flight
@@ -383,17 +409,28 @@ export function createCustomScreensaver(options) {
     videoClips = [];
     videoSlideshow = false;
     videoIndex = 0;
-    if (!videoEl) return;
-    const v = videoEl;
-    videoEl = null;
-    if (videoErrorListener) v.removeEventListener('error', videoErrorListener);
+    videoPreloaded = -1;
+    if (videoSwapTimer) {
+      clearTimeout(videoSwapTimer);
+      videoSwapTimer = null;
+    }
+    const els = videoEls;
+    videoEls = [];
+    videoFront = 0;
+    for (let i = 0; i < els.length; i += 1) {
+      const v = els[i];
+      if (videoErrorListener) {
+        try { v.removeEventListener('error', videoErrorListener); } catch (err) { /* ignore */ }
+      }
+      v.removeEventListener('playing', onVideoPlaying);
+      v.removeEventListener('ended', onVideoEnded);
+      v.removeEventListener('timeupdate', onVideoTimeUpdate);
+      try { v.pause(); } catch (err) { /* ignore */ }
+      v.removeAttribute('src');
+      try { v.load(); } catch (err) { /* ignore */ }
+      if (v.parentNode) v.parentNode.removeChild(v);
+    }
     videoErrorListener = null;
-    v.removeEventListener('playing', onVideoPlaying);
-    v.removeEventListener('ended', onVideoEnded);
-    try { v.pause(); } catch (err) { /* ignore */ }
-    v.removeAttribute('src');
-    try { v.load(); } catch (err) { /* ignore */ }
-    if (v.parentNode) v.parentNode.removeChild(v);
   }
 
   // A clip started: a run of failures is over.
@@ -401,34 +438,33 @@ export function createCustomScreensaver(options) {
     videoFailures = 0;
   }
 
-  function onVideoEnded() {
-    if (!videoSlideshow || videoClips.length <= 1) return;
-    videoIndex = (videoIndex + 1) % videoClips.length;
-    playVideo();
+  // Near the end of the clip on screen, load the next one into the idle element
+  // so the swap has its first frame ready (and only then — preloading the whole
+  // next 2K clip up front doubled the bandwidth the current one is streaming).
+  function onVideoTimeUpdate(event) {
+    if (!videoSlideshow || videoClips.length <= 1 || videoSwapTimer) return;
+    if (event && event.target !== frontVideo()) return;
+    const v = frontVideo();
+    if (!v || videoPreloaded === nextVideoIndex()) return;
+    const dur = v.duration;
+    if (!isFinite(dur) || dur <= 0) return;
+    if (dur - v.currentTime > PRELOAD_LEAD_SEC) return;
+    preloadNext();
   }
 
-  function playVideo() {
-    if (!videoEl || !videoClips.length) return;
-    const attempt = ++videoAttempt;
-    const clip = videoClips[videoIndex % videoClips.length];
-    videoEl.loop = !videoSlideshow;
-    // Bind "error" to this load; detach the previous so a late error from a
-    // clip we already left is not counted again.
-    if (videoErrorListener) videoEl.removeEventListener('error', videoErrorListener);
-    videoErrorListener = function () {
-      handleVideoFailure(attempt);
-    };
-    videoEl.addEventListener('error', videoErrorListener);
-    if (videoEl.getAttribute('src') !== clip.url) {
-      videoEl.setAttribute('src', clip.url);
-    }
-    // Reveal now rather than waiting on a "playing" event: the element's own
-    // background (dark, like the saver) covers the first-frame gap, and a clip
-    // that never reports "playing" still shows.
-    videoEl.classList.add('is-visible');
+  function onVideoEnded(event) {
+    if (!videoSlideshow || videoClips.length <= 1) return;
+    if (event && event.target !== frontVideo()) return;
+    videoIndex = (videoIndex + 1) % videoClips.length;
+    swapToPreloaded();
+  }
+
+  // Start playing element `el` for the attempt in flight, routing the same
+  // failure handling a rejected play() and the element's "error" event share.
+  function playElement(el, attempt) {
     let p = null;
     try {
-      p = videoEl.play();
+      p = el.play();
     } catch (err) {
       handleVideoFailure(attempt);
       return;
@@ -438,6 +474,95 @@ export function createCustomScreensaver(options) {
       if (err && err.name === 'AbortError') return;
       handleVideoFailure(attempt);
     });
+  }
+
+  // Load videoClips[videoIndex] into the front buffer and play it (first start,
+  // Single, and the hard cut a failed clip falls back to). Slideshow preloads
+  // the next clip once this one nears its end.
+  function playVideo() {
+    const front = frontVideo();
+    if (!front || !videoClips.length) return;
+    const attempt = ++videoAttempt;
+    const clip = videoClips[videoIndex % videoClips.length];
+    front.loop = !videoSlideshow;
+    if (videoErrorListener) front.removeEventListener('error', videoErrorListener);
+    videoErrorListener = function () {
+      handleVideoFailure(attempt);
+    };
+    front.addEventListener('error', videoErrorListener);
+    if (front.getAttribute('src') !== clip.url) {
+      front.setAttribute('src', clip.url);
+    }
+    // Reveal now rather than waiting on a "playing" event: the element's own
+    // background (dark, like the saver) covers the first-frame gap, and a clip
+    // that never reports "playing" still shows.
+    revealFront(front);
+    videoPreloaded = -1;
+    playElement(front, attempt);
+  }
+
+  // Fade the preloaded clip in over the one that just ended. The outgoing
+  // element keeps painting its last frame under the incoming one (see CSS), so
+  // there is no black gap; only once the fade is done does it get reused as the
+  // next preload target.
+  function swapToPreloaded() {
+    const back = backVideo();
+    const front = frontVideo();
+    const clip = videoClips[videoIndex];
+    if (!back || !clip || back.getAttribute('src') !== clip.url) {
+      // Nothing was preloaded in time (a failed or unbounded stream): hard cut.
+      playVideo();
+      return;
+    }
+    revealFront(back);
+    retire(front);
+    videoFront = videoFront ? 0 : 1;
+
+    const attempt = ++videoAttempt;
+    if (videoErrorListener) back.removeEventListener('error', videoErrorListener);
+    videoErrorListener = function () {
+      handleVideoFailure(attempt);
+    };
+    back.addEventListener('error', videoErrorListener);
+    back.loop = !videoSlideshow;
+    playElement(back, attempt);
+
+    const outgoing = front;
+    if (videoSwapTimer) clearTimeout(videoSwapTimer);
+    videoSwapTimer = setTimeout(function () {
+      videoSwapTimer = null;
+      if (outgoing) {
+        try { outgoing.pause(); } catch (err) { /* ignore */ }
+      }
+      preloadNext();
+    }, 1500);
+  }
+
+  function revealFront(el) {
+    if (!el) return;
+    el.classList.remove('is-back');
+    el.classList.add('is-front');
+  }
+
+  function retire(el) {
+    if (!el) return;
+    el.classList.remove('is-front');
+    el.classList.add('is-back');
+  }
+
+  // Buffer the following clip in the idle element, ready to fade in on "ended".
+  function preloadNext() {
+    const back = backVideo();
+    if (!back || !videoSlideshow || videoClips.length <= 1) return;
+    if (videoSwapTimer) return; // the outgoing element is still on screen
+    const index = nextVideoIndex();
+    const clip = videoClips[index];
+    if (!clip) return;
+    back.loop = false;
+    if (back.getAttribute('src') !== clip.url) {
+      back.setAttribute('src', clip.url);
+    }
+    videoPreloaded = index;
   }
 
   // Whether the clip should be decoding right now. Not while our surface is
@@ -453,20 +578,23 @@ export function createCustomScreensaver(options) {
   // Pause on hidden/inactive and resume the same stream (play(), never a src
   // change, so returning neither restarts the clip nor re-fetches it).
   function syncVideo() {
-    if (!active || !videoEl || !videoClips.length) return;
+    if (!active || !videoEls.length || !videoClips.length) return;
     if (!saverShouldPlay()) {
-      if (!videoEl.paused) {
-        try { videoEl.pause(); } catch (err) { /* ignore */ }
+      for (let i = 0; i < videoEls.length; i += 1) {
+        if (!videoEls[i].paused) {
+          try { videoEls[i].pause(); } catch (err) { /* ignore */ }
+        }
       }
       return;
     }
-    if (!videoEl.paused) return;
-    if (videoEl.error) {
+    const front = frontVideo();
+    if (!front || !front.paused) return;
+    if (front.error) {
       playVideo();
       return;
     }
     try {
-      const p = videoEl.play();
+      const p = front.play();
       if (p && p.catch) p.catch(function () { /* resumed elsewhere */ });
     } catch (err) { /* ignore */ }
   }
@@ -490,14 +618,15 @@ export function createCustomScreensaver(options) {
       showVideoFallback();
       return;
     }
+    const front = frontVideo();
     if (videoSlideshow) {
       // Skip the broken clip and take the next one round the list.
       videoIndex = (videoIndex + 1) % videoClips.length;
-    } else if (videoEl) {
+    } else if (front) {
       // Single: retry the same clip. Drop the failed source so playVideo re-sets
       // it and the TV makes a fresh request.
-      videoEl.removeAttribute('src');
-      try { videoEl.load(); } catch (err) { /* ignore */ }
+      front.removeAttribute('src');
+      try { front.load(); } catch (err) { /* ignore */ }
     }
     playVideo();
   }
@@ -522,6 +651,7 @@ export function createCustomScreensaver(options) {
     videoAttempt = 0;
     videoHandledAttempt = 0;
     videoFailures = 0;
+    videoPreloaded = -1;
     ensureVideo();
     playVideo();
   }

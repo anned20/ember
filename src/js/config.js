@@ -7,7 +7,7 @@ const STORAGE_KEY = 'lounge.config.v1';
 // means, its type or its name? Bump this and add a step to migrateConfig():
 // stored settings and restored backups from older versions both go through
 // those steps (see configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 22;
+export const CONFIG_SCHEMA_VERSION = 24;
 
 export const DEFAULT_CONFIG = {
   version: CONFIG_SCHEMA_VERSION,
@@ -20,13 +20,17 @@ export const DEFAULT_CONFIG = {
     builtin: 'azure-cove',
     // Curated remote catalog id (see REMOTE_BACKGROUNDS); used when source is "url".
     remote: 'remote-01-cliff-ocean',
+    // Selected Apple aerial clip (see AERIAL_BACKGROUNDS); used when source is "aerial".
+    aerial: 'aerial-apple-east-asia',
     url: '',
     urls: [],
     path: '',
     file: '',
     slideshowIntervalSec: 300,
     overlayOpacity: 0.45,
-    kenBurns: false
+    kenBurns: false,
+    // Aerial Slideshow: randomise the clip order instead of catalog order.
+    shuffle: false
   },
   music: {
     enabled: true,
@@ -421,6 +425,24 @@ function migrateConfig(config) {
       config.launcher.numberKeyLaunch = true;
     }
     config.version = 22;
+  }
+
+  // v23: Apple aerial-video background source (selected clip id).
+  if ((config.version || 1) < 23) {
+    if (!config.background) config.background = {};
+    if (!config.background.aerial) {
+      config.background.aerial = 'aerial-apple-east-asia';
+    }
+    config.version = 23;
+  }
+
+  // v24: Shuffle toggle for the aerial Slideshow.
+  if ((config.version || 1) < 24) {
+    if (!config.background) config.background = {};
+    if (typeof config.background.shuffle !== 'boolean') {
+      config.background.shuffle = false;
+    }
+    config.version = 24;
   }
 
   return config;

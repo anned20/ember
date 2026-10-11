@@ -1107,6 +1107,8 @@ body.perf-mode .app-scroll-badge {
 
 .app-tile {
   appearance: none;
+  /* Positioning context for the number-key badge (.app-key). */
+  position: relative;
   border: 1px solid rgba(var(--glass-edge-rgb), var(--glass-edge));
   background: linear-gradient(165deg, rgba(var(--glass-rgb), var(--glass-top)), rgba(var(--glass-rgb), var(--glass-bottom)));
   /* Lighter blur (was 24px + saturate): cheaper on older TV GPUs. */
@@ -1154,6 +1156,30 @@ body.perf-mode .app-scroll-badge {
   font-weight: 600;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.05));
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* Number-key shortcut badge (home row): the key that opens this tile.
+   Absolutely positioned so it costs no layout and survives a focused tile's
+   scale; pointer-events off so it never eats the tile's click. */
+.app-key {
+  position: absolute;
+  top: calc(8px * var(--tile-scale, 1));
+  right: calc(10px * var(--tile-scale, 1));
+  margin: 0;
+  min-width: calc(24px * var(--tile-scale, 1));
+  height: calc(24px * var(--tile-scale, 1));
+  padding: 0 calc(6px * var(--tile-scale, 1));
+  border-radius: calc(12px * var(--tile-scale, 1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(15px * var(--tile-scale, 1));
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  pointer-events: none;
 }
 
 .app-label {

@@ -291,6 +291,19 @@ export function createAppGrid(container, getConfig, options) {
     if (allAppsTile) tiles.push(makeAllAppsTile(pinned.length));
     tiles.push(makeSettingsTile(pinned.length + 1, settingsIcon));
 
+    // Number the home row 1-9 in the order it reads (pinned apps, then All
+    // apps, then TV Settings) so the remote's number keys open a tile by
+    // position. The badge is the visible half of the shortcut.
+    tiles.slice(0, 9).forEach(function (tile, i) {
+      const key = String(i + 1);
+      tile.dataset.appKey = key;
+      const badge = document.createElement('span');
+      badge.className = 'app-key';
+      badge.setAttribute('aria-hidden', 'true');
+      badge.textContent = key;
+      tile.appendChild(badge);
+    });
+
     // Swap in the freshly built tiles atomically. Clearing the container up
     // front instead would leave the dock empty (and unselectable) for the whole
     // async catalog fetch above -- and if that fetch stalls after a failed app
@@ -313,7 +326,19 @@ export function createAppGrid(container, getConfig, options) {
     isLoungeApp: function (id) {
       return id === APP_ID;
     },
-    launchApp: openApp
+    launchApp: openApp,
+    /**
+     * Open the home row tile numbered `n` (1-9), exactly as pressing Select on
+     * it would. False when there is no such tile.
+     */
+    launchByNumber: function (n) {
+      const num = Number(n);
+      if (!(num >= 1 && num <= 9)) return false;
+      const tile = container.querySelector('.app-tile[data-app-key="' + num + '"]');
+      if (!tile) return false;
+      tile.click();
+      return true;
+    }
   };
 }
 

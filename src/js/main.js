@@ -355,6 +355,15 @@ const apps = createAppGrid(elements.appGrid, getConfig, {
   onToast: showToast
 });
 const focus = createFocusManager(document.getElementById('app'), {
+  onNumber: function (n) {
+    // While the screensaver is showing, a key press dismisses it (screensaver.js)
+    // rather than opening an app behind it.
+    if (customScreensaver && typeof customScreensaver.isActive === 'function' &&
+        customScreensaver.isActive()) {
+      return;
+    }
+    apps.launchByNumber(n);
+  },
   onBack: function () {
     if (allApps.isOpen()) {
       allApps.hide();

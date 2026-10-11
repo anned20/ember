@@ -1,4 +1,4 @@
-import {REMOTE_KEY} from './remote.js';
+import {REMOTE_KEY, digitFromKey} from './remote.js';
 import {
   isSettingsTextField,
   isEditingSettingsText,
@@ -1175,6 +1175,22 @@ export function createFocusManager(root, handlers) {
       if (keyMap[event.key] !== undefined) {
         code = keyMap[event.key];
       }
+    }
+
+    // Number keys launch the home row tile at that position (1 = first).
+    // While the virtual keyboard is up, or Settings / All apps is open, the
+    // numbers belong to what is on screen, not the home row.
+    const digit = digitFromKey(code, event.key);
+    if (digit >= 0) {
+      const active = document.activeElement;
+      if (isEditingSettingsText(active)) return;
+      if (document.body.classList.contains('settings-open')) return;
+      if (root.querySelector('.all-apps:not([hidden])')) return;
+      if (digit > 0 && handlers && handlers.onNumber) {
+        event.preventDefault();
+        handlers.onNumber(digit);
+      }
+      return;
     }
 
     if (code === REMOTE_KEY.BACK) {

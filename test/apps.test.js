@@ -10,6 +10,7 @@ vi.mock('../src/js/luna.js', () => ({
 
 import {launchApp, listApps, getAppInfo} from '../src/js/luna.js';
 import {createAppGrid} from '../src/js/apps.js';
+import {createAllApps} from '../src/js/all-apps.js';
 
 function makeConfig(pinnedApps, numberKeyLaunch) {
   return function () {
@@ -91,6 +92,25 @@ describe('launchByNumber', () => {
     expect(grid.launchByNumber(0)).toBe(false);
     expect(grid.launchByNumber(9)).toBe(false);
     expect(launchApp).not.toHaveBeenCalled();
+  });
+});
+
+describe('All apps overlay', () => {
+  it('shows no number badges on its tiles', async () => {
+    mockInstalled(['netflix', 'youtube.leanback.v4']);
+    const mount = document.createElement('div');
+    document.body.appendChild(mount);
+    const allApps = createAllApps({
+      mount: mount,
+      focus: {focusWithin: function () {}},
+      launch: function () {}
+    });
+
+    await allApps.show();
+
+    expect(mount.querySelectorAll('.app-tile').length).toBeGreaterThan(0);
+    expect(mount.querySelectorAll('.app-key').length).toBe(0);
+    expect(mount.querySelectorAll('[data-app-key]').length).toBe(0);
   });
 });
 

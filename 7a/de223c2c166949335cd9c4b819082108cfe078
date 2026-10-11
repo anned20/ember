@@ -1,0 +1,22 @@
+src/js/config.js
+  s_4ee62867843316::t_9a3e74ca2b0358 10
+  s_4ee62867843316::t_685519907d60d7 430-445
+  s_4ee62867843316::t_ed2274bf4caae9 446-447
+  s_4ee62867843316::t_60fab762fe3198 23-24,31-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7ade223c2c166949335cd9c4b819082108cfe078",
+  "prompts": {},
+  "sessions": {
+    "s_4ee62867843316": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed5665c9effeZLFymVrI6p7NN2",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+voice/overlay/appinfo.json
+  s_67c7bd0d91cff4::t_c2030dbdbaed98 6
+scripts/set-version.js
+  s_67c7bd0d91cff4::t_6bb2239fc77356 1-55
+package.json
+  s_67c7bd0d91cff4::t_f1f8119f3ea24c 3,12-14
+appinfo.json
+  s_67c7bd0d91cff4::t_c2030dbdbaed98 3
+package-lock.json
+  s_67c7bd0d91cff4::t_d1bb262f5fc985 3,9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "790b5cb3bab434703d2b51a7f7ad2debef1d1ce8",
+  "prompts": {},
+  "sessions": {
+    "s_67c7bd0d91cff4": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed569cee6ffer4cX64OFeQJ7jS",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import {afterAll, afterEach, beforeAll, describe, expect, it, vi} from 'vitest';
-import {createFocusManager} from '../src/ts/focus.js';
+import {createFocusManager} from '@focus/focus.js';
 
 const onNumber = vi.fn();
 const onChannelUp = vi.fn();

@@ -1,9 +1,9 @@
 import {describe, expect, it, vi} from 'vitest';
 import {
   createBinder, field, getPathValue, setPathValue, stepperField, textField, toggleField
-} from '../src/ts/settings-binding.js';
-import type {FieldValue} from '../src/ts/settings-binding.js';
-import type {Config} from '../src/ts/types.js';
+} from '@settings/settings-binding.js';
+import type {FieldValue} from '@settings/settings-binding.js';
+import type {Config} from '@lib/types.js';
 
 /** A control backed by a plain object, so the binder runs without the DOM. */
 function fakeControl(path: string, initial: FieldValue) {

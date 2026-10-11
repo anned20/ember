@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
-vi.mock('../src/ts/luna.js', () => ({
+vi.mock('@luna/luna.js', () => ({
   disableVoice: vi.fn(async () => ({})),
   enableVoice: vi.fn(async () => ({otherVoice: ''})),
   execRoot: vi.fn(async () => ''),
@@ -13,11 +13,11 @@ vi.mock('../src/ts/luna.js', () => ({
   writeSettingsBackup: vi.fn(async () => ({usb: null}))
 }));
 
-vi.mock('../src/ts/apps.js', () => ({
+vi.mock('@apps/apps.js', () => ({
   listInstalledApps: vi.fn(async () => [])
 }));
 
-vi.mock('../src/ts/app-catalog.js', () => ({
+vi.mock('@apps/app-catalog.js', () => ({
   isAppInstalled: vi.fn(() => true),
   loadAppCatalog: vi.fn(async () => ({})),
   rememberApps: vi.fn(),
@@ -26,19 +26,19 @@ vi.mock('../src/ts/app-catalog.js', () => ({
   lazyLoadIcon: vi.fn()
 }));
 
-vi.mock('../src/ts/usb.js', () => ({
+vi.mock('@lib/usb.js', () => ({
   findLoungeRoots: vi.fn(async () => []),
   joinPath: vi.fn((...parts: string[]) => parts.join('/')),
   discoverMusicTracks: vi.fn(async () => [])
 }));
 
-vi.mock('../src/ts/inputs.js', () => ({
+vi.mock('@home/inputs.js', () => ({
   fetchInputDevices: vi.fn(async () => []),
   inputFromId: vi.fn((id: string) => ({id: id, label: id})),
   isTvInputId: vi.fn((id: string) => id === 'TV')
 }));
 
-vi.mock('../src/ts/voice-config.js', () => ({
+vi.mock('@voice/voice-config.js', () => ({
   getVoiceConfig: vi.fn(async () => ({})),
   getVoiceStatus: vi.fn(async () => ({})),
   setVoiceConfig: vi.fn(async () => ({})),
@@ -48,9 +48,9 @@ vi.mock('../src/ts/voice-config.js', () => ({
   importSuperGrokAuth: vi.fn(async () => ({}))
 }));
 
-import {loadConfig} from '../src/ts/config.js';
-import {createSettingsPanel} from '../src/ts/settings.js';
-import type {Config} from '../src/ts/types.js';
+import {loadConfig} from '@config/config.js';
+import {createSettingsPanel} from '@settings/settings.js';
+import type {Config} from '@lib/types.js';
 
 async function waitFor(selector: string, root: ParentNode, ms = 3000): Promise<Element> {
   const start = Date.now();

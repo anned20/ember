@@ -13,6 +13,21 @@ const {verifyIpk} = require('./verify-ipk.ts') as {verifyIpk: (ipkPath: string) 
 const root = path.join(__dirname, '..');
 const dist = path.join(root, 'dist');
 
+// Keep in sync with the "paths" aliases in tsconfig.json and "resolve.alias"
+// in vitest.config.mjs.
+const tsAliases = {
+  '@apps': path.join(root, 'src/ts/apps'),
+  '@background': path.join(root, 'src/ts/background'),
+  '@music': path.join(root, 'src/ts/music'),
+  '@voice': path.join(root, 'src/ts/voice'),
+  '@settings': path.join(root, 'src/ts/settings'),
+  '@focus': path.join(root, 'src/ts/focus'),
+  '@home': path.join(root, 'src/ts/home'),
+  '@config': path.join(root, 'src/ts/config'),
+  '@luna': path.join(root, 'src/ts/luna'),
+  '@lib': path.join(root, 'src/ts/lib')
+};
+
 // Dev / source-only assets that must not ship in the .ipk.
 const PACK_EXCLUDE = new Set([
   'icon-source.png',
@@ -66,6 +81,7 @@ async function build() {
     target: ['es2015'],
     minify: true,
     legalComments: 'none',
+    alias: tsAliases,
     define: {
       __LOUNGE_VERSION__: JSON.stringify(version)
     }

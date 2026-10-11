@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {REMOTE_KEY, isHomeApp} from '../src/ts/remote.js';
+import {REMOTE_KEY, isHomeApp} from '@lib/remote.js';
 
 describe('test harness', () => {
   it('runs project ES modules', () => {

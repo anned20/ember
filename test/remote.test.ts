@@ -1,6 +1,6 @@
 // @vitest-environment node
 import {describe, expect, it} from 'vitest';
-import {REMOTE_KEY, digitFromKey} from '../src/ts/remote.js';
+import {REMOTE_KEY, digitFromKey} from '@lib/remote.js';
 
 describe('remote key table', () => {
   it('defines the Channel Up / Channel Down keycodes', () => {

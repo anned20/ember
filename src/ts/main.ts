@@ -1,30 +1,30 @@
-import {setClockTime} from './clock-format.js';
-import {createAllApps} from './all-apps.js';
-import type {AllApps} from './all-apps.js';
-import './compat.js';
-import {loadConfig, saveConfig, applyUsbConfig, readStoredConfigText} from './config.js';
-import {applyActiveProfile} from './profiles.js';
-import {resolveLoungePaths} from './usb.js';
-import {createBackgroundController} from './background.js';
-import type {BackgroundController} from './background.js';
-import {createMusicPlayer} from './music.js';
-import type {MusicPlayer} from './music.js';
-import {createAppGrid} from './apps.js';
-import type {AppGrid, LaunchableApp} from './apps.js';
-import {createInputRow} from './inputs.js';
-import type {InputRowHandle} from './inputs.js';
-import {createChannelStrip} from './channels.js';
-import type {ChannelStripHandle} from './channels.js';
-import {createFocusManager} from './focus.js';
-import type {FocusManager} from './focus.js';
-import {createSettingsPanel} from './settings.js';
-import type {SettingsPanelHandle} from './settings.js';
-import {createCustomScreensaver} from './screensaver.js';
-import type {CustomScreensaver} from './screensaver.js';
-import {createWeatherPanel} from './weather.js';
-import type {WeatherPanelHandle} from './weather.js';
-import {createVoiceIndicator} from './voice-indicator.js';
-import type {VoiceIndicator} from './voice-indicator.js';
+import {setClockTime} from '@lib/clock-format.js';
+import {createAllApps} from '@apps/all-apps.js';
+import type {AllApps} from '@apps/all-apps.js';
+import '@lib/compat.js';
+import {loadConfig, saveConfig, applyUsbConfig, readStoredConfigText} from '@config/config.js';
+import {applyActiveProfile} from '@config/profiles.js';
+import {resolveLoungePaths} from '@lib/usb.js';
+import {createBackgroundController} from '@background/background.js';
+import type {BackgroundController} from '@background/background.js';
+import {createMusicPlayer} from '@music/music.js';
+import type {MusicPlayer} from '@music/music.js';
+import {createAppGrid} from '@apps/apps.js';
+import type {AppGrid, LaunchableApp} from '@apps/apps.js';
+import {createInputRow} from '@home/inputs.js';
+import type {InputRowHandle} from '@home/inputs.js';
+import {createChannelStrip} from '@home/channels.js';
+import type {ChannelStripHandle} from '@home/channels.js';
+import {createFocusManager} from '@focus/focus.js';
+import type {FocusManager} from '@focus/focus.js';
+import {createSettingsPanel} from '@settings/settings.js';
+import type {SettingsPanelHandle} from '@settings/settings.js';
+import {createCustomScreensaver} from '@background/screensaver.js';
+import type {CustomScreensaver} from '@background/screensaver.js';
+import {createWeatherPanel} from '@home/weather.js';
+import type {WeatherPanelHandle} from '@home/weather.js';
+import {createVoiceIndicator} from '@voice/voice-indicator.js';
+import type {VoiceIndicator} from '@voice/voice-indicator.js';
 import {
   getForegroundApp,
   launchApp,
@@ -40,18 +40,18 @@ import {
   setSystemVolume,
   setScreensaverTimeout,
   execRoot
-} from './luna.js';
-import {isHomeApp} from './remote.js';
-import {isTerminalAppId, getAppIdCandidates} from './app-icons.js';
-import {setPreferBundledIcons} from './app-catalog.js';
-import {setLiteImages} from './backgrounds.js';
-import {addVoiceListener, setVoiceWsEnabled, stopVoiceWs} from './voice-ws.js';
-import {resolveVoiceLaunch} from './voice-launch.js';
-import {activity, noteForeground} from './activity.js';
-import {settingsBackupText} from './settings-backup.js';
-import {APP_VERSION} from './version.js';
-import {createLaunchState} from './launch-state.js';
-import type {Config, LauncherConfig, AppRecord, LunaResponse} from './types.js';
+} from '@luna/luna.js';
+import {isHomeApp} from '@lib/remote.js';
+import {isTerminalAppId, getAppIdCandidates} from '@apps/app-icons.js';
+import {setPreferBundledIcons} from '@apps/app-catalog.js';
+import {setLiteImages} from '@background/backgrounds.js';
+import {addVoiceListener, setVoiceWsEnabled, stopVoiceWs} from '@voice/voice-ws.js';
+import {resolveVoiceLaunch} from '@voice/voice-launch.js';
+import {activity, noteForeground} from '@lib/activity.js';
+import {settingsBackupText} from '@settings/settings-backup.js';
+import {APP_VERSION} from '@lib/version.js';
+import {createLaunchState} from '@lib/launch-state.js';
+import type {Config, LauncherConfig, AppRecord, LunaResponse} from '@lib/types.js';
 
 const APP_ID = 'org.webosbrew.lounge.launcher';
 

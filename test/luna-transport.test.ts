@@ -5,10 +5,10 @@ import {
   rootLuna,
   runLadder,
   setLunaAdapter
-} from '../src/ts/luna-transport.js';
-import type {LadderRung, LunaAdapter} from '../src/ts/luna-transport.js';
-import type {WebOSServiceRequestOptions} from '../src/ts/types.js';
-import {LIST_APPS_LADDER, listApps} from '../src/ts/luna.js';
+} from '@luna/luna-transport.js';
+import type {LadderRung, LunaAdapter} from '@luna/luna-transport.js';
+import type {WebOSServiceRequestOptions} from '@lib/types.js';
+import {LIST_APPS_LADDER, listApps} from '@luna/luna.js';
 
 interface Sent {
   uri: string;

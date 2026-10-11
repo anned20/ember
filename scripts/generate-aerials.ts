@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Regenerate src/ts/aerials.ts: the vendored catalog of Apple's aerial clips.
+// Regenerate src/ts/background/aerials.ts: the vendored catalog of Apple's aerial clips.
 //
 //   node scripts/generate-aerials.ts
 //
@@ -17,7 +17,7 @@ import type {IncomingMessage} from 'node:http';
 
 const SOURCE_URL =
   'https://raw.githubusercontent.com/conreo/couchy-launcher/main/app/src/main/assets/aerials.json';
-const OUT_FILE = path.resolve(__dirname, '..', 'src', 'ts', 'aerials.ts');
+const OUT_FILE = path.resolve(__dirname, '..', 'src', 'ts', 'background', 'aerials.ts');
 const ID_PREFIX = 'aerial-apple-';
 
 interface RawAerial {

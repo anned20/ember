@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
-vi.mock('../src/ts/luna.js', () => ({
+vi.mock('@luna/luna.js', () => ({
   listApps: vi.fn(),
   getAppInfo: vi.fn(),
   launchApp: vi.fn(async () => 'ok'),
@@ -8,10 +8,10 @@ vi.mock('../src/ts/luna.js', () => ({
   readFileAsDataUrl: vi.fn(async () => '')
 }));
 
-import {launchApp, listApps, getAppInfo} from '../src/ts/luna.js';
-import {createAppGrid} from '../src/ts/apps.js';
-import {createAllApps} from '../src/ts/all-apps.js';
-import type {Config} from '../src/ts/types.js';
+import {launchApp, listApps, getAppInfo} from '@luna/luna.js';
+import {createAppGrid} from '@apps/apps.js';
+import {createAllApps} from '@apps/all-apps.js';
+import type {Config} from '@lib/types.js';
 
 function makeConfig(pinnedApps: string[], numberKeyLaunch?: boolean): () => Config {
   return function (): Config {

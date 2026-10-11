@@ -25,7 +25,7 @@ Prefer **Online URL** when you want more variety without growing the IPK.
 
 ## Curated remote set
 
-**39 online-only photos** in `src/ts/backgrounds.ts` (`REMOTE_BACKGROUNDS`):
+**39 online-only photos** in `src/ts/background/backgrounds.ts` (`REMOTE_BACKGROUNDS`):
 
 | Set | Count | Host | Notes |
 |-----|------:|------|--------|
@@ -62,7 +62,7 @@ Apple's aerial/screensaver clips play as a **video** background — muted, full-
 
 **License / usage:** the clips are hotlinked from Apple's CDN and are **not redistributed in the app package**, the same stance as the X (Starship) and Wallhaven entries above. They remain available only while Apple keeps hosting them, so this source can change or stop working over time.
 
-To extend or replace the catalog, edit `AERIAL_BACKGROUNDS` in `src/ts/aerials.ts` (id, title, direct `https://…` clip URL).
+To extend or replace the catalog, edit `AERIAL_BACKGROUNDS` in `src/ts/background/aerials.ts` (id, title, direct `https://…` clip URL).
 
 ## Adding your own remote URLs
 
@@ -73,7 +73,7 @@ Any host works if it serves a **direct** image over HTTPS, for example:
 - Wallhaven: `https://w.wallhaven.cc/full/ab/wallhaven-abcdef.jpg` (settings thumbs map automatically)
 - Your own server / GitHub raw / S3, etc.
 
-To extend the in-app picker, add entries to `REMOTE_BACKGROUNDS` in `src/ts/backgrounds.ts` (id, title, url only). For more anime picks, use Wallhaven’s SFW anime filter and paste the full image URL.
+To extend the in-app picker, add entries to `REMOTE_BACKGROUNDS` in `src/ts/background/backgrounds.ts` (id, title, url only). For more anime picks, use Wallhaven’s SFW anime filter and paste the full image URL.
 
 ## Why not package more JPEGs?
 

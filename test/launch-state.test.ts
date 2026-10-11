@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {createLaunchState} from '../src/ts/launch-state.js';
+import {createLaunchState} from '@lib/launch-state.js';
 
 const SELF = 'org.webosbrew.lounge.launcher';
 

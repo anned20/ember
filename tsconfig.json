@@ -11,7 +11,19 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "types": []
+    "types": [],
+    "paths": {
+      "@apps/*": ["./src/ts/apps/*"],
+      "@background/*": ["./src/ts/background/*"],
+      "@music/*": ["./src/ts/music/*"],
+      "@voice/*": ["./src/ts/voice/*"],
+      "@settings/*": ["./src/ts/settings/*"],
+      "@focus/*": ["./src/ts/focus/*"],
+      "@home/*": ["./src/ts/home/*"],
+      "@config/*": ["./src/ts/config/*"],
+      "@luna/*": ["./src/ts/luna/*"],
+      "@lib/*": ["./src/ts/lib/*"]
+    }
   },
-  "include": ["src/ts/**/*.ts", "test/**/*.ts"]
+  "include": ["./src/ts/**/*.ts", "test/**/*.ts"]
 }

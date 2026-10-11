@@ -1,8 +1,8 @@
 import {describe, expect, it} from 'vitest';
 import {
   CONFIG_MIGRATIONS, CONFIG_SCHEMA_VERSION, DEFAULT_CONFIG, migrateConfig
-} from '../src/ts/config.js';
-import type {Config} from '../src/ts/types.js';
+} from '@config/config.js';
+import type {Config} from '@lib/types.js';
 
 /** A config tree at `version`, built on the current defaults. */
 function configAt(version: number): Config {

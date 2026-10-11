@@ -5,7 +5,7 @@ import {
   neighbourRows,
   rowById,
   rowOf
-} from '../src/ts/focus-row.js';
+} from '@focus/focus-row.js';
 
 function button(): HTMLButtonElement {
   const el = document.createElement('button');

@@ -1,8 +1,8 @@
 import {afterEach, describe, expect, it} from 'vitest';
-import {createBackgroundController} from '../src/ts/background.js';
-import type {BackgroundController, BackgroundElements} from '../src/ts/background.js';
-import {AERIAL_BACKGROUNDS} from '../src/ts/aerials.js';
-import type {BackgroundConfig, Config} from '../src/ts/types.js';
+import {createBackgroundController} from '@background/background.js';
+import type {BackgroundController, BackgroundElements} from '@background/background.js';
+import {AERIAL_BACKGROUNDS} from '@background/aerials.js';
+import type {BackgroundConfig, Config} from '@lib/types.js';
 
 let controller: BackgroundController | null = null;
 

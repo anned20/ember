@@ -67,6 +67,18 @@ export function createBackgroundController(elements, getConfig) {
   let videoClips = [];
   let videoSlideshow = false;
   let videoIndex = 0;
+  // Aerial failure handling: failed starts since a clip last played, the id of
+  // the load in flight (so a play() rejection and the element's "error" event
+  // for the same attempt count once), and whether we've dropped to the gradient.
+  let videoFailures = 0;
+  let videoAttempt = 0;
+  let videoHandledAttempt = 0;
+  // Bound to the attempt in flight so the element's "error" event reports the
+  // same load as the play() rejection, and a retry detaches the old one.
+  let videoErrorListener = null;
+  let videoFellBack = false;
+  // What the wallpaper on screen was made from (see refresh reuse).
+  let appliedSignature = '';
 
   function applyPreset(name, animated) {
     const gradient = PRESETS[name] || PRESETS['warm-gradient'];
@@ -126,18 +138,61 @@ export function createBackgroundController(elements, getConfig) {
 
   function onVideoPlaying() {
     videoPlaying = true;
+    videoFailures = 0;
     layer.classList.add('has-video');
     layer.classList.remove('has-image');
     layer.classList.remove('ken-burns');
     syncMovingBackground();
   }
 
-  // The clip would not play (offline, unsupported container): the configured
-  // gradient, exactly as images fall back, so the home screen is never blank.
-  function onVideoError() {
-    const bg = normalizeBackgroundConfig(getConfig().background);
+  // Drop the video and put up the configured gradient — what images do when
+  // they don't load, so the home screen is never blank.
+  function fallbackToGradient(bg) {
     teardownVideo();
     applyPreset(bg.preset || 'warm-gradient', false);
+  }
+
+  // How many failed starts to absorb before giving up on aerials: Single gets
+  // one retry, Slideshow gets a single pass over the list.
+  function maxVideoFailures() {
+    return videoSlideshow ? videoClips.length - 1 : 1;
+  }
+
+  // A clip would not start (offline, unsupported container). Slideshow skips it
+  // and takes the next; Single retries it once. Only when every attempt has
+  // failed does the wallpaper drop to the configured gradient.
+  function failToGradient(bg) {
+    videoFellBack = true;
+    // Leave the applied signature cleared so a return (or a settings change)
+    // paints aerials again once connectivity is back; until then the gradient
+    // holds the screen.
+    appliedSignature = '';
+    fallbackToGradient(bg);
+  }
+
+  function handleVideoFailure(attemptId) {
+    // The element's "error" event and the rejected play() both report the same
+    // attempt; handle it once. A stale id (a reload already moved on) is ignored.
+    if (attemptId !== videoAttempt || attemptId === videoHandledAttempt) return;
+    videoHandledAttempt = attemptId;
+    // Backgrounded: defer, and let the resume path start the next attempt.
+    if (!wallpaperShouldAnimate()) return;
+    const bg = normalizeBackgroundConfig(getConfig().background);
+    videoFailures += 1;
+    if (videoFailures > maxVideoFailures()) {
+      failToGradient(bg);
+      return;
+    }
+    if (videoSlideshow) {
+      // Skip the broken clip and take the next one round the list.
+      videoIndex = (videoIndex + 1) % videoClips.length;
+    } else if (videoEl) {
+      // Single: retry the same clip. Drop the failed source so playVideoClip
+      // re-sets it and the TV makes a fresh request.
+      videoEl.removeAttribute('src');
+      try { videoEl.load(); } catch (err) { /* ignore */ }
+    }
+    playVideoClip(bg, refreshGen);
   }
 
   // Slideshow only: a clip reached its natural end, so roll onto the next one
@@ -161,7 +216,6 @@ export function createBackgroundController(elements, getConfig) {
     v.autoplay = true;
     v.preload = 'auto';
     v.loop = true;
-    v.addEventListener('error', onVideoError);
     v.addEventListener('playing', onVideoPlaying);
     v.addEventListener('ended', onVideoEnded);
     layer.appendChild(v);
@@ -178,7 +232,8 @@ export function createBackgroundController(elements, getConfig) {
     const v = videoEl;
     videoEl = null;
     videoPlaying = false;
-    v.removeEventListener('error', onVideoError);
+    if (videoErrorListener) v.removeEventListener('error', videoErrorListener);
+    videoErrorListener = null;
     v.removeEventListener('playing', onVideoPlaying);
     v.removeEventListener('ended', onVideoEnded);
     try { v.pause(); } catch (err) { /* ignore */ }
@@ -217,12 +272,23 @@ export function createBackgroundController(elements, getConfig) {
       }
       return;
     }
-    if (videoEl.paused) {
-      try {
-        const p = videoEl.play();
-        if (p && p.catch) p.catch(function () { /* resumed elsewhere */ });
-      } catch (err) { /* ignore */ }
+    if (!videoEl.paused) return;
+    if (videoEl.error) {
+      // The clip broke while we were away: start a fresh attempt (retry/skip)
+      // rather than play() the dead element, which would reject silently.
+      playVideoClip(normalizeBackgroundConfig(getConfig().background), refreshGen);
+      return;
     }
+    try {
+      const p = videoEl.play();
+      if (p && p.catch) p.catch(function () {
+        // A source that died while we were away can reject here; if the element
+        // now reports an error, make a fresh attempt instead of stalling.
+        if (videoEl && videoEl.error) {
+          playVideoClip(normalizeBackgroundConfig(getConfig().background), refreshGen);
+        }
+      });
+    } catch (err) { /* ignore */ }
   }
 
   document.addEventListener('visibilitychange', syncVideoPlayback);
@@ -241,9 +307,17 @@ export function createBackgroundController(elements, getConfig) {
   // resume path starts it instead of decoding for nobody).
   async function playVideoClip(bg, gen) {
     if (!wallpaperShouldAnimate()) return false;
+    const attempt = ++videoAttempt;
     const clip = videoClips[videoIndex % videoClips.length];
     const video = ensureVideo();
     video.loop = !videoSlideshow;
+    // Bind the "error" event to this load, and detach the previous load's so a
+    // late error from a clip we already moved on from is not counted again.
+    if (videoErrorListener) video.removeEventListener('error', videoErrorListener);
+    videoErrorListener = function () {
+      handleVideoFailure(attempt);
+    };
+    video.addEventListener('error', videoErrorListener);
 
     // Gradient poster behind the clip until its first frame paints.
     layer.style.backgroundImage = PRESETS[bg.preset] || PRESETS['warm-gradient'];
@@ -264,7 +338,7 @@ export function createBackgroundController(elements, getConfig) {
       // failure: keep the element for the resume path, not the gradient.
       if (err && err.name === 'AbortError') return false;
       if (!wallpaperShouldAnimate()) return false;
-      onVideoError();
+      handleVideoFailure(attempt);
       return false;
     }
     if (gen !== refreshGen) return false;
@@ -283,15 +357,24 @@ export function createBackgroundController(elements, getConfig) {
       return item && item.kind === MEDIA_VIDEO && item.url;
     });
     if (!clips.length) {
-      teardownVideo();
-      applyPreset(bg.preset || 'warm-gradient', false);
+      fallbackToGradient(bg);
+      return false;
+    }
+
+    // Offline: don't fire the whole catalog at Apple's CDN; hold the gradient
+    // and let a later return try again when connectivity is back.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      fallbackToGradient(bg);
       return false;
     }
 
     videoSlideshow = bg.mode === 'slideshow' && clips.length > 1;
     videoClips = videoSlideshow && bg.shuffle ? shuffled(clips) : clips;
     videoIndex = 0;
-    return playVideoClip(bg, gen);
+    videoFailures = 0;
+    videoHandledAttempt = 0;
+    const ok = await playVideoClip(bg, gen);
+    return ok && !videoFellBack;
   }
 
   function showSlideshowImage() {
@@ -330,8 +413,6 @@ export function createBackgroundController(elements, getConfig) {
     return null;
   }
 
-  // What the wallpaper on screen was made from (see refresh reuse).
-  let appliedSignature = '';
   // The online wallpaper link last reported as not loading (once per link).
   let reportedFailure = '';
 
@@ -372,13 +453,17 @@ export function createBackgroundController(elements, getConfig) {
     }
     appliedSignature = '';
     const gen = ++refreshGen;
-    if (await paint(config, gen) && gen === refreshGen) appliedSignature = signature;
+    const ok = await paint(config, gen);
+    // Not while the aerial fell back to its gradient: leaving the signature
+    // unset is what lets a later return retry the clips once online.
+    if (ok && gen === refreshGen && !videoFellBack) appliedSignature = signature;
   }
 
   // Put the configured wallpaper up. False when it fell back to a gradient
   // because the pictures didn't load (a return then tries them again).
   async function paint(config, gen) {
     clearSlideshow();
+    videoFellBack = false;
     applyScrim();
 
     const bg = normalizeBackgroundConfig(config.background);

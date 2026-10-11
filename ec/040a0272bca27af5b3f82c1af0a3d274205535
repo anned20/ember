@@ -1,0 +1,33 @@
+src/js/settings.js
+  s_22cdba5a20c179::t_734b790f97e55f 4018
+  s_22cdba5a20c179::t_c6a0a78ba4b30d 3332-3345
+README.md
+  s_22cdba5a20c179::t_4404a91f61c323 12
+src/js/apps.js
+  s_22cdba5a20c179::t_d63471a27f5eaf 298-308
+  s_22cdba5a20c179::t_909b008ff54390 259-260
+  s_22cdba5a20c179::t_8b17c7731403a1 338-339
+src/js/config.js
+  s_22cdba5a20c179::t_659394d33c1ebb 90-91
+  s_22cdba5a20c179::t_a463bbfeea3361 418-425
+  s_22cdba5a20c179::t_7047e7613be10d 10
+test/apps.test.js
+  s_22cdba5a20c179::t_97827e6c91fb85 14,21-22,35,38
+  s_22cdba5a20c179::t_ace50548d5991f 96-108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ec040a0272bca27af5b3f82c1af0a3d274205535",
+  "prompts": {},
+  "sessions": {
+    "s_22cdba5a20c179": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed581ac13ffexOUBBTtu64Rv04",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

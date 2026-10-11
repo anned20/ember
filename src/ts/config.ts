@@ -5,9 +5,9 @@ import type {BackgroundConfig, BackupFitResult, BackupSkip, Config, MusicConfig}
 const STORAGE_KEY = 'lounge.config.v1';
 
 // Layout version of the settings (config.version). Changing what a setting
-// means, its type or its name? Bump this and add a step to migrateConfig():
-// stored settings and restored backups from older versions both go through
-// those steps (see configFromBackup).
+// means, its type or its name? Bump this and add an entry to CONFIG_MIGRATIONS
+// keyed by the new version: stored settings and restored backups from older
+// versions both run through those steps (see migrateConfig / configFromBackup).
 export const CONFIG_SCHEMA_VERSION = 24;
 
 export const DEFAULT_CONFIG: Config = {
@@ -199,13 +199,18 @@ function deepMerge<T>(target: unknown, source: unknown): T {
   return out as T;
 }
 
+/** One settings migration: brings a config up to a single schema version. */
+export type ConfigMigration = (config: Config) => void;
+
 /**
- * Bring settings saved by an older Launch Home up to CONFIG_SCHEMA_VERSION.
- * In memory only: the caller saves (loadConfig) or checks them first (a
- * restored backup).
+ * Settings migrations, keyed by the schema version they bring a config up to.
+ * migrateConfig runs the entries above the stored version, in ascending order;
+ * each entry assumes the ones before it have run. Exported so a test can drive
+ * a single step in isolation.
  */
-function migrateConfig(config: Config): Config {
-  if ((config.version || 1) < 2) {
+export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
+  // v2: put Amazon next to Netflix on the home row.
+  2: function addAmazonTile(config) {
     const pinned = config.launcher.pinnedApps || [];
     if (pinned.indexOf('amazon.html') < 0) {
       const netflixIndex = pinned.indexOf('netflix');
@@ -216,10 +221,10 @@ function migrateConfig(config: Config): Config {
       }
       config.launcher.pinnedApps = pinned;
     }
-    config.version = 2;
-  }
+  },
 
-  if ((config.version || 1) < 3) {
+  // v3: music gained a source and a default built-in track.
+  3: function normalizeMusicSource(config) {
     config.music = normalizeMusicConfig(config.music);
     if (!config.music.source) {
       config.music.source = config.music.path ? 'usb' : 'builtin';
@@ -227,107 +232,105 @@ function migrateConfig(config: Config): Config {
     if (!config.music.builtin) {
       config.music.builtin = 'midnight-lounge';
     }
-    config.version = 3;
-  }
+  },
 
-  if ((config.version || 1) < 4) {
+  // v4: drop the dead Breezyfin app; add the timezone setting.
+  4: function dropBreezyfinAddTimezone(config) {
     config.launcher.pinnedApps = (config.launcher.pinnedApps || []).filter(function (id: string) {
       return id !== 'com.breezyfin.app';
     });
     if (config.launcher.timezone === undefined) {
       config.launcher.timezone = '';
     }
-    config.version = 4;
-  }
+  },
 
-  if ((config.version || 1) < 5) {
+  // v5: "repeat one" was dropped.
+  5: function dropRepeatOne(config) {
     if (config.music && config.music.repeat === 'one') {
       config.music.repeat = 'all';
     }
-    config.version = 5;
-  }
+  },
 
-  if ((config.version || 1) < 6) {
+  // v6: Apple TV joins the home row.
+  6: function addAppleTvTile(config) {
     const pinned = config.launcher.pinnedApps || [];
     if (pinned.indexOf('com.apple.appletv') < 0) {
       pinned.push('com.apple.appletv');
     }
     config.launcher.pinnedApps = pinned;
-    config.version = 6;
-  }
+  },
 
-  if ((config.version || 1) < 7) {
+  // v7: iPlayer, the browser and Media Discovery join the home row.
+  7: function addStreamingTiles(config) {
     const pinned = config.launcher.pinnedApps || [];
     ['bbc.iplayer.lge', 'com.webos.app.browser', 'com.webos.app.mediadiscovery'].forEach(function (id) {
       if (pinned.indexOf(id) < 0) pinned.push(id);
     });
     config.launcher.pinnedApps = pinned;
-    config.version = 7;
-  }
+  },
 
-  if ((config.version || 1) < 8) {
+  // v8: drop the stock LG channels, Live TV and Wuaki tiles.
+  8: function dropStockTiles(config) {
     config.launcher.pinnedApps = (config.launcher.pinnedApps || []).filter(function (id: string) {
       return id !== 'com.webos.app.lgchannels' && id !== 'com.webos.app.livetv' && id !== 'tv.wuaki';
     });
-    config.version = 8;
-  }
+  },
 
-  if ((config.version || 1) < 9) {
+  // v9: icon size.
+  9: function addIconSize(config) {
     if (!config.launcher.iconSize) {
       config.launcher.iconSize = 'medium';
     }
-    config.version = 9;
-  }
+  },
 
-  if ((config.version || 1) < 10) {
+  // v10: show/hide the date.
+  10: function addShowDate(config) {
     if (config.launcher.showDate === undefined) {
       config.launcher.showDate = true;
     }
-    config.version = 10;
-  }
+  },
 
-  if ((config.version || 1) < 11) {
+  // v11: icon alignment.
+  11: function addIconAlign(config) {
     if (!config.launcher.iconAlign) {
       config.launcher.iconAlign = 'center';
     }
-    config.version = 11;
-  }
+  },
 
-  if ((config.version || 1) < 12) {
+  // v12: user-added app tiles.
+  12: function addCustomApps(config) {
     if (!Array.isArray(config.launcher.customApps)) {
       config.launcher.customApps = [];
     }
-    config.version = 12;
-  }
+  },
 
-  if ((config.version || 1) < 13) {
+  // v13: performance mode.
+  13: function addPerfMode(config) {
     if (typeof config.launcher.perfMode !== 'boolean') {
       config.launcher.perfMode = false;
     }
-    config.version = 13;
-  }
+  },
 
-  if ((config.version || 1) < 14) {
+  // v14: icon layout (wrap/scroll) and icons per row.
+  14: function addIconLayout(config) {
     if (config.launcher.iconLayout !== 'wrap' && config.launcher.iconLayout !== 'scroll') {
       config.launcher.iconLayout = 'scroll';
     }
     if (typeof config.launcher.iconsPerRow !== 'number') {
       config.launcher.iconsPerRow = 7;
     }
-    config.version = 14;
-  }
+  },
 
-  if ((config.version || 1) < 15) {
-    // New launchOnHome setting. Preserve any existing returnOnAppExit preference
-    // so users who already opted into home-intercept keep that behaviour.
+  // v15: launchOnHome. Seed it from the old returnOnAppExit preference so users
+  // who already opted into home-intercept keep that behaviour.
+  15: function addLaunchOnHome(config) {
     if (typeof config.launcher.launchOnHome !== 'boolean') {
       config.launcher.launchOnHome = !!config.launcher.returnOnAppExit;
     }
-    config.version = 15;
-  }
+  },
 
-  if ((config.version || 1) < 16) {
-    // Slimmed built-in music (8 tracks) + optional playlists.
+  // v16: slimmed built-in music (8 tracks) + optional playlists.
+  16: function addMusicPlaylists(config) {
     if (!Array.isArray(config.music.builtinPlaylist)) {
       config.music.builtinPlaylist = [];
     }
@@ -346,11 +349,10 @@ function migrateConfig(config: Config): Config {
     if (!kept[config.music.builtin]) {
       config.music.builtin = 'midnight-lounge';
     }
-    config.version = 16;
-  }
+  },
 
-  if ((config.version || 1) < 17) {
-    // Re-enable ambient music if it was left off; add music-bar visibility flag.
+  // v17: re-enable ambient music if it was left off; add the music-bar flag.
+  17: function reenableMusic(config) {
     if (!config.music) config.music = {} as MusicConfig;
     config.music.enabled = true;
     config.music.source = config.music.source || 'builtin';
@@ -364,38 +366,29 @@ function migrateConfig(config: Config): Config {
     if (config.profile === 'cinema') {
       config.profile = 'default';
     }
-    config.version = 17;
-  }
+  },
 
-  if ((config.version || 1) < 18) {
-    // v18 added TV volume levels. Leave them at null ("Don't change") so an
-    // upgrade never starts overriding the volume set with the remote.
-    config.version = 18;
-  }
+  // v18: TV volume levels. Left at null ("Don't change") so an upgrade never
+  // starts overriding the volume set with the remote.
+  18: function addVolumeLevels() {},
 
-  if ((config.version || 1) < 19) {
+  // v19: the system screensaver wait.
+  19: function addScreensaverMinutes(config) {
     if (typeof config.launcher.screensaverMinutes !== 'number') {
       config.launcher.screensaverMinutes = 20;
     }
-    config.version = 19;
-  }
+  },
 
   // v20: webOS only accepts screenSaverTimer ∈ {3,10,20,30}. Older builds
   // defaulted to 15 / offered 5 & 60, which the TV silently rejected → 3 min.
-  if ((config.version || 1) < 20) {
+  20: function coerceScreensaverWait(config) {
     config.launcher.screensaverMinutes = coerceScreensaverMinutes(
       config.launcher.screensaverMinutes
     );
-    config.version = 20;
-  } else if (typeof config.launcher.screensaverMinutes === 'number') {
-    const coerced = coerceScreensaverMinutes(config.launcher.screensaverMinutes);
-    if (coerced !== config.launcher.screensaverMinutes) {
-      config.launcher.screensaverMinutes = coerced;
-    }
-  }
+  },
 
   // v21: in-app Launch Home screensaver.
-  if ((config.version || 1) < 21) {
+  21: function addCustomScreensaver(config) {
     if (typeof config.launcher.customScreensaver !== 'boolean') {
       config.launcher.customScreensaver = true;
     }
@@ -417,35 +410,61 @@ function migrateConfig(config: Config): Config {
         config.launcher.screensaverMinutes < 30) {
       config.launcher.screensaverMinutes = 30;
     }
-    config.version = 21;
-  }
+  },
 
   // v22: remote number keys open the home row tile at that position.
-  if ((config.version || 1) < 22) {
+  22: function addNumberKeyLaunch(config) {
     if (typeof config.launcher.numberKeyLaunch !== 'boolean') {
       config.launcher.numberKeyLaunch = true;
     }
-    config.version = 22;
-  }
+  },
 
   // v23: Apple aerial-video background source (selected clip id).
-  if ((config.version || 1) < 23) {
+  23: function addAerialClip(config) {
     if (!config.background) config.background = {} as BackgroundConfig;
     if (!config.background.aerial) {
       config.background.aerial = 'aerial-apple-east-asia';
     }
-    config.version = 23;
-  }
+  },
 
-  // v24: Shuffle toggle for the aerial Slideshow.
-  if ((config.version || 1) < 24) {
+  // v24: shuffle toggle for the aerial Slideshow.
+  24: function addAerialShuffle(config) {
     if (!config.background) config.background = {} as BackgroundConfig;
     if (typeof config.background.shuffle !== 'boolean') {
       config.background.shuffle = false;
     }
-    config.version = 24;
   }
+};
 
+/**
+ * Repairs run on every load, not only on an upgrade: values a config can carry
+ * at any version. v20's TV-accepted wait can drift after it was migrated.
+ */
+const CONFIG_REPAIRS: ConfigMigration[] = [
+  function repairScreensaverWait(config) {
+    if (typeof config.launcher.screensaverMinutes === 'number') {
+      const coerced = coerceScreensaverMinutes(config.launcher.screensaverMinutes);
+      if (coerced !== config.launcher.screensaverMinutes) {
+        config.launcher.screensaverMinutes = coerced;
+      }
+    }
+  }
+];
+
+/**
+ * Bring settings saved by an older Launch Home up to CONFIG_SCHEMA_VERSION.
+ * In memory only: the caller saves (loadConfig) or checks them first (a
+ * restored backup). Migrations above the stored version run in order; a config
+ * already at or past this version only gets the repairs.
+ */
+export function migrateConfig(config: Config): Config {
+  const from = config.version || 1;
+  for (let version = from + 1; version <= CONFIG_SCHEMA_VERSION; version += 1) {
+    const step = CONFIG_MIGRATIONS[version];
+    if (step) step(config);
+  }
+  if (from < CONFIG_SCHEMA_VERSION) config.version = CONFIG_SCHEMA_VERSION;
+  CONFIG_REPAIRS.forEach(function (repair) { repair(config); });
   return config;
 }
 

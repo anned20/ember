@@ -11,7 +11,8 @@ import {
   findRemoteBackgroundById,
   findRemoteBackgroundByUrl,
   remoteThumbUrl,
-  builtinImageUrl
+  builtinImageUrl,
+  jpegForTv
 } from './backgrounds.js';
 import {loadBuiltinMusicManifest, normalizeMusicConfig} from './builtin-music.js';
 import {applyActiveProfile, getProfileOverrides, PROFILE_OPTIONS} from './profiles.js';
@@ -2332,14 +2333,65 @@ export function createSettingsPanel(panel, getConfig, options) {
     section.appendChild(remoteRow);
 
     // Keep remote id aligned when the user edits the URL by hand.
+    // Under the field: whether the link loads as an image. A web page link
+    // (an image host's page for the photo) was accepted and silently showed
+    // nothing on the home screen.
+    const urlStatus = document.createElement('p');
+    urlStatus.className = 'settings-hint settings-url-status';
+    urlStatus.hidden = true;
+    let urlCheckTimer = null;
+    let urlCheckGen = 0;
+    function showUrlStatus(text, kind) {
+      urlStatus.textContent = text;
+      urlStatus.hidden = !text;
+      urlStatus.classList.toggle('is-ok', kind === 'ok');
+      urlStatus.classList.toggle('is-error', kind === 'error');
+    }
+    function checkUrl() {
+      const url = urlInput.value.trim();
+      const gen = ++urlCheckGen;
+      // A built-in online photo: known good.
+      if (!url || findRemoteBackgroundByUrl(url)) {
+        showUrlStatus('', '');
+        return;
+      }
+      if (!/^https?:\/\//i.test(url)) {
+        showUrlStatus('This needs a web link starting with https://', 'error');
+        return;
+      }
+      showUrlStatus('Checking the link\u2026', '');
+      const img = new Image();
+      let settled = false;
+      function done(ok) {
+        if (settled || gen !== urlCheckGen) return;
+        settled = true;
+        if (ok) {
+          showUrlStatus('The link loads as an image (' + img.naturalWidth + ' \u00d7 ' +
+            img.naturalHeight + '). Press Save to use it.', 'ok');
+        } else {
+          showUrlStatus('That link didn\u2019t load as an image. Use the direct image link: it ' +
+            'usually ends in .jpg or .png (on an image host, \u201cCopy image address\u201d or ' +
+            '\u201cDirect link\u201d). A link to a web page about the photo won\u2019t work.', 'error');
+        }
+      }
+      img.onload = function () { done(true); };
+      img.onerror = function () { done(false); };
+      setTimeout(function () { done(false); }, 20000);
+      img.src = jpegForTv(url);
+    }
     urlInput.addEventListener('input', function () {
       const match = findRemoteBackgroundByUrl(urlInput.value.trim());
       selectedRemoteId = match ? match.id : '';
       markRemoteSelection();
+      clearTimeout(urlCheckTimer);
+      urlCheckTimer = setTimeout(checkUrl, 800);
     });
 
     const urlRow = labeledControl('Image URL', urlInput);
     section.appendChild(urlRow);
+    section.appendChild(urlStatus);
+    // A saved link is checked when Settings opens, too.
+    if (urlInput.value.trim()) checkUrl();
 
     const urlsInput = document.createElement('textarea');
     urlsInput.className = 'settings-textarea focusable';

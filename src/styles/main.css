@@ -2883,3 +2883,12 @@ body.perf-mode .custom-screensaver-bg.is-back {
   width: 56%;
   height: 56%;
 }
+
+/* Settings -> Look -> Background -> Image URL: whether the link loads. */
+.settings-url-status.is-ok {
+  color: #b9f0c4;
+}
+
+.settings-url-status.is-error {
+  color: #ffb7a8;
+}

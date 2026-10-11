@@ -1,0 +1,20 @@
+install2tvfrommacos.sh
+  h_1a6b0cc05bf029 223-225,319,325-328
+package.json
+  h_1a6b0cc05bf029 10
+scripts/ares-default-device.js
+  h_1a6b0cc05bf029 1-83
+scripts/deploy.sh
+  h_1a6b0cc05bf029 1-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c29937990ce78b7d1cfb030ff435bed4b1735805",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

@@ -42,6 +42,7 @@ function buildGrid(pinnedApps, numberKeyLaunch) {
 
 beforeEach(() => {
   vi.mocked(launchApp).mockClear();
+  vi.mocked(listApps).mockClear();
   document.body.innerHTML = '';
 });
 
@@ -124,5 +125,55 @@ describe('numberKeyLaunch off', () => {
     expect(container.querySelectorAll('.app-key').length).toBe(0);
     expect(grid.launchByNumber(1)).toBe(false);
     expect(launchApp).not.toHaveBeenCalled();
+  });
+});
+
+describe('cold-boot dock shell', () => {
+  it('paints focusable tiles from memory without asking for the app list', () => {
+    const {container, grid} = buildGrid(['netflix', 'youtube.leanback.v4']);
+
+    expect(grid.renderShell()).toBe(true);
+    // netflix, youtube, All apps, TV Settings
+    expect(container.querySelectorAll('.app-tile.focusable').length).toBe(4);
+    expect(container.querySelectorAll('.app-tile[data-app-key]').length).toBe(4);
+    expect(listApps).not.toHaveBeenCalled();
+  });
+
+  it('does not repaint a shell that is already up', () => {
+    const {grid} = buildGrid(['netflix']);
+    expect(grid.renderShell()).toBe(true);
+    expect(grid.renderShell()).toBe(false);
+  });
+
+  it('fills the shell in place, so focus is not dropped', async () => {
+    mockInstalled(['netflix', 'youtube.leanback.v4']);
+    const {container, grid} = buildGrid(['netflix', 'youtube.leanback.v4']);
+
+    grid.renderShell();
+    const tileBefore = container.querySelector('.app-tile[data-app-id="netflix"]');
+    await grid.refresh();
+
+    const tileAfter = container.querySelector('.app-tile[data-app-id="netflix"]');
+    expect(tileAfter).toBe(tileBefore);
+    expect(tileAfter.querySelector('.app-label').textContent).toBe('Netflix');
+  });
+
+  it('drops a pinned app the TV no longer has, keeping numbering contiguous', async () => {
+    listApps.mockResolvedValue({
+      apps: [{id: 'netflix', title: 'netflix'}],
+      complete: true
+    });
+    getAppInfo.mockImplementation(async (id) => ({id: id, title: id}));
+
+    const {container, grid} = buildGrid(['netflix', 'gone.app']);
+    grid.renderShell();
+    expect(container.querySelectorAll('.app-tile').length).toBe(4);
+
+    await grid.refresh();
+
+    const tiles = container.querySelectorAll('.app-tile');
+    expect(tiles.length).toBe(3);
+    expect(Array.from(tiles).map((tile) => tile.dataset.appKey)).toEqual(['1', '2', '3']);
+    expect(container.querySelector('.app-tile[data-app-id="gone.app"]')).toBeNull();
   });
 });

@@ -357,6 +357,21 @@ export async function loadAppCatalog() {
   return catalog;
 }
 
+/**
+ * The remembered title/icon for an id, synchronously, from the on-device app
+ * memory. Used to paint the home dock before the app list answers after a cold
+ * boot; callers fill the real values in once the catalog arrives.
+ */
+export function knownAppInfo(id) {
+  if (!id) return null;
+  const known = knownApp(id);
+  return applyBuiltinOverrides({
+    id: id,
+    title: (known && known.t) || humanizeAppId(id),
+    icon: (known && known.i) || ''
+  });
+}
+
 export async function resolvePinnedApp(id, catalog) {
   const cached = catalog && catalog[id];
   // Installed ids first (e.g. amazon before amazon.html), so the tile opens

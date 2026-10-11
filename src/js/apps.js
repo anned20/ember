@@ -2,6 +2,7 @@ import {launchApp, launchAppViaRoot, listApps} from './luna.js';
 import {
   isAppInstalled,
   isCatalogComplete,
+  knownAppInfo,
   loadAppCatalog,
   normalizeAppRecord,
   prefersBundledIcons,
@@ -202,6 +203,118 @@ export function createAppGrid(container, getConfig, options) {
   let builtSignature = '';
   let lastSignature = '';
 
+  function dockParams() {
+    const config = getConfig();
+    const customApps = (config.launcher && config.launcher.customApps) || [];
+    const customById = {};
+    customApps.forEach(function (entry) {
+      if (entry && entry.id) customById[entry.id] = entry;
+    });
+    return {
+      pinned: (config.launcher && config.launcher.pinnedApps) || [],
+      customApps: customApps,
+      customById: customById,
+      iconSize: (config.launcher && config.launcher.iconSize) || 'medium',
+      allAppsTile: !(config.launcher && config.launcher.allAppsTile === false),
+      numberKeys: !(config.launcher && config.launcher.numberKeyLaunch === false)
+    };
+  }
+
+  function dockSignature(p) {
+    return JSON.stringify([p.pinned, p.customApps, p.iconSize, prefersBundledIcons(), p.allAppsTile, p.numberKeys]);
+  }
+
+  function applyScale(p) {
+    const scaleBySize = {small: 0.78, medium: 1, large: 1.28};
+    container.style.setProperty('--tile-scale', String(scaleBySize[p.iconSize] || 1));
+  }
+
+  // Number the home row 1-9 in the order it reads (pinned apps, then All apps,
+  // then TV Settings) so the remote's number keys open a tile by position.
+  function applyNumbering(numberKeys) {
+    const tiles = container.querySelectorAll('.app-tile');
+    for (let i = 0; i < tiles.length; i += 1) {
+      const tile = tiles[i];
+      const existing = tile.querySelector('.app-key');
+      if (numberKeys && i < 9) {
+        const key = String(i + 1);
+        tile.dataset.appKey = key;
+        if (existing) existing.textContent = key;
+        else {
+          const badge = document.createElement('span');
+          badge.className = 'app-key';
+          badge.setAttribute('aria-hidden', 'true');
+          badge.textContent = key;
+          tile.appendChild(badge);
+        }
+      } else {
+        delete tile.dataset.appKey;
+        if (existing) existing.remove();
+      }
+    }
+  }
+
+  function makeCustomTile(entry, index) {
+    return makeTile({
+      id: entry.launchId || entry.id,
+      launchId: entry.launchId || entry.id,
+      title: entry.title || entry.launchId || entry.id,
+      icon: entry.icon || '',
+      custom: true
+    }, index);
+  }
+
+  function appendChromeTiles(tiles, p, cat) {
+    let settingsIcon = '';
+    if (!prefersBundledIcons()) {
+      const settingsApp = cat['com.webos.app.settings'] || cat['com.palm.app.settings'];
+      settingsIcon = (settingsApp && settingsApp.icon) || '';
+    }
+    if (p.allAppsTile) tiles.push(makeAllAppsTile(p.pinned.length));
+    tiles.push(makeSettingsTile(p.pinned.length + 1, settingsIcon));
+  }
+
+  // Tiles for the dock from remembered info only (no app list). Synchronous, so
+  // a cold boot can paint focusable tiles and take input before the root
+  // listApps call answers; refresh() fills the real names/icons in place.
+  function buildShellTiles(p) {
+    const tiles = [];
+    for (let i = 0; i < p.pinned.length; i += 1) {
+      const custom = p.customById[p.pinned[i]];
+      if (custom) {
+        tiles.push(makeCustomTile(custom, i));
+        continue;
+      }
+      tiles.push(makeTile(knownAppInfo(p.pinned[i]) || {id: p.pinned[i], title: p.pinned[i], icon: ''}, i));
+    }
+    appendChromeTiles(tiles, p, {});
+    return tiles;
+  }
+
+  function paintDock(tiles, signature, realList, numberKeys) {
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < tiles.length; i += 1) {
+      fragment.appendChild(tiles[i]);
+    }
+    container.innerHTML = '';
+    container.appendChild(fragment);
+    applyNumbering(numberKeys);
+    builtSignature = realList ? signature : '';
+    lastSignature = signature;
+  }
+
+  // Paint the dock from remembered info without touching the app list. main.js
+  // calls this at the very start of startup so the remote works while the
+  // catalog loads; refresh() then fills the tiles in.
+  function renderShell() {
+    const p = dockParams();
+    applyScale(p);
+    const signature = dockSignature(p);
+    if (signature === lastSignature && container.children.length) return false;
+    paintDock(buildShellTiles(p), signature, false, p.numberKeys);
+    return true;
+  }
+
   // Built without the TV's full app list (root not answering yet, Luna late
   // after power-on): ask again a few times and fill names and icons in place.
   const NAME_RETRY_MS = [20000, 60000, 180000];
@@ -245,87 +358,59 @@ export function createAppGrid(container, getConfig, options) {
    *   lookup (app list + one getAppInfo per pinned app) and redraw the dock.
    */
   async function refresh(opts) {
-    const config = getConfig();
-    const pinned = (config.launcher && config.launcher.pinnedApps) || [];
-    const customApps = (config.launcher && config.launcher.customApps) || [];
-    const customById = {};
-    customApps.forEach(function (entry) {
-      if (entry && entry.id) customById[entry.id] = entry;
-    });
-    const scaleBySize = {small: 0.78, medium: 1, large: 1.28};
-    const iconSize = (config.launcher && config.launcher.iconSize) || 'medium';
-    container.style.setProperty('--tile-scale', String(scaleBySize[iconSize] || 1));
-    const allAppsTile = !(config.launcher && config.launcher.allAppsTile === false);
-    const numberKeys = !(config.launcher && config.launcher.numberKeyLaunch === false);
-    const signature = JSON.stringify([pinned, customApps, iconSize, prefersBundledIcons(), allAppsTile, numberKeys]);
+    const p = dockParams();
+    applyScale(p);
+    const signature = dockSignature(p);
     if (opts && opts.reuse && signature === builtSignature && container.children.length) {
       return;
     }
-    const tiles = [];
+    // Paint a dock from remembered info at once if one is not already up, then
+    // fill it in from the TV's app list. On a cold boot renderShell() has often
+    // painted it already (main.js), so this does not repaint and drop focus.
+    if (signature !== lastSignature || !container.children.length) {
+      paintDock(buildShellTiles(p), signature, false, p.numberKeys);
+    }
 
     catalog = await loadAppCatalog();
+    await applyCatalog(p, signature);
+    scheduleNameRetry(isCatalogComplete(catalog));
+  }
 
-    for (let i = 0; i < pinned.length; i += 1) {
-      const custom = customById[pinned[i]];
-      if (custom) {
-        tiles.push(makeTile({
-          id: custom.launchId || custom.id,
-          launchId: custom.launchId || custom.id,
-          title: custom.title || custom.launchId || custom.id,
-          icon: custom.icon || '',
-          custom: true
-        }, i));
+  // Fill the painted dock from the app list: update titles/icons in place (so
+  // focus stays where the user put it), drop pinned tiles the TV no longer has,
+  // and renumber. A partial list (no root) leaves every tile alone.
+  async function applyCatalog(p, signature) {
+    const tiles = Array.prototype.slice.call(container.querySelectorAll('.app-tile[data-app-id]'));
+    for (let i = 0; i < tiles.length; i += 1) {
+      const tile = tiles[i];
+      const id = tile.dataset.appId;
+      const current = tileApps.get(tile);
+      if (!current || current.custom) continue;
+      if (!isAppInstalled(catalog, id)) {
+        tile.remove();
         continue;
       }
-      // Pinned but not on this TV (a default pin, or an app since removed):
-      // no tile that can't open. Settings still lists it, marked.
-      if (!isAppInstalled(catalog, pinned[i])) continue;
-      const info = await resolvePinnedApp(pinned[i], catalog);
-      tiles.push(makeTile(info, i));
+      const info = await resolvePinnedApp(id, catalog);
+      if (info.title !== current.title || info.icon !== current.icon) updateTile(tile, info);
     }
-
-    let settingsIcon = '';
+    // The Settings tile is only in the shell with the bundled icon; swap in the
+    // TV's own when the user prefers it.
     if (!prefersBundledIcons()) {
       const settingsApp = catalog['com.webos.app.settings'] || catalog['com.palm.app.settings'];
-      settingsIcon = (settingsApp && settingsApp.icon) || '';
+      const iconUrl = (settingsApp && settingsApp.icon) || '';
+      const img = container.querySelector('.settings-tile .app-icon');
+      if (iconUrl && img) setIconSrc(img, iconUrl);
     }
-    if (allAppsTile) tiles.push(makeAllAppsTile(pinned.length));
-    tiles.push(makeSettingsTile(pinned.length + 1, settingsIcon));
-
-    // Number the home row 1-9 in the order it reads (pinned apps, then All
-    // apps, then TV Settings) so the remote's number keys open a tile by
-    // position. The badge is the visible half of the shortcut.
-    if (numberKeys) {
-      tiles.slice(0, 9).forEach(function (tile, i) {
-        const key = String(i + 1);
-        tile.dataset.appKey = key;
-        const badge = document.createElement('span');
-        badge.className = 'app-key';
-        badge.setAttribute('aria-hidden', 'true');
-        badge.textContent = key;
-        tile.appendChild(badge);
-      });
-    }
-
-    // Swap in the freshly built tiles atomically. Clearing the container up
-    // front instead would leave the dock empty (and unselectable) for the whole
-    // async catalog fetch above -- and if that fetch stalls after a failed app
-    // launch, the dock would stay empty and focus would never be restored.
-    const fragment = document.createDocumentFragment();
-    for (const tile of tiles) {
-      fragment.appendChild(tile);
-    }
-    container.innerHTML = '';
-    container.appendChild(fragment);
+    applyNumbering(p.numberKeys);
     // Only reuse a dock built from a real app list: at power-on the Luna
     // services can be late, and that first dock uses fallback titles/icons.
     builtSignature = Object.keys(catalog).length ? signature : '';
     lastSignature = signature;
-    scheduleNameRetry(isCatalogComplete(catalog));
   }
 
   return {
     refresh: refresh,
+    renderShell: renderShell,
     isLoungeApp: function (id) {
       return id === APP_ID;
     },

@@ -1147,14 +1147,14 @@ function handlePowerOff() {
 }
 
 async function autoEnableTerminal() {
-  if (baseConfig.launcher && baseConfig.launcher.terminalChecked) return;
+  if (baseConfig.launcher && baseConfig.launcher.terminalChecked) return false;
 
   let installed = [];
   try {
     const res = await listApps();
     installed = (res && res.apps) || [];
   } catch (err) {
-    return; // Could not list apps; try again on the next launch.
+    return false; // Could not list apps; try again on the next launch.
   }
 
   const terminal = installed.find(function (app) {
@@ -1162,13 +1162,16 @@ async function autoEnableTerminal() {
   });
 
   const pinned = (baseConfig.launcher.pinnedApps || []);
+  let added = false;
   if (terminal && pinned.indexOf(terminal.id) < 0) {
     pinned.push(terminal.id);
     baseConfig.launcher.pinnedApps = pinned;
+    added = true;
   }
 
   baseConfig.launcher.terminalChecked = true;
   saveConfig(baseConfig);
+  return added;
 }
 
 // Settings -> Backup & restore: the first start after an update keeps the
@@ -1203,18 +1206,34 @@ function keepSettingsFromBeforeUpdate() {
   });
 }
 
+// Run `fn` once the first paint and the current work are done, so startup side
+// work (root hooks, voice, backups) does not compete with bringing the screen
+// up on a cold boot.
+function whenIdle(fn) {
+  if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(function () { fn(); }, {timeout: 3000});
+  } else {
+    setTimeout(fn, 250);
+  }
+}
+
 async function init() {
-  keepSettingsFromBeforeUpdate();
   await applyUsbOverrides();
-  await autoEnableTerminal();
   updateClock();
   setInterval(updateClock, 30000);
   bindAppScrollHints();
 
   applyHomeVolume();
   applyScreensaverSetting();
+
+  // Paint the dock from remembered info and hand the remote over before the
+  // app list / root work below. On a cold boot we are replacing the stock Home
+  // screen, so being interactive soon matters more than complete tiles; the
+  // refresh below fills them in.
+  if (apps && typeof apps.renderShell === 'function') apps.renderShell();
+  if (focus && typeof focus.focusHomeDock === 'function') focus.focusHomeDock();
+
   await refreshAll();
-  weather.start();
 
   // In-app photo/clock screensaver after idle.
   if (customScreensaver && typeof customScreensaver.start === 'function') {
@@ -1385,14 +1404,26 @@ async function init() {
   window.addEventListener('pagehide', handlePowerOff);
   startForegroundWatcher();
 
-  // Re-assert root hooks if the user previously enabled them. The home watcher
-  // and boot-launch init.d must be re-written after every install (ipk replace
-  // drops scripts; hbchannel may kill orphan processes).
-  const cfg = getBaseConfig();
-  if (shouldInterceptHome(cfg.launcher) || (cfg.launcher && cfg.launcher.bootOnStart)) {
-    syncRootHooks(cfg, {quiet: true}).catch(function () { /* ignore */ });
-  }
-  syncVoice(cfg);
+  // Side work that the first usable screen does not need: the before-update
+  // settings backup, the terminal auto-pin, the weather timers, and re-asserting
+  // the root/voice hooks. Each runs root/network work through Homebrew Channel,
+  // which is itself still starting up on a cold boot, so run them once idle.
+  whenIdle(function () {
+    keepSettingsFromBeforeUpdate();
+    autoEnableTerminal().then(function (added) {
+      // The idle pass runs after the first dock render; if it pinned the
+      // terminal, redraw so the tile shows now instead of next boot.
+      if (added) apps.refresh();
+    }).catch(function () { /* optional */ });
+    weather.start();
+    // The home watcher and boot-launch init.d must be re-written after every
+    // install (ipk replace drops scripts; hbchannel may kill orphan processes).
+    const cfg = getBaseConfig();
+    if (shouldInterceptHome(cfg.launcher) || (cfg.launcher && cfg.launcher.bootOnStart)) {
+      syncRootHooks(cfg, {quiet: true}).catch(function () { /* ignore */ });
+    }
+    syncVoice(cfg);
+  });
 }
 
 init().catch(function (err) {

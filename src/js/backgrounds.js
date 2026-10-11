@@ -282,6 +282,7 @@ export function normalizeBackgroundConfig(bg) {
   if (!Array.isArray(out.urls)) out.urls = [];
   // Selected Apple aerial clip (source "aerial").
   if (!out.aerial) out.aerial = AERIAL_BACKGROUNDS[0] ? AERIAL_BACKGROUNDS[0].id : '';
+  if (typeof out.shuffle !== 'boolean') out.shuffle = false;
 
   return out;
 }
@@ -385,8 +386,16 @@ function findAerialBackgroundById(id) {
   return null;
 }
 
-/** The selected aerial clip as a video media descriptor ([] when none). */
+/**
+ * The aerial clips to play. Single = the chosen clip; Slideshow = the whole
+ * catalog, in catalog order (the controller shuffles when the config asks).
+ */
 function aerialMedia(bg) {
+  if (bg.mode === 'slideshow') {
+    return mediaDescriptors(AERIAL_BACKGROUNDS.map(function (clip) {
+      return clip.url;
+    }), MEDIA_VIDEO);
+  }
   const clip = findAerialBackgroundById(bg.aerial) || AERIAL_BACKGROUNDS[0];
   if (!clip || !clip.url) return [];
   return [{kind: MEDIA_VIDEO, url: clip.url}];

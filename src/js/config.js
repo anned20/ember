@@ -7,7 +7,7 @@ const STORAGE_KEY = 'lounge.config.v1';
 // means, its type or its name? Bump this and add a step to migrateConfig():
 // stored settings and restored backups from older versions both go through
 // those steps (see configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 22;
+export const CONFIG_SCHEMA_VERSION = 23;
 
 export const DEFAULT_CONFIG = {
   version: CONFIG_SCHEMA_VERSION,
@@ -28,7 +28,9 @@ export const DEFAULT_CONFIG = {
     file: '',
     slideshowIntervalSec: 300,
     overlayOpacity: 0.45,
-    kenBurns: false
+    kenBurns: false,
+    // Aerial Slideshow: randomise the clip order instead of catalog order.
+    shuffle: false
   },
   music: {
     enabled: true,
@@ -422,6 +424,15 @@ function migrateConfig(config) {
       config.background.aerial = 'aerial-apple-east-asia';
     }
     config.version = 22;
+  }
+
+  // v23: Shuffle toggle for the aerial Slideshow.
+  if ((config.version || 1) < 23) {
+    if (!config.background) config.background = {};
+    if (typeof config.background.shuffle !== 'boolean') {
+      config.background.shuffle = false;
+    }
+    config.version = 23;
   }
 
   return config;

@@ -8,6 +8,18 @@ const PRESETS = {
   'ember': 'radial-gradient(ellipse at 30% 20%, #4a1942 0%, #1a0a14 50%, #080408 100%)'
 };
 
+/** Fisher–Yates copy (aerial Slideshow order). */
+function shuffled(items) {
+  const arr = items.slice();
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
+}
+
 function preloadImage(url) {
   return new Promise(function (resolve) {
     if (!url) {
@@ -51,6 +63,10 @@ export function createBackgroundController(elements, getConfig) {
   // Aerial clip: one <video> filling the layer while the source is "aerial".
   let videoEl = null;
   let videoPlaying = false;
+  // Aerial Slideshow: the ordered clips and where we are in them.
+  let videoClips = [];
+  let videoSlideshow = false;
+  let videoIndex = 0;
 
   function applyPreset(name, animated) {
     const gradient = PRESETS[name] || PRESETS['warm-gradient'];
@@ -124,6 +140,14 @@ export function createBackgroundController(elements, getConfig) {
     applyPreset(bg.preset || 'warm-gradient', false);
   }
 
+  // Slideshow only: a clip reached its natural end, so roll onto the next one
+  // (clips are never cut off by a timer). Looping Single clips never end.
+  function onVideoEnded() {
+    if (!videoSlideshow || !videoClips.length) return;
+    videoIndex = (videoIndex + 1) % videoClips.length;
+    playVideoClip(normalizeBackgroundConfig(getConfig().background), refreshGen);
+  }
+
   function ensureVideo() {
     if (videoEl) return videoEl;
     const v = document.createElement('video');
@@ -139,6 +163,7 @@ export function createBackgroundController(elements, getConfig) {
     v.loop = true;
     v.addEventListener('error', onVideoError);
     v.addEventListener('playing', onVideoPlaying);
+    v.addEventListener('ended', onVideoEnded);
     layer.appendChild(v);
     videoEl = v;
     return v;
@@ -146,12 +171,16 @@ export function createBackgroundController(elements, getConfig) {
 
   // Release the decoder and the network request (source change or teardown).
   function teardownVideo() {
+    videoSlideshow = false;
+    videoClips = [];
+    videoIndex = 0;
     if (!videoEl) return;
     const v = videoEl;
     videoEl = null;
     videoPlaying = false;
     v.removeEventListener('error', onVideoError);
     v.removeEventListener('playing', onVideoPlaying);
+    v.removeEventListener('ended', onVideoEnded);
     try { v.pause(); } catch (err) { /* ignore */ }
     v.removeAttribute('src');
     try { v.load(); } catch (err) { /* ignore */ }
@@ -160,21 +189,14 @@ export function createBackgroundController(elements, getConfig) {
     syncMovingBackground();
   }
 
-  // Play the selected aerial clip, muted, cover-filling and looping. True once
-  // it is playing; false when it fell back to the gradient (so a return retries).
-  async function paintAerial(bg, gen) {
-    clearSlideshow();
-    const media = await resolveBackgroundMedia(getConfig(), '');
-    if (gen !== refreshGen) return false;
-
-    const clip = media[0];
-    if (!clip || clip.kind !== MEDIA_VIDEO || !clip.url) {
-      teardownVideo();
-      applyPreset(bg.preset || 'warm-gradient', false);
-      return false;
-    }
-
+  // Play videoClips[videoIndex]: looping in Single mode, once in Slideshow (the
+  // next clip then rides in on "ended"). True once playing; false when it fell
+  // back to the gradient, so a return retries.
+  async function playVideoClip(bg, gen) {
+    const clip = videoClips[videoIndex % videoClips.length];
     const video = ensureVideo();
+    video.loop = !videoSlideshow;
+
     // Gradient poster behind the clip until its first frame paints.
     layer.style.backgroundImage = PRESETS[bg.preset] || PRESETS['warm-gradient'];
     layer.style.backgroundColor = '#0a0a0f';
@@ -196,6 +218,28 @@ export function createBackgroundController(elements, getConfig) {
     if (gen !== refreshGen) return false;
     onVideoPlaying();
     return true;
+  }
+
+  // Single = loop the chosen clip; Slideshow = cycle the catalog, one clip per
+  // "ended". False when it fell back to the gradient (so a return retries).
+  async function paintAerial(bg, gen) {
+    clearSlideshow();
+    const media = await resolveBackgroundMedia(getConfig(), '');
+    if (gen !== refreshGen) return false;
+
+    const clips = media.filter(function (item) {
+      return item && item.kind === MEDIA_VIDEO && item.url;
+    });
+    if (!clips.length) {
+      teardownVideo();
+      applyPreset(bg.preset || 'warm-gradient', false);
+      return false;
+    }
+
+    videoSlideshow = bg.mode === 'slideshow' && clips.length > 1;
+    videoClips = videoSlideshow && bg.shuffle ? shuffled(clips) : clips;
+    videoIndex = 0;
+    return playVideoClip(bg, gen);
   }
 
   function showSlideshowImage() {

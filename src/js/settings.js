@@ -649,8 +649,11 @@ export function createSettingsPanel(panel, getConfig, options) {
     const revealGallery = !!(opts && opts.revealGallery);
 
     refs.displayRow.hidden = !isImage;
+    // Aerial Slideshow cycles the whole catalog, so the single-clip picker is
+    // hidden there (as the built-in gallery is for its own slideshow).
+    refs.aerialRow.hidden = !showAerial || isSlideshow;
+    refs.bgShuffleRow.hidden = !(showAerial && isSlideshow);
     // Built-in / online / aerial galleries are mutually exclusive by source.
-    refs.aerialRow.hidden = !showAerial;
     refs.builtinRow.hidden = !showBuiltin || isSlideshow;
     refs.usbHint.hidden = !showUsb;
     refs.usbFileRow.hidden = !showUsb || isSlideshow;
@@ -658,8 +661,11 @@ export function createSettingsPanel(panel, getConfig, options) {
     refs.urlHint.hidden = !showUrl;
     refs.urlRow.hidden = !showUrl || isSlideshow;
     refs.urlsRow.hidden = !showUrl || !isSlideshow;
-    refs.intervalRow.hidden = !isImage || !isSlideshow;
-    refs.kenBurnsRow.hidden = !isImage;
+    // Neither applies to aerials: clips advance on the clip's own end, and a
+    // Ken Burns pan on top of a moving video is meaningless.
+    refs.intervalRow.hidden = !isImage || !isSlideshow || showAerial;
+    refs.kenBurnsRow.hidden = !isImage || showAerial;
+    refs.kenBurnsHint.hidden = !isImage || showAerial;
 
     // When the user switches Source to a photo catalog, scroll that gallery into view.
     if (revealGallery && !isSlideshow) {
@@ -2108,6 +2114,15 @@ export function createSettingsPanel(panel, getConfig, options) {
     const displayRow = labeledControl('Display', displaySelect);
     section.appendChild(displayRow);
 
+    // Aerial Slideshow only: randomise the clip order.
+    const bgShuffleToggle = document.createElement('input');
+    bgShuffleToggle.type = 'checkbox';
+    bgShuffleToggle.checked = !!bg.shuffle;
+    bgShuffleToggle.className = 'focusable';
+    bgShuffleToggle.dataset.focusIndex = '936';
+    const bgShuffleRow = labeledControl('Shuffle clips', bgShuffleToggle);
+    section.appendChild(bgShuffleRow);
+
     // Aerial clips (Apple) — title-only picker; the clips stream from Apple's
     // CDN, so there are no packaged thumbnails to show.
     let selectedAerialId = bg.aerial || (AERIAL_BACKGROUNDS[0] && AERIAL_BACKGROUNDS[0].id) || '';
@@ -2515,6 +2530,7 @@ export function createSettingsPanel(panel, getConfig, options) {
 
     const refs = {
       displayRow: displayRow,
+      bgShuffleRow: bgShuffleRow,
       aerialRow: aerialRow,
       builtinRow: builtinRow,
       usbHint: usbHint,
@@ -2525,6 +2541,7 @@ export function createSettingsPanel(panel, getConfig, options) {
       urlsRow: urlsRow,
       intervalRow: intervalRow,
       kenBurnsRow: kenBurnsRow,
+      kenBurnsHint: kenBurnsHint,
       displaySelect: displaySelect
     };
 
@@ -3998,6 +4015,7 @@ export function createSettingsPanel(panel, getConfig, options) {
       config.background.urls = parseUrlList(urlsInput.value);
       config.background.slideshowIntervalSec = Number(intervalInput.value) || 300;
       config.background.kenBurns = kenBurnsToggle.checked;
+      config.background.shuffle = bgShuffleToggle.checked;
       config.background.overlayOpacity = Number(overlayRange.value) / 100;
 
       config.music.enabled = musicEnabled.checked;

@@ -364,12 +364,23 @@ export function isImageUrl(url) {
   return /^https?:\/\//i.test(url);
 }
 
-export async function resolveBackgroundImages(config, usbPath) {
-  const images = await resolveImagesAtSourceSize(config, usbPath);
-  if (!liteImages) return images.map(jpegForTv);
+export const MEDIA_IMAGE = 'image';
+export const MEDIA_VIDEO = 'video';
+
+function mediaDescriptors(urls, kind) {
+  return urls.map(function (url) {
+    return {kind: kind, url: url};
+  });
+}
+
+export async function resolveBackgroundMedia(config, usbPath) {
+  const urls = await resolveImagesAtSourceSize(config, usbPath);
+  if (!liteImages) return mediaDescriptors(urls.map(jpegForTv), MEDIA_IMAGE);
   const bg = normalizeBackgroundConfig(config.background);
-  if (bg.source === 'builtin') return liteBuiltinImages(images, bg.mode);
-  return images.map(sizeForDisplay).map(jpegForTv);
+  if (bg.source === 'builtin') {
+    return mediaDescriptors(await liteBuiltinImages(urls, bg.mode), MEDIA_IMAGE);
+  }
+  return mediaDescriptors(urls.map(sizeForDisplay).map(jpegForTv), MEDIA_IMAGE);
 }
 
 async function resolveImagesAtSourceSize(config, usbPath) {

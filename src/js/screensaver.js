@@ -11,7 +11,7 @@
  */
 
 import {setClockTime} from './clock-format.js';
-import {normalizeBackgroundConfig, resolveBackgroundImages} from './backgrounds.js';
+import {normalizeBackgroundConfig, resolveBackgroundMedia} from './backgrounds.js';
 import {resolveLoungePaths} from './usb.js';
 
 const PRESETS = {
@@ -224,7 +224,7 @@ export function createCustomScreensaver(options) {
 
     let list = [];
     try {
-      list = await resolveBackgroundImages(probe, usbBackgroundPath);
+      list = await resolveBackgroundMedia(probe, usbBackgroundPath);
     } catch (err) {
       list = [];
     }
@@ -233,7 +233,7 @@ export function createCustomScreensaver(options) {
     if (!list.length) {
       // Fall back to whatever the home wallpaper would use (single image).
       try {
-        list = await resolveBackgroundImages(config, usbBackgroundPath);
+        list = await resolveBackgroundMedia(config, usbBackgroundPath);
       } catch (err2) {
         list = [];
       }
@@ -243,10 +243,10 @@ export function createCustomScreensaver(options) {
     // Deduplicate while preserving order.
     const seen = {};
     for (let i = 0; i < list.length; i += 1) {
-      const u = list[i];
-      if (!u || seen[u]) continue;
-      seen[u] = true;
-      out.push({url: u, gradient: false});
+      const item = list[i];
+      if (!item || !item.url || seen[item.url]) continue;
+      seen[item.url] = true;
+      out.push({kind: item.kind, url: item.url, gradient: false});
     }
 
     if (!out.length) {

@@ -1,4 +1,4 @@
-import {normalizeBackgroundConfig, resolveBackgroundImages} from './backgrounds.js';
+import {normalizeBackgroundConfig, resolveBackgroundMedia} from './backgrounds.js';
 import {resolveLoungePaths} from './usb.js';
 
 const PRESETS = {
@@ -45,7 +45,7 @@ export function createBackgroundController(elements, getConfig) {
   const scrim = elements.scrim;
   let slideshowTimer = null;
   let slideshowIndex = 0;
-  let slideshowImages = [];
+  let slideshowMedia = [];
   let usbBackgroundPath = '';
   let refreshGen = 0;
 
@@ -105,8 +105,8 @@ export function createBackgroundController(elements, getConfig) {
   }
 
   function showSlideshowImage() {
-    if (!slideshowImages.length) return;
-    applyImage(slideshowImages[slideshowIndex % slideshowImages.length]);
+    if (!slideshowMedia.length) return;
+    applyImage(slideshowMedia[slideshowIndex % slideshowMedia.length].url);
     slideshowIndex += 1;
   }
 
@@ -117,8 +117,8 @@ export function createBackgroundController(elements, getConfig) {
     showSlideshowImage();
   }
 
-  function startSlideshow(images, intervalSec) {
-    slideshowImages = images;
+  function startSlideshow(media, intervalSec) {
+    slideshowMedia = media;
     slideshowIndex = 0;
     showSlideshowImage();
     slideshowTimer = setInterval(slideshowTick, intervalSec * 1000);
@@ -128,16 +128,16 @@ export function createBackgroundController(elements, getConfig) {
    * Try each candidate URL until one decodes. webOS 4 may reject one form of
    * path but accept another (relative vs absolute file://).
    */
-  async function pickLoadableImage(candidates) {
+  async function pickLoadableMedia(candidates) {
     for (let i = 0; i < candidates.length; i += 1) {
-      const url = candidates[i];
-      if (!url) continue;
+      const item = candidates[i];
+      if (!item || !item.url) continue;
       // Apply optimistically so the user sees something while we verify.
-      applyImage(url);
-      const ok = await preloadImage(url);
-      if (ok) return url;
+      applyImage(item.url);
+      const ok = await preloadImage(item.url);
+      if (ok) return item;
     }
-    return '';
+    return null;
   }
 
   // What the wallpaper on screen was made from (see refresh reuse).
@@ -201,28 +201,28 @@ export function createBackgroundController(elements, getConfig) {
       usbBackgroundPath = paths.backgroundPath || '';
     }
 
-    const images = await resolveBackgroundImages(config, usbBackgroundPath);
+    const media = await resolveBackgroundMedia(config, usbBackgroundPath);
     if (gen !== refreshGen) return false;
 
-    if (!images.length) {
+    if (!media.length) {
       applyPreset(bg.preset || 'warm-gradient', false);
       return false;
     }
 
-    if (bg.mode === 'slideshow' && images.length > 1) {
+    if (bg.mode === 'slideshow' && media.length > 1) {
       // Verify at least the first image loads; still run the full list.
-      const first = await pickLoadableImage(images);
+      const first = await pickLoadableMedia(media);
       if (gen !== refreshGen) return false;
       if (!first) {
         applyPreset(bg.preset || 'warm-gradient', false);
         reportOnlineFailure(bg, images);
         return false;
       }
-      startSlideshow(images, bg.slideshowIntervalSec || 300);
+      startSlideshow(media, bg.slideshowIntervalSec || 300);
       return true;
     }
 
-    const loaded = await pickLoadableImage(images);
+    const loaded = await pickLoadableMedia(media);
     if (gen !== refreshGen) return false;
     if (!loaded) {
       applyPreset(bg.preset || 'warm-gradient', false);

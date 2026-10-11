@@ -1,4 +1,4 @@
-import {normalizeBackgroundConfig, resolveBackgroundMedia} from './backgrounds.js';
+import {MEDIA_VIDEO, normalizeBackgroundConfig, resolveBackgroundMedia} from './backgrounds.js';
 import {resolveLoungePaths} from './usb.js';
 
 const PRESETS = {
@@ -48,6 +48,9 @@ export function createBackgroundController(elements, getConfig) {
   let slideshowMedia = [];
   let usbBackgroundPath = '';
   let refreshGen = 0;
+  // Aerial clip: one <video> filling the layer while the source is "aerial".
+  let videoEl = null;
+  let videoPlaying = false;
 
   function applyPreset(name, animated) {
     const gradient = PRESETS[name] || PRESETS['warm-gradient'];
@@ -66,6 +69,7 @@ export function createBackgroundController(elements, getConfig) {
   // a webOS 25 OLED); body.bg-moving swaps the blur for a tint (main.css).
   function syncMovingBackground() {
     document.body.classList.toggle('bg-moving',
+      videoPlaying ||
       layer.classList.contains('ken-burns') || layer.classList.contains('gradient-animated'));
   }
 
@@ -102,6 +106,96 @@ export function createBackgroundController(elements, getConfig) {
       clearInterval(slideshowTimer);
       slideshowTimer = null;
     }
+  }
+
+  function onVideoPlaying() {
+    videoPlaying = true;
+    layer.classList.add('has-video');
+    layer.classList.remove('has-image');
+    layer.classList.remove('ken-burns');
+    syncMovingBackground();
+  }
+
+  // The clip would not play (offline, unsupported container): the configured
+  // gradient, exactly as images fall back, so the home screen is never blank.
+  function onVideoError() {
+    const bg = normalizeBackgroundConfig(getConfig().background);
+    teardownVideo();
+    applyPreset(bg.preset || 'warm-gradient', false);
+  }
+
+  function ensureVideo() {
+    if (videoEl) return videoEl;
+    const v = document.createElement('video');
+    v.className = 'background-video';
+    v.muted = true;
+    v.defaultMuted = true;
+    v.playsInline = true;
+    v.setAttribute('playsinline', '');
+    v.setAttribute('webkit-playsinline', '');
+    v.setAttribute('aria-hidden', 'true');
+    v.autoplay = true;
+    v.preload = 'auto';
+    v.loop = true;
+    v.addEventListener('error', onVideoError);
+    v.addEventListener('playing', onVideoPlaying);
+    layer.appendChild(v);
+    videoEl = v;
+    return v;
+  }
+
+  // Release the decoder and the network request (source change or teardown).
+  function teardownVideo() {
+    if (!videoEl) return;
+    const v = videoEl;
+    videoEl = null;
+    videoPlaying = false;
+    v.removeEventListener('error', onVideoError);
+    v.removeEventListener('playing', onVideoPlaying);
+    try { v.pause(); } catch (err) { /* ignore */ }
+    v.removeAttribute('src');
+    try { v.load(); } catch (err) { /* ignore */ }
+    if (v.parentNode) v.parentNode.removeChild(v);
+    layer.classList.remove('has-video');
+    syncMovingBackground();
+  }
+
+  // Play the selected aerial clip, muted, cover-filling and looping. True once
+  // it is playing; false when it fell back to the gradient (so a return retries).
+  async function paintAerial(bg, gen) {
+    clearSlideshow();
+    const media = await resolveBackgroundMedia(getConfig(), '');
+    if (gen !== refreshGen) return false;
+
+    const clip = media[0];
+    if (!clip || clip.kind !== MEDIA_VIDEO || !clip.url) {
+      teardownVideo();
+      applyPreset(bg.preset || 'warm-gradient', false);
+      return false;
+    }
+
+    const video = ensureVideo();
+    // Gradient poster behind the clip until its first frame paints.
+    layer.style.backgroundImage = PRESETS[bg.preset] || PRESETS['warm-gradient'];
+    layer.style.backgroundColor = '#0a0a0f';
+    layer.classList.add('has-video');
+    layer.classList.remove('has-image');
+    layer.classList.remove('ken-burns');
+    layer.classList.remove('gradient-animated');
+
+    if (video.getAttribute('src') !== clip.url) {
+      video.setAttribute('src', clip.url);
+    }
+    try {
+      await video.play();
+    } catch (err) {
+      if (gen !== refreshGen) return false;
+      onVideoError();
+      return false;
+    }
+    if (gen !== refreshGen) return false;
+    onVideoPlaying();
+    return true;
   }
 
   function showSlideshowImage() {
@@ -191,9 +285,17 @@ export function createBackgroundController(elements, getConfig) {
     const bg = normalizeBackgroundConfig(config.background);
 
     if (bg.source === 'preset' || bg.source === 'animated-gradient') {
+      teardownVideo();
       applyPreset(bg.preset || 'warm-gradient', bg.source === 'animated-gradient');
       return true;
     }
+
+    if (bg.source === 'aerial') {
+      return paintAerial(bg, gen);
+    }
+
+    // Left the aerial source: release the decoder before painting photos.
+    teardownVideo();
 
     if (!usbBackgroundPath) {
       const paths = await resolveLoungePaths(config);
@@ -235,6 +337,9 @@ export function createBackgroundController(elements, getConfig) {
 
   return {
     refresh: refresh,
-    destroy: clearSlideshow
+    destroy: function () {
+      clearSlideshow();
+      teardownVideo();
+    }
   };
 }

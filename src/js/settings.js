@@ -14,6 +14,7 @@ import {
   builtinImageUrl,
   jpegForTv
 } from './backgrounds.js';
+import {AERIAL_BACKGROUNDS} from './aerials.js';
 import {loadBuiltinMusicManifest, normalizeMusicConfig} from './builtin-music.js';
 import {applyActiveProfile, getProfileOverrides, PROFILE_OPTIONS} from './profiles.js';
 import {fetchInputDevices, inputFromId, isTvInputId} from './inputs.js';
@@ -643,11 +644,13 @@ export function createSettingsPanel(panel, getConfig, options) {
     const showBuiltin = source === 'builtin';
     const showUsb = source === 'usb';
     const showUrl = source === 'url';
+    const showAerial = source === 'aerial';
     const isSlideshow = refs.displaySelect.value === 'slideshow';
     const revealGallery = !!(opts && opts.revealGallery);
 
     refs.displayRow.hidden = !isImage;
-    // Built-in / online galleries are mutually exclusive by source.
+    // Built-in / online / aerial galleries are mutually exclusive by source.
+    refs.aerialRow.hidden = !showAerial;
     refs.builtinRow.hidden = !showBuiltin || isSlideshow;
     refs.usbHint.hidden = !showUsb;
     refs.usbFileRow.hidden = !showUsb || isSlideshow;
@@ -660,7 +663,9 @@ export function createSettingsPanel(panel, getConfig, options) {
 
     // When the user switches Source to a photo catalog, scroll that gallery into view.
     if (revealGallery && !isSlideshow) {
-      if (showBuiltin && refs.builtinRow && !refs.builtinRow.hidden) {
+      if (showAerial && refs.aerialRow && !refs.aerialRow.hidden) {
+        focusPhotoGallery(refs.aerialRow);
+      } else if (showBuiltin && refs.builtinRow && !refs.builtinRow.hidden) {
         focusPhotoGallery(refs.builtinRow);
       } else if (showUrl && refs.remoteRow && !refs.remoteRow.hidden) {
         focusPhotoGallery(refs.remoteRow);
@@ -2058,9 +2063,12 @@ export function createSettingsPanel(panel, getConfig, options) {
       {value: 'animated-gradient', label: 'Animated Gradient'},
       {value: 'builtin', label: 'Built-in photos'},
       {value: 'usb', label: 'USB folder'},
-      {value: 'url', label: 'Online URL (nature + anime)'}
+      {value: 'url', label: 'Online URL (nature + anime)'},
+      {value: 'aerial', label: 'Aerial videos (Apple)'}
     ], bg.source, function (value) {
-      syncFields({revealGallery: value === 'url' || value === 'builtin'});
+      syncFields({
+        revealGallery: value === 'url' || value === 'builtin' || value === 'aerial'
+      });
     });
     section.appendChild(labeledControl('Source', sourceSelect));
 
@@ -2099,6 +2107,69 @@ export function createSettingsPanel(panel, getConfig, options) {
     });
     const displayRow = labeledControl('Display', displaySelect);
     section.appendChild(displayRow);
+
+    // Aerial clips (Apple) — title-only picker; the clips stream from Apple's
+    // CDN, so there are no packaged thumbnails to show.
+    let selectedAerialId = bg.aerial || (AERIAL_BACKGROUNDS[0] && AERIAL_BACKGROUNDS[0].id) || '';
+    const aerialRow = document.createElement('div');
+    aerialRow.className = 'settings-block photo-picker-block';
+    const aerialHeading = document.createElement('span');
+    aerialHeading.className = 'settings-block-label';
+    aerialHeading.textContent =
+      'Choose an aerial clip (' + AERIAL_BACKGROUNDS.length + ' \u00b7 streams from Apple)';
+    aerialRow.appendChild(aerialHeading);
+
+    const aerialGrid = document.createElement('div');
+    aerialGrid.className = 'photo-picker-grid aerial-picker-grid';
+    aerialRow.appendChild(aerialGrid);
+
+    function markAerialSelection() {
+      const tiles = aerialGrid.querySelectorAll('.photo-picker-tile');
+      for (let i = 0; i < tiles.length; i += 1) {
+        const tile = tiles[i];
+        const id = tile.dataset.aerialId || '';
+        const isSel = id === selectedAerialId;
+        tile.classList.toggle('is-selected', isSel);
+        tile.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+      }
+    }
+
+    function selectAerial(id) {
+      selectedAerialId = id || '';
+      markAerialSelection();
+    }
+
+    AERIAL_BACKGROUNDS.forEach(function (entry, index) {
+      const tile = document.createElement('div');
+      tile.className = 'photo-picker-tile photo-picker-tile-text focusable';
+      tile.setAttribute('role', 'button');
+      // Shares the gallery range with built-in / online; only one shows at once.
+      tile.dataset.focusIndex = String(905 + index);
+      tile.dataset.aerialId = entry.id;
+      tile.setAttribute('aria-label', entry.title || entry.id);
+      tile.tabIndex = 0;
+
+      const caption = document.createElement('span');
+      caption.className = 'photo-picker-caption';
+      caption.textContent = entry.title || entry.id;
+      caption.style.pointerEvents = 'none';
+
+      tile.appendChild(caption);
+      // Browse with arrows only; Select/click keeps is-selected when focus leaves.
+      tile.addEventListener('click', function (event) {
+        if (event && event.preventDefault) event.preventDefault();
+        selectAerial(entry.id);
+      });
+      aerialGrid.appendChild(tile);
+    });
+    markAerialSelection();
+
+    const aerialHint = document.createElement('p');
+    aerialHint.className = 'settings-hint';
+    aerialHint.textContent =
+      'Clips stream from Apple\u2019s network (nothing is packaged) and play muted, full-screen and looping. The TV must be online; if a clip will not play, the gradient above is used instead.';
+    aerialRow.appendChild(aerialHint);
+    section.appendChild(aerialRow);
 
     // Built-in photo gallery (thumbnails) — only visible when Source is Built-in photos.
     let selectedBuiltinId = bg.builtin || (builtinManifest[0] && builtinManifest[0].id) || '';
@@ -2444,6 +2515,7 @@ export function createSettingsPanel(panel, getConfig, options) {
 
     const refs = {
       displayRow: displayRow,
+      aerialRow: aerialRow,
       builtinRow: builtinRow,
       usbHint: usbHint,
       usbFileRow: usbFileRow,
@@ -3907,6 +3979,7 @@ export function createSettingsPanel(panel, getConfig, options) {
       config.background.mode = displaySelect.value;
       config.background.preset = presetSelect.value;
       config.background.builtin = selectedBuiltinId || '';
+      config.background.aerial = selectedAerialId || '';
       config.background.file = usbFileInput.value.trim();
       // Online catalog is independent of built-in; only apply when source is url.
       config.background.remote = selectedRemoteId || '';

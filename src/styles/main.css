@@ -54,6 +54,20 @@ body {
   }
 }
 
+/* Aerial clips: a <video> fills the background layer, under the scrim. */
+.background-video {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background: #0a0a0f;
+}
+
 #background-layer.gradient-animated {
   animation: gradient-hue-shift 40s linear infinite;
 }
@@ -2340,6 +2354,23 @@ body.settings-open .settings-panel .ai-provider-card.focused {
   opacity: 0.65;
   text-align: center;
   padding: 0 12px;
+}
+
+/* Aerial clips (Apple): title-only tiles — the clips stream from Apple's CDN,
+   so there are no packaged thumbnails to show. */
+.aerial-picker-grid .photo-picker-tile-text {
+  align-items: center;
+  justify-content: center;
+  height: 66px;
+}
+
+.aerial-picker-grid .photo-picker-tile-text .photo-picker-caption {
+  position: static;
+  background: none;
+  padding: 8px 12px;
+  font-size: 15px;
+  white-space: normal;
+  text-align: center;
 }
 
 /* Chosen wallpaper — stays visible after focus moves (scroll up/down). */

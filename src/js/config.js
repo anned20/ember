@@ -7,7 +7,7 @@ const STORAGE_KEY = 'lounge.config.v1';
 // means, its type or its name? Bump this and add a step to migrateConfig():
 // stored settings and restored backups from older versions both go through
 // those steps (see configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 21;
+export const CONFIG_SCHEMA_VERSION = 22;
 
 export const DEFAULT_CONFIG = {
   version: CONFIG_SCHEMA_VERSION,
@@ -20,6 +20,8 @@ export const DEFAULT_CONFIG = {
     builtin: 'azure-cove',
     // Curated remote catalog id (see REMOTE_BACKGROUNDS); used when source is "url".
     remote: 'remote-01-cliff-ocean',
+    // Selected Apple aerial clip (see AERIAL_BACKGROUNDS); used when source is "aerial".
+    aerial: 'aerial-apple-east-asia',
     url: '',
     urls: [],
     path: '',
@@ -411,6 +413,15 @@ function migrateConfig(config) {
       config.launcher.screensaverMinutes = 30;
     }
     config.version = 21;
+  }
+
+  // v22: Apple aerial-video background source (selected clip id).
+  if ((config.version || 1) < 22) {
+    if (!config.background) config.background = {};
+    if (!config.background.aerial) {
+      config.background.aerial = 'aerial-apple-east-asia';
+    }
+    config.version = 22;
   }
 
   return config;

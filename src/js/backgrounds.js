@@ -1,6 +1,7 @@
 import {discoverBackgroundImages, fetchJson, joinPath} from './usb.js';
 import {resolveAppUrl, withAssetVersion} from './compat.js';
 import {APP_VERSION} from './version.js';
+import {AERIAL_BACKGROUNDS} from './aerials.js';
 
 const BUILTIN_MANIFEST = 'assets/backgrounds/manifest.json';
 const BUILTIN_BASE = 'assets/backgrounds/';
@@ -279,6 +280,8 @@ export function normalizeBackgroundConfig(bg) {
   }
   if (!out.url) out.url = '';
   if (!Array.isArray(out.urls)) out.urls = [];
+  // Selected Apple aerial clip (source "aerial").
+  if (!out.aerial) out.aerial = AERIAL_BACKGROUNDS[0] ? AERIAL_BACKGROUNDS[0].id : '';
 
   return out;
 }
@@ -373,10 +376,28 @@ function mediaDescriptors(urls, kind) {
   });
 }
 
+/** The Apple aerial clip with this id, or null. */
+function findAerialBackgroundById(id) {
+  if (!id) return null;
+  for (let i = 0; i < AERIAL_BACKGROUNDS.length; i += 1) {
+    if (AERIAL_BACKGROUNDS[i].id === id) return AERIAL_BACKGROUNDS[i];
+  }
+  return null;
+}
+
+/** The selected aerial clip as a video media descriptor ([] when none). */
+function aerialMedia(bg) {
+  const clip = findAerialBackgroundById(bg.aerial) || AERIAL_BACKGROUNDS[0];
+  if (!clip || !clip.url) return [];
+  return [{kind: MEDIA_VIDEO, url: clip.url}];
+}
+
 export async function resolveBackgroundMedia(config, usbPath) {
+  const bg = normalizeBackgroundConfig(config.background);
+  if (bg.source === 'aerial') return aerialMedia(bg);
+
   const urls = await resolveImagesAtSourceSize(config, usbPath);
   if (!liteImages) return mediaDescriptors(urls.map(jpegForTv), MEDIA_IMAGE);
-  const bg = normalizeBackgroundConfig(config.background);
   if (bg.source === 'builtin') {
     return mediaDescriptors(await liteBuiltinImages(urls, bg.mode), MEDIA_IMAGE);
   }

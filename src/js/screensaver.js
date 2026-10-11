@@ -11,7 +11,7 @@
  */
 
 import {setClockTime} from './clock-format.js';
-import {normalizeBackgroundConfig, resolveBackgroundMedia} from './backgrounds.js';
+import {MEDIA_VIDEO, normalizeBackgroundConfig, resolveBackgroundMedia} from './backgrounds.js';
 import {resolveLoungePaths} from './usb.js';
 
 const PRESETS = {
@@ -240,11 +240,13 @@ export function createCustomScreensaver(options) {
     }
     if (gen !== loadGen) return null;
 
-    // Deduplicate while preserving order.
+    // Deduplicate while preserving order. Aerial clips are video: the image
+    // cross-fade can't show them, so skip them and fall through to the gradient
+    // (the in-app screensaver learns to play aerials in #19).
     const seen = {};
     for (let i = 0; i < list.length; i += 1) {
       const item = list[i];
-      if (!item || !item.url || seen[item.url]) continue;
+      if (!item || !item.url || item.kind === MEDIA_VIDEO || seen[item.url]) continue;
       seen[item.url] = true;
       out.push({kind: item.kind, url: item.url, gradient: false});
     }

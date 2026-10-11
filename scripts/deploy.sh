@@ -76,7 +76,7 @@ die() {
 
 # ── Resolve the target device ────────────────────────────────────────────────
 section "Resolving ares device"
-fields="$(ARES_DEVICE="$ARES_DEVICE" node "$SCRIPT_DIR/ares-default-device.js")" \
+fields="$(ARES_DEVICE="$ARES_DEVICE" node "$SCRIPT_DIR/ares-default-device.ts")" \
 	|| die "Could not resolve the ares device. Add one with ares-setup-device."
 IFS=$'\t' read -r DEV_NAME DEV_HOST DEV_PORT DEV_USER DEV_KEY _ <<<"$fields"
 
@@ -107,7 +107,7 @@ wait_for_ssh() {
 section "Building app"
 (cd "$ROOT_DIR" && npm run --silent pack)
 
-VERSION="$(node "$SCRIPT_DIR/read-version.js")"
+VERSION="$(node "$SCRIPT_DIR/read-version.ts")"
 IPK="$ROOT_DIR/dist/${APP_ID}_${VERSION}_all.ipk"
 [[ -f "$IPK" ]] || die "Missing package: $IPK"
 REMOTE_IPK="$REMOTE_TMP/$(basename "$IPK")"

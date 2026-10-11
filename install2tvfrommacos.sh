@@ -163,7 +163,7 @@ wait_for_ssh() {
 }
 
 read_version() {
-	node "$SCRIPT_DIR/scripts/read-version.js"
+	node "$SCRIPT_DIR/scripts/read-version.ts"
 }
 
 ensure_deploy_key() {

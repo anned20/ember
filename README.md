@@ -121,6 +121,12 @@ ares-install --device webos dist/*.ipk
 
 `npm run pack` uses the project-local `@webos-tools/cli` and rejects files dated `1970-01-01`. That epoch stamp is a `@webosose/ares-cli` + Node.js 22+ bug; some TVs (webOS 5) refuse to install those packages. Do not package with `@webosose/ares-cli` on modern Node.
 
+The application (`src/ts/`), the tests (`test/`) and the build tooling (`scripts/`) are TypeScript. Node's native type stripping runs the `.ts` build scripts directly, so no extra build step is needed before `npm run pack`. Check the types with:
+
+```bash
+npm run typecheck
+```
+
 ## Running elevated as root (required for app scanning)
 
 **Why this is required.** Retail webOS only returns the *full* list of installed

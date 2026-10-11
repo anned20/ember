@@ -4,20 +4,23 @@
   "description": "Launch Home — fullscreen home screen for rooted LG webOS TVs",
   "private": true,
   "scripts": {
-    "build": "node scripts/build.js",
-    "pack": "node scripts/build.js --pack",
-    "verify-ipk": "node scripts/verify-ipk.js",
+    "build": "node scripts/build.ts",
+    "pack": "node scripts/build.ts --pack",
+    "verify-ipk": "node scripts/verify-ipk.ts",
     "deploy": "bash scripts/deploy.sh",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p scripts/tsconfig.json",
     "clean": "rm -rf dist",
-    "version:set": "node scripts/set-version.js",
-    "version": "node scripts/set-version.js && git add version.md appinfo.json voice/overlay/appinfo.json"
+    "version:set": "node scripts/set-version.ts",
+    "version": "node scripts/set-version.ts && git add version.md appinfo.json voice/overlay/appinfo.json"
   },
   "devDependencies": {
     "@procot/webostv": "^1.2.6",
+    "@types/node": "^26.6.5",
     "@webos-tools/cli": "^3.2.5",
     "esbuild": "^0.25.0",
     "jsdom": "^30.1.2",
+    "typescript": "^7.0.2",
     "vitest": "^3.2.7"
   },
   "dependencies": {

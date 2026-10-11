@@ -1,0 +1,176 @@
+src/ts/lib/version.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1
+src/ts/background/aerials.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-7,9-150
+  s_4cdebaf620696e::t_441c1cc2361172 8
+src/ts/home/weather.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-9,12-587
+  s_4cdebaf620696e::t_441c1cc2361172 10-11
+src/ts/luna/platform.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-40
+src/ts/music/music.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-6,10-841
+  s_4cdebaf620696e::t_441c1cc2361172 7-9
+src/ts/luna/luna.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 2-958
+  s_4cdebaf620696e::t_441c1cc2361172 1
+src/ts/settings/settings.ts
+  s_4cdebaf620696e::t_aa9195107931cf 54-55
+  s_4cdebaf620696e::t_34dd9f4c571d64 6-15,23-25,28-31,33-40,44-53,56-67,69-1896,1898-4331
+  s_4cdebaf620696e::t_441c1cc2361172 1-5,16-22,26-27,32,41-43,68,1897
+test/settings/components/app-row.test.ts
+  s_4cdebaf620696e::t_aa9195107931cf 2
+src/ts/apps/app-catalog.ts
+  s_4cdebaf620696e::t_441c1cc2361172 1,3-5
+  s_4cdebaf620696e::t_34dd9f4c571d64 2,6-442
+docs/background-sources.md
+  s_4cdebaf620696e::t_0f02a1242d01a2 28,65,76
+test/config.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 4-5
+test/apps.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 3,11-14
+src/ts/lib/remote.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-57
+src/ts/lib/clock-format.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-50
+src/ts/config/profiles.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 2-61
+  s_4cdebaf620696e::t_441c1cc2361172 1
+test/remote.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 3
+test/settings-binding.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 4-6
+src/ts/focus/focus-row.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-192
+scripts/build.ts
+  s_4cdebaf620696e::t_aa36a5022d9ab4 16-27,29-30
+  s_4cdebaf620696e::t_0691adfaae739d 28
+  s_4cdebaf620696e::t_81e87a1bd412e2 84
+src/ts/lib/usb.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1,3-243
+  s_4cdebaf620696e::t_441c1cc2361172 2
+src/ts/voice/voice-ws.ts
+  s_4cdebaf620696e::t_441c1cc2361172 17
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-16,18-181
+src/ts/luna/luna-transport.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-7,9-321
+  s_4cdebaf620696e::t_441c1cc2361172 8
+test/focus.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 2
+src/ts/settings/settings-backup.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-11,15-205
+  s_4cdebaf620696e::t_441c1cc2361172 12-14
+src/ts/voice/voice-launch.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 3-112
+  s_4cdebaf620696e::t_441c1cc2361172 1-2
+src/ts/lib/activity.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-36
+test/settings/components/text-field.test.ts
+  s_4cdebaf620696e::t_aa9195107931cf 2
+src/ts/apps/all-apps.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-8,10,12-197
+  s_4cdebaf620696e::t_441c1cc2361172 9,11
+test/settings/components/toggle.test.ts
+  s_4cdebaf620696e::t_aa9195107931cf 2
+src/ts/background/background.ts
+  s_4cdebaf620696e::t_441c1cc2361172 3-4
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-2,5-645
+src/ts/background/backgrounds.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 4,6-494
+  s_4cdebaf620696e::t_441c1cc2361172 1-3,5
+src/ts/focus/focus.ts
+  s_4cdebaf620696e::t_441c1cc2361172 1-2,15
+  s_4cdebaf620696e::t_34dd9f4c571d64 3-14,16-1421
+src/ts/settings/settings-binding.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 2-177
+  s_4cdebaf620696e::t_441c1cc2361172 1
+src/ts/voice/voice-indicator.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-157
+test/focus-row.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 8
+src/ts/lib/launch-state.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-108
+test/luna-transport.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 8-11
+test/settings/components/hint.test.ts
+  s_4cdebaf620696e::t_aa9195107931cf 2
+test/settings/components/section.test.ts
+  s_4cdebaf620696e::t_aa9195107931cf 2
+src/ts/background/screensaver.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-12,14,17-780
+  s_4cdebaf620696e::t_441c1cc2361172 13,15-16
+src/ts/apps/apps.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 2-12,15-512
+  s_4cdebaf620696e::t_441c1cc2361172 1,13-14
+src/ts/apps/app-icons.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-168
+src/ts/home/channels.ts
+  s_4cdebaf620696e::t_441c1cc2361172 11-14
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-10,15-218
+test/settings/components/gallery.test.ts
+  s_4cdebaf620696e::t_aa9195107931cf 2
+src/ts/voice/voice-config.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-100
+vitest.config.mjs
+  s_4cdebaf620696e::t_e2798f97def1e0 1-2,5-18,20-21,23
+  s_4cdebaf620696e::t_3b5319d2ec2379 19
+src/ts/lib/compat.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-174
+test/settings/components/labeled.test.ts
+  s_4cdebaf620696e::t_aa9195107931cf 2
+src/ts/main.ts
+  s_4cdebaf620696e::t_441c1cc2361172 1-27,43-54
+test/smoke.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 2
+src/ts/apps/lg-home.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-7,9-54
+  s_4cdebaf620696e::t_441c1cc2361172 8
+src/ts/music/builtin-music.ts
+  s_4cdebaf620696e::t_441c1cc2361172 1-4
+  s_4cdebaf620696e::t_34dd9f4c571d64 5-196
+scripts/generate-aerials.ts
+  s_4cdebaf620696e::t_e4a7a74307494d 3
+  s_4cdebaf620696e::t_e8f408f229bde3 20
+test/settings-panel.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 3,16,20,29,35,41,51-53
+tsconfig.json
+  s_4cdebaf620696e::t_3c09598fea2ecb 14-15,26
+  s_4cdebaf620696e::t_1ee288bc8e5a4f 16-24,28
+  s_4cdebaf620696e::t_2339a1a0db962d 25
+test/settings/components/mini-button.test.ts
+  s_4cdebaf620696e::t_aa9195107931cf 2
+test/background.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 2-5
+src/ts/home/inputs.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 4-219
+  s_4cdebaf620696e::t_441c1cc2361172 1-3
+src/ts/lib/types.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-247
+test/launch-state.test.ts
+  s_4cdebaf620696e::t_441c1cc2361172 2
+src/ts/config/config.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 4-611
+  s_4cdebaf620696e::t_441c1cc2361172 1-3
+src/ts/lib/qr-svg.ts
+  s_4cdebaf620696e::t_34dd9f4c571d64 1-13
+src/ts/settings/components/text-field.ts
+  s_4cdebaf620696e::t_728df781d86f0e 2-3
+src/ts/settings/components/toggle.ts
+  s_4cdebaf620696e::t_a6a4076d838249 2-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "23df68facc7c16050475021986f8c60b905e5ffe",
+  "prompts": {},
+  "sessions": {
+    "s_4cdebaf620696e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed3981db2ffehUEItqPEVsR53P",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

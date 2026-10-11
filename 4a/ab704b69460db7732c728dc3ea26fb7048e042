@@ -1,0 +1,32 @@
+src/js/background.js
+  s_2a912048e2ef9a::t_f96c9ffa60a279 108-109
+  s_2a912048e2ef9a::t_a56b3baa88f879 120-121
+  s_2a912048e2ef9a::t_31f921543455f4 225
+  s_2a912048e2ef9a::t_638e188b684957 48
+  s_2a912048e2ef9a::t_a86843551265a1 133-134,136-138,140
+  s_2a912048e2ef9a::t_c77fd6f8831d8b 204,207,212,221
+  s_2a912048e2ef9a::t_a903426b790c7f 1
+  s_2a912048e2ef9a::t_84b96266d437b4 131
+  s_2a912048e2ef9a::t_a498006e96ba2f 214
+src/js/screensaver.js
+  s_2a912048e2ef9a::t_9c89ec585c3ac3 14
+  s_2a912048e2ef9a::t_00628d01550e51 227,236,246-249
+src/js/backgrounds.js
+  s_2a912048e2ef9a::t_e048575e7aa528 367-378,380-383
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4aab704b69460db7732c728dc3ea26fb7048e042",
+  "prompts": {},
+  "sessions": {
+    "s_2a912048e2ef9a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed5c58650ffepeVnPOWnFkQoAe",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

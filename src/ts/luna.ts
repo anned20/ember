@@ -1,10 +1,18 @@
 import type { LunaResponse, WebOSServiceHandle } from './types.js';
+import {
+  execRoot,
+  hasWebOS,
+  lunaRequest,
+  lunaSubscribe,
+  readExecStdout,
+  rootLuna,
+  runLadder,
+  TIMEOUTS
+} from './luna-transport.js';
+import type { LadderRung, LunaRequestOptions } from './luna-transport.js';
 
-/** Method + parameters for a Luna request (module-local). */
-export interface LunaRequestOptions {
-  method: string;
-  parameters?: Record<string, unknown>;
-}
+export { execRoot, lunaRequest, lunaSendRootCommand } from './luna-transport.js';
+export type { LunaRequestOptions } from './luna-transport.js';
 
 /** A normalized installed-app list, optionally marked complete. */
 export interface NormalizedApps {
@@ -58,132 +66,24 @@ export interface ForegroundInfo {
   appId: string;
 }
 
-function hasWebOS() {
-  return typeof window !== 'undefined' && window.webOS && window.webOS.service;
-}
-
-/**
- * Reject if the wrapped promise doesn't settle within `ms`. Some Luna calls
- * (root exec, subscriptions) can hang indefinitely after a failed app launch;
- * without a timeout that would stall the whole UI refresh.
- */
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise(function (resolve, reject) {
-    const timer: ReturnType<typeof setTimeout> = setTimeout(function () {
-      reject(new Error('Luna call timed out'));
-    }, ms);
-    promise.then(function (value) {
-      clearTimeout(timer);
-      resolve(value);
-    }, function (err) {
-      clearTimeout(timer);
-      reject(err);
-    });
-  });
-}
-
-export function lunaRequest(uri: string, options: LunaRequestOptions): Promise<LunaResponse> {
-  const method = options.method;
-  const parameters = options.parameters || {};
-
-  return new Promise(function (resolve, reject) {
-    if (!hasWebOS()) {
-      reject(new Error('webOS Luna bus unavailable'));
-      return;
-    }
-
-    const webos = window.webOS!;
-    webos.service.request(uri, {
-      method: method,
-      parameters: parameters,
-      onSuccess: function (res) {
-        if (res && res.returnValue === false) {
-          reject(new Error(res.errorText || 'Luna call failed'));
-          return;
-        }
-        resolve(res || {});
-      },
-      onFailure: function (err) {
-        reject(err || new Error('Luna call failed'));
-      }
-    });
-  });
-}
-
 function tryLunaRequest(uri: string, options: LunaRequestOptions) {
   return lunaRequest(uri, options).catch(function () {
     return null;
   });
 }
 
-/**
- * Some applicationManager list methods only return data through a subscription
- * on retail webOS. Open a subscribe request, resolve on the first payload, then
- * cancel so we behave like a one-shot call.
- */
-function lunaSubscribeOnce(uri: string, options: LunaRequestOptions): Promise<LunaResponse> {
-  const method = options.method;
-  const parameters = Object.assign({subscribe: true}, options.parameters || {});
-
-  return new Promise(function (resolve, reject) {
-    if (!hasWebOS()) {
-      reject(new Error('webOS Luna bus unavailable'));
-      return;
-    }
-
-    let settled = false;
-    let handle: WebOSServiceHandle | null = null;
-
-    function finish(fn: (value: any) => void, value: any): void {
-      if (settled) return;
-      settled = true;
-      if (handle && typeof handle.cancel === 'function') {
-        try { handle.cancel(); } catch (err) { /* ignore */ }
-      }
-      fn(value);
-    }
-
-    handle = window.webOS!.service.request(uri, {
-      method: method,
-      parameters: parameters,
-      onSuccess: function (res) {
-        if (res && res.returnValue === false) {
-          finish(reject, new Error(res.errorText || 'Luna call failed'));
-          return;
-        }
-        finish(resolve, res || {});
-      },
-      onFailure: function (err) {
-        finish(reject, err || new Error('Luna call failed'));
-      }
-    });
-  });
-}
-
 export function launchApp(id: string) {
-  return withTimeout(lunaRequest('luna://com.webos.applicationManager', {
+  return lunaRequest('luna://com.webos.applicationManager', {
     method: 'launch',
     parameters: {id: id, params: {}}
-  }), 5000);
+  }, TIMEOUTS.launch);
 }
 
 export function getAppInfo(id: string) {
-  return withTimeout(lunaRequest('luna://com.webos.applicationManager', {
+  return lunaRequest('luna://com.webos.applicationManager', {
     method: 'getAppInfo',
     parameters: {id: id}
-  }), 4000);
-}
-
-/**
- * Run a shell command through the Homebrew Channel root service. On a rooted TV
- * with the service elevated this executes as root; otherwise it fails or runs
- * unprivileged. Resolves with the raw exec response.
- */
-export function execRoot(command: string) {
-  return lunaRequest('luna://org.webosbrew.hbchannel.service', {
-    method: 'exec',
-    parameters: {command: command}
-  });
+  }, TIMEOUTS.appInfo);
 }
 
 /**
@@ -193,11 +93,7 @@ export function execRoot(command: string) {
  */
 export function whoAmI() {
   return execRoot('id -un').then(function (res) {
-    let out = (res && res.stdoutString ? String(res.stdoutString) : '').trim();
-    if (!out && res && res.stdoutBytes) {
-      try { out = String(atob(res.stdoutBytes)).trim(); } catch (err) { /* ignore */ }
-    }
-    return out || null;
+    return readExecStdout(res) || null;
   }).catch(function () {
     return null;
   });
@@ -225,7 +121,7 @@ export function readFileAsDataUrl(path: string) {
   const clean = String(path).replace(/^file:\/\//, '');
   const command = 'cat -- "' + clean.replace(/(["$`\\])/g, '\\$1') + '"';
   // Root through Homebrew Channel can stop answering; don't wait for good.
-  return withTimeout(execRoot(command), 8000).then(function (res) {
+  return execRoot(command, TIMEOUTS.rootReadFile).then(function (res) {
     const b64 = res && res.stdoutBytes ? String(res.stdoutBytes).replace(/\s+/g, '') : '';
     if (!b64) return null;
     return 'data:' + guessImageMime(clean) + ';base64,' + b64;
@@ -255,107 +151,76 @@ function normalizeListedApps(res?: LunaResponse | null): NormalizedApps {
   return {apps: []};
 }
 
-/**
- * Build a root `luna-send` command line for this TV's 2011-era binary.
- *
- * That build requires `-i` (interactive) or it prints nothing; `-n 1` exits
- * after one reply; `-w` is a hard timeout. Newer TVs accept the same flags.
- */
-export function lunaSendRootCommand(uri: string, payloadJson: string | null, waitMs?: number): string {
-  const wait = waitMs || 4000;
-  const payload = payloadJson == null ? '{}' : String(payloadJson);
-  // Single-quoted payload; escape any embedded single quotes for the shell.
-  const safePayload = payload.replace(/'/g, "'\\''");
-  return "luna-send -i -n 1 -w " + wait + " -f '" + uri + "' '" + safePayload + "'";
-}
+const APP_MANAGER = 'luna://com.webos.applicationManager';
 
-function readExecStdout(res: LunaResponse | null | undefined): string {
-  let out = res && res.stdoutString ? String(res.stdoutString) : '';
-  if (!out && res && res.stdoutBytes) {
-    try { out = String(atob(res.stdoutBytes)); } catch (err) { /* ignore */ }
+/**
+ * Read every installed app. A sandboxed web app can't call the privileged
+ * `applicationManager/listApps` directly, so on retail webOS the in-app
+ * subscription returns only a handful (or zero). The ladder tries root first —
+ * which sees them all — then the in-app fallbacks; only the root rung marks the
+ * list complete, since app-catalog.js may treat a missing app as not installed.
+ */
+export const LIST_APPS_LADDER: LadderRung[] = [
+  {
+    via: 'rootLuna',
+    uri: APP_MANAGER + '/listApps',
+    parameters: {},
+    waitMs: TIMEOUTS.lunaSendWaitListApps,
+    timeoutMs: TIMEOUTS.rootListApps
+  },
+  {
+    via: 'subscribeOnce',
+    uri: APP_MANAGER,
+    method: 'listLaunchPoints',
+    parameters: {},
+    timeoutMs: TIMEOUTS.subscribeListApps
+  },
+  {
+    via: 'request',
+    uri: APP_MANAGER,
+    method: 'listApps',
+    parameters: {}
   }
-  return out.trim();
+];
+
+function parseListedApps(res: LunaResponse, rung: LadderRung): NormalizedApps {
+  const normalized = normalizeListedApps(res);
+  if (!normalized.apps.length) throw new Error('no apps returned');
+  if (rung.via === 'rootLuna') normalized.complete = true;
+  return normalized;
 }
 
-/**
- * List every installed app via the Homebrew Channel root service.
- *
- * A sandboxed web app cannot call the privileged
- * `com.webos.applicationManager/listApps` method directly, so on retail webOS
- * the in-app subscription only returns a handful (or zero) apps. Running
- * `luna-send` through the elevated Homebrew Channel exec service performs the
- * call as root and returns the full, unfiltered list. Rejects when the service
- * is unavailable or the output can't be parsed, so callers can fall back.
- */
-function listAppsViaRoot(): Promise<NormalizedApps> {
-  const command = lunaSendRootCommand(
-    'luna://com.webos.applicationManager/listApps',
-    '{}',
-    5000
-  );
-  return withTimeout(execRoot(command), 6000).then(function (res) {
-    const out = readExecStdout(res);
-    if (!out) throw new Error('empty listApps output');
-
-    const data = JSON.parse(out);
-    if (data && data.returnValue === false) {
-      throw new Error(data.errorText || 'listApps failed');
-    }
-    const normalized = normalizeListedApps(data);
-    if (!normalized.apps.length) throw new Error('no apps returned');
-    // Every installed app (root sees them all): app-catalog.js may treat an
-    // app missing from this list as not installed.
-    normalized.complete = true;
-    return normalized;
-  });
-}
-
-export function listApps() {
-  return listAppsViaRoot().catch(function () {
-    return withTimeout(lunaSubscribeOnce('luna://com.webos.applicationManager', {
-      method: 'listLaunchPoints',
-      parameters: {}
-    }), 5000).then(normalizeListedApps).then(function (result) {
-      if (result.apps && result.apps.length) return result;
-      return lunaRequest('luna://com.webos.applicationManager', {
-        method: 'listApps',
-        parameters: {}
-      }).then(normalizeListedApps);
-    }).catch(function () {
-      return lunaRequest('luna://com.webos.applicationManager', {
-        method: 'listApps',
-        parameters: {}
-      }).then(normalizeListedApps).catch(function () {
-        return {apps: []};
-      });
-    });
+export function listApps(): Promise<NormalizedApps> {
+  return runLadder(LIST_APPS_LADDER, parseListedApps).catch(function () {
+    return {apps: []};
   });
 }
 
 /**
  * The apps on LG's own home screen (launch points), in LG's order. Read as
  * root: a sandboxed app is usually refused the full list. Falls back to the
- * in-app call, which may return few or none.
+ * in-app subscription, which may return few or none.
  */
+export const LIST_LAUNCH_POINTS_LADDER: LadderRung[] = [
+  {
+    via: 'rootLuna',
+    uri: APP_MANAGER + '/listLaunchPoints',
+    parameters: {},
+    waitMs: TIMEOUTS.lunaSendWaitListLaunchPoints,
+    timeoutMs: TIMEOUTS.rootListLaunchPoints
+  },
+  {
+    via: 'subscribeOnce',
+    uri: APP_MANAGER,
+    method: 'listLaunchPoints',
+    parameters: {},
+    timeoutMs: TIMEOUTS.subscribeListLaunchPoints
+  }
+];
+
 export function listLaunchPoints() {
-  const command = lunaSendRootCommand(
-    'luna://com.webos.applicationManager/listLaunchPoints',
-    '{}',
-    6000
-  );
-  return withTimeout(execRoot(command), 8000).then(function (res) {
-    const data = JSON.parse(readExecStdout(res));
-    if (data && data.returnValue === false) {
-      throw new Error(data.errorText || 'listLaunchPoints failed');
-    }
-    return (data && data.launchPoints) || [];
-  }).catch(function () {
-    return withTimeout(lunaSubscribeOnce('luna://com.webos.applicationManager', {
-      method: 'listLaunchPoints',
-      parameters: {}
-    }), 5000).then(function (res) {
-      return (res && res.launchPoints) || [];
-    });
+  return runLadder(LIST_LAUNCH_POINTS_LADDER, function (res) {
+    return (res && res.launchPoints) || [];
   });
 }
 
@@ -368,45 +233,45 @@ function pickForegroundId(res: LunaResponse | null | undefined): string {
   return '';
 }
 
-function getForegroundViaRoot() {
-  // Same privilege wall as listApps: a sandboxed web app is not allowed to
-  // query applicationManager for the foreground app, so the direct/subscription
-  // call is denied and never resolves. Running luna-send as root returns it.
-  // Must use -i on this TV's luna-send or stdout is empty (see lunaSendRootCommand).
-  const command = lunaSendRootCommand(
-    'luna://com.webos.applicationManager/getForegroundAppInfo',
-    '{"subscribe":true}',
-    4000
-  );
-  return withTimeout(execRoot(command), 5000).then(function (res) {
-    const out = readExecStdout(res);
-    if (!out) throw new Error('empty getForegroundAppInfo output');
-    const data = JSON.parse(out);
-    if (data && data.returnValue === false) {
-      throw new Error(data.errorText || 'getForegroundAppInfo failed');
-    }
-    return {appId: pickForegroundId(data)};
-  });
-}
+/**
+ * The foreground app. Same privilege wall as listApps: a sandboxed web app is
+ * refused applicationManager's direct/subscription call, so root is tried
+ * first; the in-app rungs cover desktop previews. Must use -i on this TV's
+ * luna-send or stdout is empty (see lunaSendRootCommand).
+ */
+export const FOREGROUND_LADDER: LadderRung[] = [
+  {
+    via: 'rootLuna',
+    uri: APP_MANAGER + '/getForegroundAppInfo',
+    parameters: {subscribe: true},
+    waitMs: TIMEOUTS.lunaSendWait,
+    timeoutMs: TIMEOUTS.rootForeground
+  },
+  {
+    via: 'subscribeOnce',
+    uri: APP_MANAGER,
+    method: 'getForegroundAppInfo',
+    parameters: {},
+    timeoutMs: TIMEOUTS.foreground
+  },
+  {
+    via: 'request',
+    uri: APP_MANAGER,
+    method: 'getForegroundApp',
+    parameters: {},
+    timeoutMs: TIMEOUTS.foreground
+  }
+];
 
 /**
  * Launch an app via root luna-send. More reliable from backgrounded contexts
  * where the sandboxed applicationManager/launch call may be denied or ignored.
  */
 export function launchAppViaRoot(id: string) {
-  const command = lunaSendRootCommand(
-    'luna://com.webos.applicationManager/launch',
-    JSON.stringify({id: id}),
-    4000
-  );
-  return withTimeout(execRoot(command), 5000).then(function (res) {
-    const out = readExecStdout(res);
-    if (!out) return {returnValue: true};
-    const data = JSON.parse(out);
-    if (data && data.returnValue === false) {
-      throw new Error(data.errorText || 'launch failed');
-    }
-    return data;
+  return rootLuna(APP_MANAGER + '/launch', {id: id}, {
+    waitMs: TIMEOUTS.lunaSendWait,
+    timeoutMs: TIMEOUTS.rootLaunch,
+    emptyAs: {returnValue: true}
   });
 }
 
@@ -438,7 +303,7 @@ export function enableHomeWatcher() {
   const cmd =
     'chmod 755 "' + HOME_WATCHER_ENABLE + '" "' + HOME_WATCHER_APP_PATH +
     '" 2>/dev/null; sh "' + HOME_WATCHER_ENABLE + '"';
-  return rootScriptOutput(withTimeout(execRoot(cmd), 20000)).then(function (out) {
+  return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootHomeWatcher)).then(function (out) {
     if (out.indexOf('missing_watcher') >= 0) {
       throw new Error('home-watcher.sh not installed on TV');
     }
@@ -466,7 +331,7 @@ export function runTvCheck(appLine: string) {
     DIAGNOSTICS_SCRIPT + '" --open-settings --app \'' + app + '\'';
   // Usually 30-40 s; up to about two minutes when TV Settings is slow and
   // won't close by itself (the script then tries other ways).
-  return rootScriptOutput(withTimeout(execRoot(cmd), 150000));
+  return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootTvCheck));
 }
 
 // Settings -> Backup & restore. The TV copy is outside the app folder, so it
@@ -505,23 +370,25 @@ export function rootWriteCommands(path: string, text: string): string[] {
 
 async function writeFileAsRoot(path: string, text: string): Promise<void> {
   for (const cmd of rootWriteCommands(path, text)) {
-    const out = await rootScriptOutput(withTimeout(execRoot(cmd), 10000));
+    const out = await rootScriptOutput(execRoot(cmd, TIMEOUTS.rootDefault));
     if (out.indexOf('written') < 0) throw new Error(out.split('\n')[0] || 'could not write');
   }
 }
 
 /** A file's text read as root, or null when it doesn't exist. */
 async function readFileAsRoot(path: string): Promise<string | null> {
-  const res = await withTimeout(execRoot(
-    'if [ -f ' + shQuote(path) + ' ]; then cat ' + shQuote(path) + '; else echo __missing__; fi'), 10000);
+  const res = await execRoot(
+    'if [ -f ' + shQuote(path) + ' ]; then cat ' + shQuote(path) + '; else echo __missing__; fi',
+    TIMEOUTS.rootDefault);
   const out = readExecStdout(res);
   return out === '__missing__' ? null : out;
 }
 
 /** The text of every *.json file in `dir`, read as root: [{path, text}]. */
 async function readJsonFilesAsRoot(dir: string): Promise<IndexedFile[]> {
-  const res = await withTimeout(execRoot('for f in ' + shQuote(dir) + '/*.json; do ' +
-    '[ -f "$f" ] || continue; printf \'\\n' + FILE_MARK + '%s\\n\' "$f"; cat "$f"; done; echo'), 10000);
+  const res = await execRoot('for f in ' + shQuote(dir) + '/*.json; do ' +
+    '[ -f "$f" ] || continue; printf \'\\n' + FILE_MARK + '%s\\n\' "$f"; cat "$f"; done; echo',
+    TIMEOUTS.rootDefault);
   const out = '\n' + readExecStdout(res);
   return out.split('\n' + FILE_MARK).slice(1).map(function (chunk: string): IndexedFile {
     const cut = chunk.indexOf('\n');
@@ -537,8 +404,9 @@ export async function writeAutoBackup(name: string, text: string): Promise<void>
   const safe = String(name).replace(/[^A-Za-z0-9._-]/g, '_');
   await writeFileAsRoot(SETTINGS_AUTO_DIR + '/' + safe, text);
   try {
-    await withTimeout(execRoot('cd ' + shQuote(SETTINGS_AUTO_DIR) + ' && ls -t before-update-*.json ' +
-      '2>/dev/null | tail -n +' + (AUTO_UPDATE_COPIES + 1) + ' | while read -r f; do rm -f "$f"; done'), 10000);
+    await execRoot('cd ' + shQuote(SETTINGS_AUTO_DIR) + ' && ls -t before-update-*.json ' +
+      '2>/dev/null | tail -n +' + (AUTO_UPDATE_COPIES + 1) + ' | while read -r f; do rm -f "$f"; done',
+      TIMEOUTS.rootDefault);
   } catch (err) {
     // Old copies are only tidied up.
   }
@@ -592,7 +460,7 @@ export async function readSettingsBackups(usbRoots?: string[]): Promise<Settings
  * tuned (e.g. a TV only used with a set-top box).
  */
 export function getTvChannels(): Promise<TvChannel[]> {
-  return withTimeout(execRoot('sh "' + CHANNELS_SCRIPT + '" list'), 20000).then(function (res) {
+  return execRoot('sh "' + CHANNELS_SCRIPT + '" list', TIMEOUTS.rootChannelsList).then(function (res) {
     return readExecStdout(res).split('\n').map(function (line: string): TvChannel | null {
       const f = line.split('\t');
       if (f.length < 6 || !f[0] || !f[2]) return null;
@@ -610,7 +478,7 @@ export function getTvChannels(): Promise<TvChannel[]> {
 
 /** The channel Live TV is on and the programme now: {number, name, programme}. */
 export function getTvChannelNow(): Promise<TvChannelNow> {
-  return withTimeout(execRoot('sh "' + CHANNELS_SCRIPT + '" now'), 12000).then(function (res) {
+  return execRoot('sh "' + CHANNELS_SCRIPT + '" now', TIMEOUTS.rootChannelNow).then(function (res) {
     const f = readExecStdout(res).split('\t');
     return {number: f[0] || '', name: f[1] || '', programme: f[2] || ''};
   });
@@ -621,7 +489,7 @@ export function openTvChannel(channel: {id?: string; number?: string} | null | u
   const id = String((channel && channel.id) || '').replace(/[^A-Za-z0-9_.-]/g, '');
   const number = String((channel && channel.number) || '').replace(/[^0-9.-]/g, '');
   const cmd = 'sh "' + CHANNELS_SCRIPT + '" open "' + id + '" "' + number + '"';
-  return rootScriptOutput(withTimeout(execRoot(cmd), 20000)).then(function (out) {
+  return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootChannelOpen)).then(function (out) {
     if (out.indexOf('opened') < 0) throw new Error('the TV didn\u2019t switch channel');
     return true;
   });
@@ -658,7 +526,7 @@ export function enableVoice(): Promise<VoiceEnableResult> {
   const cmd =
     'chmod 755 "' + VOICE_ENABLE + '" "' + VOICE_RUN + '" 2>/dev/null; sh "' +
     VOICE_ENABLE + '"';
-  return rootScriptOutput(withTimeout(execRoot(cmd), 150000)).then(function (out) {
+  return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootVoiceEnable)).then(function (out) {
     if (out.indexOf('missing_voice') >= 0) {
       throw new Error('voice files are missing from Launch Home');
     }
@@ -682,7 +550,7 @@ export function enableVoice(): Promise<VoiceEnableResult> {
 /** True while Launch Home's voice run loop is alive (voice-run.sh status). */
 export function isVoiceRunning() {
   const cmd = 'sh "' + VOICE_RUN + '" status 2>/dev/null || echo stopped';
-  return withTimeout(execRoot(cmd), 8000).then(function (res) {
+  return execRoot(cmd, TIMEOUTS.rootVoiceProbe).then(function (res) {
     return readExecStdout(res).indexOf('running') === 0;
   });
 }
@@ -694,7 +562,7 @@ export function isVoiceRunning() {
 export function disableVoice() {
   const cmd =
     'chmod 755 "' + VOICE_DISABLE + '" 2>/dev/null; sh "' + VOICE_DISABLE + '"';
-  return rootScriptOutput(withTimeout(execRoot(cmd), 45000)).then(function (out) {
+  return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootVoiceDisable)).then(function (out) {
     if (out.indexOf('disabled') < 0) {
       throw new Error(out.split('\n')[0] || 'voice assistant did not stop');
     }
@@ -709,7 +577,7 @@ export function disableHomeWatcher() {
   const cmd =
     'chmod 755 "' + HOME_WATCHER_DISABLE + '" 2>/dev/null; sh "' +
     HOME_WATCHER_DISABLE + '"';
-  return withTimeout(execRoot(cmd), 8000).then(function () {
+  return execRoot(cmd, TIMEOUTS.rootHomeWatcherStop).then(function () {
     return true;
   }).catch(function () {
     return false;
@@ -721,7 +589,7 @@ export function isHomeWatcherRunning() {
   const cmd =
     'if [ -f "' + HOME_WATCHER_PIDFILE + '" ] && kill -0 $(cat "' +
     HOME_WATCHER_PIDFILE + '") 2>/dev/null; then echo running; else echo stopped; fi';
-  return withTimeout(execRoot(cmd), 5000).then(function (res) {
+  return execRoot(cmd, TIMEOUTS.rootHomeWatcherProbe).then(function (res) {
     return readExecStdout(res).indexOf('running') >= 0;
   }).catch(function () {
     return false;
@@ -736,7 +604,7 @@ export function enableBootLaunch() {
   const cmd =
     'chmod 755 "' + BOOT_LAUNCH_ENABLE + '" "' + BOOT_LAUNCH_SCRIPT +
     '" 2>/dev/null; sh "' + BOOT_LAUNCH_ENABLE + '"';
-  return rootScriptOutput(withTimeout(execRoot(cmd), 12000)).then(function (out) {
+  return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootBootLaunchEnable)).then(function (out) {
     if (out.indexOf('missing_boot_script') >= 0) {
       throw new Error('boot-launch.sh not installed on TV');
     }
@@ -754,7 +622,7 @@ export function disableBootLaunch() {
   const cmd =
     'chmod 755 "' + BOOT_LAUNCH_DISABLE + '" 2>/dev/null; sh "' +
     BOOT_LAUNCH_DISABLE + '"';
-  return withTimeout(execRoot(cmd), 8000).then(function () {
+  return execRoot(cmd, TIMEOUTS.rootBootLaunchDisable).then(function () {
     return true;
   }).catch(function () {
     return false;
@@ -762,22 +630,8 @@ export function disableBootLaunch() {
 }
 
 export function getForegroundApp() {
-  // Prefer the root path (the only one that works on retail webOS for a
-  // sandboxed app); fall back to in-app subscription / one-shot for previews.
-  return getForegroundViaRoot().catch(function () {
-    return withTimeout(lunaSubscribeOnce('luna://com.webos.applicationManager', {
-      method: 'getForegroundAppInfo',
-      parameters: {}
-    }), 4000).then(function (res) {
-      return {appId: pickForegroundId(res)};
-    });
-  }).catch(function () {
-    return withTimeout(lunaRequest('luna://com.webos.applicationManager', {
-      method: 'getForegroundApp',
-      parameters: {}
-    }), 4000).then(function (res) {
-      return {appId: pickForegroundId(res)};
-    });
+  return runLadder(FOREGROUND_LADDER, function (res) {
+    return {appId: pickForegroundId(res)};
   });
 }
 
@@ -801,9 +655,10 @@ export function getAllInputStatus() {
 
 /** The input service's list read as root, for when the in-app call fails. */
 export function getAllInputStatusViaRoot(): Promise<LunaResponse> {
-  const command = lunaSendRootCommand('luna://com.webos.service.eim/getAllInputStatus', '{}', 5000);
-  return withTimeout(execRoot(command), 7000).then(function (res) {
-    const data = JSON.parse(readExecStdout(res));
+  return rootLuna('luna://com.webos.service.eim/getAllInputStatus', {}, {
+    waitMs: TIMEOUTS.lunaSendWaitInputs,
+    timeoutMs: TIMEOUTS.rootInputs
+  }).then(function (data) {
     if (!data || data.returnValue === false || !Array.isArray(data.devices)) {
       throw new Error('getAllInputStatus failed');
     }
@@ -1001,7 +856,7 @@ export function setScreensaverTimeout(minutes: number | string) {
     'print("ok",d.get("screenSaverTimer"),d.get("screenOffTime"),en)\n' +
     '\'';
 
-  return withTimeout(execRoot(py), 10000).then(function (res) {
+  return execRoot(py, TIMEOUTS.rootScreensaver).then(function (res) {
     const out = readExecStdout(res);
     if (out.indexOf('ok') < 0) {
       return {returnValue: false, value: saverVal, enabled: enabled, out: out};
@@ -1061,7 +916,7 @@ export function setSystemVolume(level: number | string) {
  * them on the on-screen bar. Returns an unsubscribe function.
  */
 export function subscribeVolume(onChange: (volume: number, muted: boolean) => void): () => void {
-  if (!hasWebOS() || typeof onChange !== 'function') {
+  if (typeof onChange !== 'function') {
     return function () {};
   }
 
@@ -1082,19 +937,15 @@ export function subscribeVolume(onChange: (volume: number, muted: boolean) => vo
   }
 
   function requestOn(uri: string): WebOSServiceHandle | null {
-    try {
-      return window.webOS!.service.request(uri, {
-        method: 'getVolume',
-        parameters: {subscribe: true},
-        onSuccess: function (res) {
-          const volume = extractVolume(res);
-          if (volume !== null) onChange(volume, extractMuted(res));
-        },
-        onFailure: function () {}
-      });
-    } catch (err) {
-      return null;
-    }
+    return lunaSubscribe(uri, {
+      method: 'getVolume',
+      parameters: {subscribe: true},
+      onSuccess: function (res) {
+        const volume = extractVolume(res);
+        if (volume !== null) onChange(volume, extractMuted(res));
+      },
+      onFailure: function () {}
+    });
   }
 
   const handle = requestOn('luna://com.webos.audio') || requestOn('luna://com.webos.service.audio');

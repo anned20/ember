@@ -1,0 +1,58 @@
+src/ts/luna-transport.ts
+  s_78114a4f27db5e::t_af307826633731 1-65,68,77-126,129-182,185-279,281-321
+  s_78114a4f27db5e::t_d466ed6c9ae0d7 183-184
+  s_78114a4f27db5e::t_3ad31119ecf3d5 127-128
+  s_78114a4f27db5e::t_7508ca6838da6b 66-67,69-76
+  s_78114a4f27db5e::t_5b84bff4e6ce0f 280
+test/luna-transport.test.ts
+  s_78114a4f27db5e::t_5ec76e986609d7 81-84,89-90,95
+  s_78114a4f27db5e::t_410e3f416044fc 85-88
+  s_78114a4f27db5e::t_8d8c85c6ddaddc 1-80,91-94,96-234
+src/ts/luna.ts
+  s_78114a4f27db5e::t_0e550af8efa928 2-3,5-11,14-15
+  s_78114a4f27db5e::t_7d76163c1e6935 76,79,83,86
+  s_78114a4f27db5e::t_b73feed8b372e0 553
+  s_78114a4f27db5e::t_51829ba9e10e5e 12
+  s_78114a4f27db5e::t_e99a824c99ea5c 380-382
+  s_78114a4f27db5e::t_cc01923282174c 373
+  s_78114a4f27db5e::t_f2c1935ece3b5d 607
+  s_78114a4f27db5e::t_97f216df34a222 306
+  s_78114a4f27db5e::t_9ae387e6221785 625
+  s_78114a4f27db5e::t_ba754f47f5971f 633-634
+  s_78114a4f27db5e::t_539d448fc276ea 859
+  s_78114a4f27db5e::t_516b3376a3167d 96
+  s_78114a4f27db5e::t_b87de1dd03ea19 407-409
+  s_78114a4f27db5e::t_ab073b3284553b 565
+  s_78114a4f27db5e::t_f96a11e176022f 940-948
+  s_78114a4f27db5e::t_c23954ebd4d129 124
+  s_78114a4f27db5e::t_3da236d5392299 919
+  s_78114a4f27db5e::t_7d500d0de4f389 529
+  s_78114a4f27db5e::t_eb8c6526a31879 334
+  s_78114a4f27db5e::t_a402d84636b00c 389-391
+  s_78114a4f27db5e::t_85ca02af5b8619 481
+  s_78114a4f27db5e::t_c0ec176868dddb 4
+  s_78114a4f27db5e::t_be3f0e2968cdb0 236-264,271-274
+  s_78114a4f27db5e::t_136a6427c3d9ab 463
+  s_78114a4f27db5e::t_b9c19632341387 492
+  s_78114a4f27db5e::t_879e45f24d4f9a 658-661
+  s_78114a4f27db5e::t_861920a51c1179 592
+  s_78114a4f27db5e::t_e281c5dcf5cb36 580
+  s_78114a4f27db5e::t_00cab7a735a116 154,157-161,163-184,186-190,193-195,202,204-220,222-223
+  s_78114a4f27db5e::t_a31782d9a7cfe6 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "086d9745ccf13648697b1dcb72d0a58c14fb60ad",
+  "prompts": {},
+  "sessions": {
+    "s_78114a4f27db5e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed3e9b90bffeIYUd8jKdtriNhv",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

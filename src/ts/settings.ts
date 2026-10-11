@@ -50,8 +50,8 @@ import {
   createMiniButton,
   createAppRow,
   createGallery
-} from './settings-controls.js';
-import type {GalleryEntry} from './settings-controls.js';
+} from './components/settings/index.js';
+import type {GalleryEntry} from './components/settings/index.js';
 import type {
   Config,
   CustomApp,

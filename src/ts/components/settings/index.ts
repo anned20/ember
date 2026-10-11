@@ -1,0 +1,17 @@
+/**
+ * The Settings control kit.
+ *
+ * Each module exports one control factory: a toggle, a text field, a hint, a
+ * section, a mini button, an app row, or a photo gallery. Panes compose them; a
+ * control's shape (DOM, classes, focus index, events) lives in one module
+ * instead of being hand-built at every call site.
+ */
+
+export * from './labeled.js';
+export * from './hint.js';
+export * from './section.js';
+export * from './toggle.js';
+export * from './text-field.js';
+export * from './mini-button.js';
+export * from './app-row.js';
+export * from './gallery.js';

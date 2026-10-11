@@ -1,0 +1,19 @@
+docs/agents/issue-tracker.md
+  s_cc172ff3c0d8bb::t_1e59d8315ca7be 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7e47f79d9e369a6206edc5b5608c666c15636700",
+  "prompts": {},
+  "sessions": {
+    "s_cc172ff3c0d8bb": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed5509d5fffeTHNmEtGqtb7H8O",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

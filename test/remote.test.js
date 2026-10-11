@@ -1,6 +1,13 @@
 // @vitest-environment node
 import {describe, expect, it} from 'vitest';
-import {digitFromKey} from '../src/js/remote.js';
+import {REMOTE_KEY, digitFromKey} from '../src/js/remote.js';
+
+describe('remote key table', () => {
+  it('defines the Channel Up / Channel Down keycodes', () => {
+    expect(REMOTE_KEY.CHANNEL_UP).toBe(427);
+    expect(REMOTE_KEY.CHANNEL_DOWN).toBe(428);
+  });
+});
 
 describe('digitFromKey', () => {
   it('maps the digit row (1-9 = 49-57, 0 = 48)', () => {

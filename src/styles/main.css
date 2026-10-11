@@ -28,10 +28,6 @@ body {
   right: 0;
   bottom: 0;
   left: 0;
-  /* Own stacking context: the two double-buffered aerial <video> layers use
-     z-index to order the cross-fade, and without this they would paint above
-     the separate #scrim sibling instead of under it. */
-  isolation: isolate;
   background: linear-gradient(135deg, #1a1028 0%, #3d1f2e 40%, #7a3b2e 100%);
   background-size: cover;
   background-position: center;
@@ -58,11 +54,7 @@ body {
   }
 }
 
-/* Aerial clips: a <video> fills the background layer, under the scrim. Two of
-   them are double-buffered so the next clip is loaded before the current one
-   ends; the incoming one fades in over the outgoing one, which stays fully
-   opaque underneath until the fade finishes (fading both at once dimmed the
-   wallpaper mid-change and briefly showed the gradient). */
+/* Aerial clips: a <video> fills the background layer, under the scrim. */
 .background-video {
   position: absolute;
   top: 0;
@@ -74,20 +66,6 @@ body {
   object-fit: cover;
   object-position: center;
   background: #0a0a0f;
-  opacity: 0;
-  z-index: 0;
-  transition: opacity 1.4s ease;
-}
-
-.background-video.is-front {
-  opacity: 1;
-  z-index: 1;
-}
-
-.background-video.is-back {
-  opacity: 0;
-  z-index: 0;
-  transition: opacity 0s linear 1.4s;
 }
 
 #background-layer.gradient-animated {
@@ -2775,14 +2753,11 @@ body.settings-open .settings-panel .ai-provider-card.focused {
   }
 }
 
-/* Aerial clips fill the saver above the photo layers, under the scrim/clock.
-   Two are double-buffered so the next clip loads before the current one ends;
-   the incoming one fades in over the outgoing one, which stays fully opaque
-   underneath until the fade finishes (fading both at once dimmed the screen). */
+/* Aerial clips fill the saver above the photo layers, under the scrim/clock. */
 .custom-screensaver-video {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -2791,15 +2766,8 @@ body.settings-open .settings-panel .ai-provider-card.focused {
   transition: opacity 1.4s ease;
 }
 
-.custom-screensaver-video.is-front {
+.custom-screensaver-video.is-visible {
   opacity: 1;
-  z-index: 1;
-}
-
-.custom-screensaver-video.is-back {
-  opacity: 0;
-  z-index: 0;
-  transition: opacity 0s linear 1.4s;
 }
 
 .custom-screensaver-scrim {

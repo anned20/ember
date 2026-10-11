@@ -111,6 +111,24 @@ function showToast(message) {
 
 elements.onToast = showToast;
 
+// Aerial clip switched by the remote's Channel Up / Channel Down. In Single
+// mode the landed clip becomes the saved choice (the Settings picker reads the
+// base config, so it follows); in Slideshow mode the skip is transient and
+// nothing is written.
+elements.onAerialChange = function (change) {
+  if (!change) return;
+  if (change.mode === 'single' && change.id) {
+    const config = getBaseConfig();
+    setConfig(Object.assign({}, config, {
+      background: Object.assign({}, config.background, {aerial: change.id})
+    }));
+    saveConfig(baseConfig);
+  }
+  if (change.title) {
+    showToast('Aerial \u00b7 ' + change.title);
+  }
+};
+
 const background = createBackgroundController(elements, getConfig);
 const music = createMusicPlayer(getConfig, Object.assign({}, elements, {
   onToast: showToast,
@@ -354,6 +372,21 @@ const apps = createAppGrid(elements.appGrid, getConfig, {
   },
   onToast: showToast
 });
+// Blue (and Channel Up / Channel Down where the remote delivers them) steps the
+// aerial wallpaper to the next clip. They do nothing — like today — when an open
+// surface owns the keys: Settings, the Channels strip, All apps, or the
+// screensaver (which a key dismisses instead).
+function stepAerialBackground(direction) {
+  if (settings.isVisible()) return;
+  if (allApps.isOpen()) return;
+  if (channelStrip.isOpen()) return;
+  if (customScreensaver && typeof customScreensaver.isActive === 'function' &&
+      customScreensaver.isActive()) {
+    return;
+  }
+  background.stepAerial(direction);
+}
+
 const focus = createFocusManager(document.getElementById('app'), {
   onNumber: function (n) {
     // While the screensaver is showing, a key press dismisses it (screensaver.js)
@@ -404,6 +437,15 @@ const focus = createFocusManager(document.getElementById('app'), {
   onVolumeMute: function () {
     if (settings.isVisible()) return;
     elements.muteBtn.click();
+  },
+  onBlue: function () {
+    stepAerialBackground(1);
+  },
+  onChannelUp: function () {
+    stepAerialBackground(1);
+  },
+  onChannelDown: function () {
+    stepAerialBackground(-1);
   }
 });
 

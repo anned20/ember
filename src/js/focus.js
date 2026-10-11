@@ -1167,7 +1167,9 @@ export function createFocusManager(root, handlers) {
         ArrowDown: REMOTE_KEY.DOWN,
         Enter: REMOTE_KEY.ENTER,
         Escape: REMOTE_KEY.BACK,
-        GoBack: REMOTE_KEY.BACK
+        GoBack: REMOTE_KEY.BACK,
+        ChannelUp: REMOTE_KEY.CHANNEL_UP,
+        ChannelDown: REMOTE_KEY.CHANNEL_DOWN
       };
       if (!typing) {
         keyMap.Backspace = REMOTE_KEY.BACK;
@@ -1230,6 +1232,14 @@ export function createFocusManager(root, handlers) {
       return;
     }
 
+    if (code === REMOTE_KEY.BLUE) {
+      if (handlers && handlers.onBlue) {
+        event.preventDefault();
+        handlers.onBlue();
+      }
+      return;
+    }
+
     if (code === REMOTE_KEY.VOLUME_UP) {
       if (handlers && handlers.onVolumeUp) {
         event.preventDefault();
@@ -1250,6 +1260,22 @@ export function createFocusManager(root, handlers) {
       if (handlers && handlers.onVolumeMute) {
         event.preventDefault();
         handlers.onVolumeMute();
+      }
+      return;
+    }
+
+    if (code === REMOTE_KEY.CHANNEL_UP) {
+      if (handlers && handlers.onChannelUp) {
+        event.preventDefault();
+        handlers.onChannelUp();
+      }
+      return;
+    }
+
+    if (code === REMOTE_KEY.CHANNEL_DOWN) {
+      if (handlers && handlers.onChannelDown) {
+        event.preventDefault();
+        handlers.onChannelDown();
       }
       return;
     }

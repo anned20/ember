@@ -1,4 +1,5 @@
 import {MEDIA_VIDEO, normalizeBackgroundConfig, resolveBackgroundMedia} from './backgrounds.js';
+import {AERIAL_BACKGROUNDS} from './aerials.js';
 import {resolveLoungePaths} from './usb.js';
 
 const PRESETS = {
@@ -7,6 +8,20 @@ const PRESETS = {
   'midnight': 'linear-gradient(180deg, #050508 0%, #12121a 60%, #1c1c28 100%)',
   'ember': 'radial-gradient(ellipse at 30% 20%, #4a1942 0%, #1a0a14 50%, #080408 100%)'
 };
+
+/** The aerial catalog entry with this URL, or null. */
+function aerialClipByUrl(url) {
+  for (let i = 0; i < AERIAL_BACKGROUNDS.length; i += 1) {
+    if (AERIAL_BACKGROUNDS[i].url === url) return AERIAL_BACKGROUNDS[i];
+  }
+  return null;
+}
+
+/** Where an aerial clip sits in the settings catalog, by its URL (0 when unknown). */
+function aerialClipIndexByUrl(url) {
+  const clip = aerialClipByUrl(url);
+  return clip ? AERIAL_BACKGROUNDS.indexOf(clip) : 0;
+}
 
 /** Fisher–Yates copy (aerial Slideshow order). */
 function shuffled(items) {
@@ -60,20 +75,13 @@ export function createBackgroundController(elements, getConfig) {
   let slideshowMedia = [];
   let usbBackgroundPath = '';
   let refreshGen = 0;
-  // Aerial clip: two <video> elements double-buffered in the layer while the
-  // source is "aerial". Single loops the chosen clip; Slideshow rides "ended"
-  // onto the next, which is preloaded into the idle element near the end of the
-  // current one — so the swap cross-fades instead of showing the black frame of
-  // a freshly-set src.
-  const PRELOAD_LEAD_SEC = 15;
-  let videoEls = [];
-  let videoFront = 0;
+  // Aerial clip: one <video> filling the layer while the source is "aerial".
+  let videoEl = null;
   let videoPlaying = false;
   // Aerial Slideshow: the ordered clips and where we are in them.
   let videoClips = [];
   let videoSlideshow = false;
   let videoIndex = 0;
-  let videoPreloaded = -1;
   // Aerial failure handling: failed starts since a clip last played, the id of
   // the load in flight (so a play() rejection and the element's "error" event
   // for the same attempt count once), and whether we've dropped to the gradient.
@@ -84,7 +92,6 @@ export function createBackgroundController(elements, getConfig) {
   // same load as the play() rejection, and a retry detaches the old one.
   let videoErrorListener = null;
   let videoFellBack = false;
-  let videoSwapTimer = null;
   // What the wallpaper on screen was made from (see refresh reuse).
   let appliedSignature = '';
 
@@ -191,70 +198,28 @@ export function createBackgroundController(elements, getConfig) {
       failToGradient(bg);
       return;
     }
-    const front = frontVideo();
     if (videoSlideshow) {
       // Skip the broken clip and take the next one round the list.
       videoIndex = (videoIndex + 1) % videoClips.length;
-    } else if (front) {
+    } else if (videoEl) {
       // Single: retry the same clip. Drop the failed source so playVideoClip
       // re-sets it and the TV makes a fresh request.
-      front.removeAttribute('src');
-      try { front.load(); } catch (err) { /* ignore */ }
+      videoEl.removeAttribute('src');
+      try { videoEl.load(); } catch (err) { /* ignore */ }
     }
     playVideoClip(bg, refreshGen);
   }
 
-  // The two buffers: the front element is on screen, the back one idles as the
-  // preload target for the clip after this one.
-  function frontVideo() {
-    return videoEls[videoFront] || null;
-  }
-
-  function backVideo() {
-    return videoEls.length > 1 ? videoEls[videoFront ? 0 : 1] : null;
-  }
-
-  function nextVideoIndex() {
-    return videoClips.length ? (videoIndex + 1) % videoClips.length : 0;
-  }
-
-  function revealFront(el) {
-    if (!el) return;
-    el.classList.remove('is-back');
-    el.classList.add('is-front');
-  }
-
-  function retire(el) {
-    if (!el) return;
-    el.classList.remove('is-front');
-    el.classList.add('is-back');
-  }
-
   // Slideshow only: a clip reached its natural end, so roll onto the next one
   // (clips are never cut off by a timer). Looping Single clips never end.
-  function onVideoEnded(event) {
-    if (!videoSlideshow || videoClips.length <= 1) return;
-    if (event && event.target !== frontVideo()) return;
+  function onVideoEnded() {
+    if (!videoSlideshow || !videoClips.length) return;
     videoIndex = (videoIndex + 1) % videoClips.length;
-    swapToPreloaded(refreshGen);
+    playVideoClip(normalizeBackgroundConfig(getConfig().background), refreshGen);
   }
 
-  // Near the end of the clip on screen, load the next one into the idle element
-  // so the swap has its first frame ready (and only then — preloading the whole
-  // next 2K clip up front doubled the bandwidth the current one is streaming).
-  function onVideoTimeUpdate(event) {
-    if (!videoSlideshow || videoClips.length <= 1 || videoSwapTimer) return;
-    if (event && event.target !== frontVideo()) return;
-    if (!wallpaperShouldAnimate()) return;
-    const v = frontVideo();
-    if (!v || videoPreloaded === nextVideoIndex()) return;
-    const dur = v.duration;
-    if (!isFinite(dur) || dur <= 0) return;
-    if (dur - v.currentTime > PRELOAD_LEAD_SEC) return;
-    preloadNext();
-  }
-
-  function makeVideo() {
+  function ensureVideo() {
+    if (videoEl) return videoEl;
     const v = document.createElement('video');
     v.className = 'background-video';
     v.muted = true;
@@ -268,109 +233,28 @@ export function createBackgroundController(elements, getConfig) {
     v.loop = true;
     v.addEventListener('playing', onVideoPlaying);
     v.addEventListener('ended', onVideoEnded);
-    v.addEventListener('timeupdate', onVideoTimeUpdate);
     layer.appendChild(v);
+    videoEl = v;
     return v;
   }
 
-  function ensureVideo() {
-    if (videoEls.length) return;
-    videoEls = [makeVideo(), makeVideo()];
-    videoFront = 0;
-  }
-
-  // Buffer the following clip in the idle element, ready to fade in on "ended".
-  function preloadNext() {
-    const back = backVideo();
-    if (!back || !videoSlideshow || videoClips.length <= 1) return;
-    if (videoSwapTimer) return; // the outgoing element is still on screen
-    const index = nextVideoIndex();
-    const clip = videoClips[index];
-    if (!clip) return;
-    back.loop = false;
-    if (back.getAttribute('src') !== clip.url) {
-      back.setAttribute('src', clip.url);
-    }
-    videoPreloaded = index;
-  }
-
-  // Fade the preloaded clip in over the one that just ended. The outgoing
-  // element keeps painting its last frame under the incoming one (see CSS), so
-  // there is no black gap; only once the fade is done does it get reused as the
-  // next preload target.
-  function swapToPreloaded(gen) {
-    const front = frontVideo();
-    const back = backVideo();
-    const clip = videoClips[videoIndex];
-    if (!back || !clip || back.getAttribute('src') !== clip.url) {
-      // Nothing was preloaded in time (a failed or unbounded stream): hard cut.
-      playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
-      return;
-    }
-    revealFront(back);
-    retire(front);
-    videoFront = videoFront ? 0 : 1;
-
-    const attempt = ++videoAttempt;
-    if (videoErrorListener) back.removeEventListener('error', videoErrorListener);
-    videoErrorListener = function () {
-      handleVideoFailure(attempt);
-    };
-    back.addEventListener('error', videoErrorListener);
-    back.loop = !videoSlideshow;
-    let p = null;
-    try {
-      p = back.play();
-    } catch (err) {
-      handleVideoFailure(attempt);
-      return;
-    }
-    if (p && p.catch) p.catch(function (err) {
-      if (err && err.name === 'AbortError') return;
-      if (gen !== refreshGen) return;
-      handleVideoFailure(attempt);
-    });
-    onVideoPlaying();
-
-    const outgoing = front;
-    if (videoSwapTimer) clearTimeout(videoSwapTimer);
-    videoSwapTimer = setTimeout(function () {
-      videoSwapTimer = null;
-      if (outgoing) {
-        try { outgoing.pause(); } catch (err) { /* ignore */ }
-      }
-      preloadNext();
-    }, 1500);
-  }
-
-  // Release the decoders and the network requests (source change or teardown).
+  // Release the decoder and the network request (source change or teardown).
   function teardownVideo() {
     videoSlideshow = false;
     videoClips = [];
     videoIndex = 0;
-    videoPreloaded = -1;
-    if (videoSwapTimer) {
-      clearTimeout(videoSwapTimer);
-      videoSwapTimer = null;
-    }
-    const els = videoEls;
-    videoEls = [];
-    videoFront = 0;
+    if (!videoEl) return;
+    const v = videoEl;
+    videoEl = null;
     videoPlaying = false;
-    for (let i = 0; i < els.length; i += 1) {
-      const v = els[i];
-      if (videoErrorListener) {
-        try { v.removeEventListener('error', videoErrorListener); } catch (err) { /* ignore */ }
-      }
-      v.removeEventListener('playing', onVideoPlaying);
-      v.removeEventListener('ended', onVideoEnded);
-      v.removeEventListener('timeupdate', onVideoTimeUpdate);
-      try { v.pause(); } catch (err) { /* ignore */ }
-      v.removeAttribute('src');
-      try { v.load(); } catch (err) { /* ignore */ }
-      if (v.parentNode) v.parentNode.removeChild(v);
-    }
+    if (videoErrorListener) v.removeEventListener('error', videoErrorListener);
     videoErrorListener = null;
+    v.removeEventListener('playing', onVideoPlaying);
+    v.removeEventListener('ended', onVideoEnded);
+    try { v.pause(); } catch (err) { /* ignore */ }
+    v.removeAttribute('src');
+    try { v.load(); } catch (err) { /* ignore */ }
+    if (v.parentNode) v.parentNode.removeChild(v);
     layer.classList.remove('has-video');
     syncMovingBackground();
   }
@@ -392,33 +276,30 @@ export function createBackgroundController(elements, getConfig) {
   // the surface was hidden.
   function syncVideoPlayback() {
     if (!wallpaperShouldAnimate()) {
-      for (let i = 0; i < videoEls.length; i += 1) {
-        if (!videoEls[i].paused) {
-          try { videoEls[i].pause(); } catch (err) { /* ignore */ }
-        }
+      if (videoEl && !videoEl.paused) {
+        try { videoEl.pause(); } catch (err) { /* ignore */ }
       }
       return;
     }
-    const front = frontVideo();
-    if (!front) {
+    if (!videoEl) {
       if (videoClips.length) {
         playVideoClip(normalizeBackgroundConfig(getConfig().background), refreshGen);
       }
       return;
     }
-    if (!front.paused) return;
-    if (front.error) {
+    if (!videoEl.paused) return;
+    if (videoEl.error) {
       // The clip broke while we were away: start a fresh attempt (retry/skip)
       // rather than play() the dead element, which would reject silently.
       playVideoClip(normalizeBackgroundConfig(getConfig().background), refreshGen);
       return;
     }
     try {
-      const p = front.play();
+      const p = videoEl.play();
       if (p && p.catch) p.catch(function () {
         // A source that died while we were away can reject here; if the element
         // now reports an error, make a fresh attempt instead of stalling.
-        if (front.error) {
+        if (videoEl && videoEl.error) {
           playVideoClip(normalizeBackgroundConfig(getConfig().background), refreshGen);
         }
       });
@@ -441,19 +322,17 @@ export function createBackgroundController(elements, getConfig) {
   // resume path starts it instead of decoding for nobody).
   async function playVideoClip(bg, gen) {
     if (!wallpaperShouldAnimate()) return false;
-    if (!videoEls.length) ensureVideo();
-    const front = frontVideo();
-    if (!front || !videoClips.length) return false;
     const attempt = ++videoAttempt;
     const clip = videoClips[videoIndex % videoClips.length];
-    front.loop = !videoSlideshow;
+    const video = ensureVideo();
+    video.loop = !videoSlideshow;
     // Bind the "error" event to this load, and detach the previous load's so a
     // late error from a clip we already moved on from is not counted again.
-    if (videoErrorListener) front.removeEventListener('error', videoErrorListener);
+    if (videoErrorListener) video.removeEventListener('error', videoErrorListener);
     videoErrorListener = function () {
       handleVideoFailure(attempt);
     };
-    front.addEventListener('error', videoErrorListener);
+    video.addEventListener('error', videoErrorListener);
 
     // Gradient poster behind the clip until its first frame paints.
     layer.style.backgroundImage = PRESETS[bg.preset] || PRESETS['warm-gradient'];
@@ -463,15 +342,11 @@ export function createBackgroundController(elements, getConfig) {
     layer.classList.remove('ken-burns');
     layer.classList.remove('gradient-animated');
 
-    if (front.getAttribute('src') !== clip.url) {
-      front.setAttribute('src', clip.url);
+    if (video.getAttribute('src') !== clip.url) {
+      video.setAttribute('src', clip.url);
     }
-    // Reveal now rather than waiting on a "playing" event: the element's own
-    // background (dark, like the layer) covers the first-frame gap.
-    revealFront(front);
-    videoPreloaded = -1;
     try {
-      await front.play();
+      await video.play();
     } catch (err) {
       if (gen !== refreshGen) return false;
       // play() aborted by a pause (the surface hid mid-start) is not a decode
@@ -497,14 +372,14 @@ export function createBackgroundController(elements, getConfig) {
       return item && item.kind === MEDIA_VIDEO && item.url;
     });
     if (!clips.length) {
-      fallbackToGradient(bg);
+      failToGradient(bg);
       return false;
     }
 
     // Offline: don't fire the whole catalog at Apple's CDN; hold the gradient
     // and let a later return try again when connectivity is back.
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      fallbackToGradient(bg);
+      failToGradient(bg);
       return false;
     }
 
@@ -513,9 +388,61 @@ export function createBackgroundController(elements, getConfig) {
     videoIndex = 0;
     videoFailures = 0;
     videoHandledAttempt = 0;
-    videoPreloaded = -1;
     const ok = await playVideoClip(bg, gen);
     return ok && !videoFellBack;
+  }
+
+  /**
+   * Channel Up / Channel Down (and Blue) on an aerial wallpaper: step to the
+   * next / previous clip. Single steps the settings catalog and is remembered
+   * by the host; Slideshow steps the order actually playing (shuffled if
+   * enabled). Returns the landed clip ({id, title, mode}) or null when there is
+   * nothing to switch to (source not aerial, no clip loaded, or the gradient
+   * fallback). The jump is a hard cut: the chosen clip is loaded into the one
+   * <video> buffer and played.
+   */
+  function stepAerial(direction) {
+    const dir = direction < 0 ? -1 : 1;
+    const bg = normalizeBackgroundConfig(getConfig().background);
+    if (bg.source !== 'aerial') return null;
+    if (videoFellBack) return null;
+    if (!videoClips.length) return null;
+
+    let clip;
+    if (videoSlideshow) {
+      if (videoClips.length < 2) return null;
+      videoIndex = (videoIndex + dir + videoClips.length) % videoClips.length;
+      clip = videoClips[videoIndex];
+    } else {
+      const current = videoClips[videoIndex % videoClips.length];
+      const catalogIndex = aerialClipIndexByUrl(current.url);
+      const nextIndex =
+        (catalogIndex + dir + AERIAL_BACKGROUNDS.length) % AERIAL_BACKGROUNDS.length;
+      clip = AERIAL_BACKGROUNDS[nextIndex];
+      // Single plays one clip: swap in the landed clip as the one on screen.
+      videoClips = [{kind: MEDIA_VIDEO, url: clip.url}];
+      videoIndex = 0;
+    }
+    if (!clip || !clip.url) return null;
+    // Slideshow descriptors carry only {kind, url}: resolve id/title from the
+    // catalog so the toast and Single-mode persistence have them.
+    const resolved = aerialClipByUrl(clip.url) || clip;
+
+    // A manual pick starts clean: don't inherit a pending failure count.
+    videoFailures = 0;
+    videoHandledAttempt = 0;
+    playVideoClip(bg, refreshGen);
+
+    const change = {
+      id: resolved.id || '',
+      title: resolved.title || '',
+      mode: videoSlideshow ? 'slideshow' : 'single'
+    };
+    // Tell the host first so its persistence (Single) lands before we fold the
+    // new choice into the signature — a later return then reuses this clip.
+    if (elements.onAerialChange) elements.onAerialChange(change);
+    appliedSignature = configSignature();
+    return change;
   }
 
   function showSlideshowImage() {
@@ -580,11 +507,18 @@ export function createBackgroundController(elements, getConfig) {
    *   keeps going); loading it again decoded the 4K photo and asked the TV for
    *   USB folders on every return, which slow TVs felt as lag.
    */
+  // What the wallpaper on screen was made from. Computed from the resolved
+  // config so a remote clip switch can be folded in after it is persisted.
+  function configSignature(config) {
+    const c = config || getConfig();
+    return JSON.stringify([
+      c.background || {}, c.profile || '', !!(c.launcher && c.launcher.perfMode)
+    ]);
+  }
+
   async function refresh(opts) {
     const config = getConfig();
-    const signature = JSON.stringify([
-      config.background || {}, config.profile || '', !!(config.launcher && config.launcher.perfMode)
-    ]);
+    const signature = configSignature(config);
     if (opts && opts.reuse && appliedSignature && signature === appliedSignature) {
       applyScrim();
       // Returning from an app: the clip is already loaded (unpainted changes are
@@ -662,6 +596,7 @@ export function createBackgroundController(elements, getConfig) {
 
   return {
     refresh: refresh,
+    stepAerial: stepAerial,
     destroy: function () {
       clearSlideshow();
       teardownVideo();

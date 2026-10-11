@@ -11,7 +11,9 @@ export const REMOTE_KEY = {
   BLUE: 406,
   VOLUME_UP: 447,
   VOLUME_DOWN: 448,
-  VOLUME_MUTE: 449
+  VOLUME_MUTE: 449,
+  CHANNEL_UP: 427,
+  CHANNEL_DOWN: 428
 };
 
 // Number keys on the remote or a physical keyboard. The digit row reports

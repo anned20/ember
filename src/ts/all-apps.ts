@@ -6,6 +6,7 @@
  */
 
 import {listInstalledApps} from './apps.js';
+import {indexInRow} from './focus-row.js';
 import {lazyLoadIcon} from './app-catalog.js';
 import type {AppRecord} from './types.js';
 
@@ -86,7 +87,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'app-tile all-apps-tile focusable';
-    button.dataset.focusIndex = String(5000 + index);
+    button.dataset.focusIndex = String(indexInRow('all-apps', index));
     button.setAttribute('aria-label', app.title);
 
     const label = document.createElement('span');

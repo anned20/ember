@@ -1,6 +1,13 @@
 import type {RemoteKey} from './remote.js';
 import {REMOTE_KEY, digitFromKey} from './remote.js';
 import {
+  createRow,
+  neighbourRows,
+  rowById,
+  rowOf
+} from './focus-row.js';
+import type {Direction, RowId} from './focus-row.js';
+import {
   isSettingsTextField,
   isEditingSettingsText,
   beginSettingsTextEdit,
@@ -49,16 +56,6 @@ interface FocusEl extends HTMLElement {
   options: HTMLOptionsCollection;
   selectedIndex: number;
   __step?: (dir: number) => void;
-}
-
-function focusRow(el: FocusEl | null): string {
-  if (!el) return '';
-  if (el.closest('#input-row')) return 'inputs';
-  if (el.closest('#channel-strip')) return 'channels';
-  if (el.closest('#app-grid')) return 'apps';
-  if (el.closest('#music-bar')) return 'music';
-  if (el.closest('#settings-panel')) return 'settings';
-  return 'other';
 }
 
 export function createFocusManager(
@@ -152,7 +149,7 @@ export function createFocusManager(
     let node: HTMLElement | null = el;
     // Settings keeps about a row of look-ahead, so the next row is already on
     // screen before Down reaches it and the list moves one row per press.
-    const margin = focusRow(el) === 'settings' ? 72 : 28;
+    const margin = rowOf(el) === 'settings' ? 72 : 28;
     while (node && node !== document.body) {
       const container = scrollableAncestor(node, 'y');
       if (!container) break;
@@ -184,7 +181,7 @@ export function createFocusManager(
     root.querySelectorAll<FocusEl>('.settings-row-highlight').forEach(function (item) {
       item.classList.remove('settings-row-highlight');
     });
-    if (!el || focusRow(el) !== 'settings') return;
+    if (!el || rowOf(el) !== 'settings') return;
     // Prefer the whole labeled row / track row so the eye tracks while scrolling.
     // Photo tiles: only the focused tile gets row-highlight; is-selected stays
     // on the chosen wallpaper separately.
@@ -205,7 +202,7 @@ export function createFocusManager(
     try {
       if (typeof el.tabIndex === 'number' && el.tabIndex < 0) el.tabIndex = 0;
     } catch (err) { /* ignore */ }
-    const inSettings = focusRow(el) === 'settings';
+    const inSettings = rowOf(el) === 'settings';
     // Settings: a plain focus() makes Chromium scroll an off-screen row to the
     // middle of the panel, so one Down press jumped the list 7-8 rows.
     // ensureVerticallyVisible below scrolls just far enough instead.
@@ -311,7 +308,7 @@ export function createFocusManager(
     if (!active || !target || active === target) return false;
     if (!active.classList.contains('focusable')) return false;
     if (pointerAxis !== 'horizontal') return false;
-    return focusRow(active) !== focusRow(target);
+    return rowOf(active) !== rowOf(target);
   }
 
   function onPointerMove(event: MouseEvent): void {
@@ -467,20 +464,17 @@ export function createFocusManager(
     if (!active || !active.classList || !active.classList.contains('settings-tab')) {
       return false;
     }
-    const tabs = settingsTabButtons();
-    if (!tabs.length) return false;
-    const idx = tabs.indexOf(active);
+    const row = createRow(rowById('settings-tabs')!, settingsTabButtons);
+    if (!row.tiles().length) return false;
 
     if (keyCode === REMOTE_KEY.DOWN) {
-      if (idx >= 0 && idx < tabs.length - 1) {
-        return activateSettingsTabButton(tabs[idx + 1]);
-      }
+      const next = row.moveWithin(active, 1, isFocusable);
+      if (next) return activateSettingsTabButton(next);
       return true; // swallow at edge
     }
     if (keyCode === REMOTE_KEY.UP) {
-      if (idx > 0) {
-        return activateSettingsTabButton(tabs[idx - 1]);
-      }
+      const prev = row.moveWithin(active, -1, isFocusable);
+      if (prev) return activateSettingsTabButton(prev);
       // Past the top of the list: Save, then Close, in the header.
       const actions = settingsHeaderActions();
       if (actions.length && focusItem(actions[0])) return true;
@@ -506,16 +500,17 @@ export function createFocusManager(
    */
   function moveSettingsHeaderAction(active: FocusEl, keyCode: number): boolean {
     if (!isSettingsHeaderAction(active)) return false;
-    const actions = settingsHeaderActions();
-    if (!actions.length) return false;
-    const idx = actions.indexOf(active);
+    const row = createRow(rowById('settings-header')!, settingsHeaderActions);
+    if (!row.tiles().length) return false;
 
     if (keyCode === REMOTE_KEY.RIGHT) {
-      if (idx >= 0 && idx < actions.length - 1) return focusItem(actions[idx + 1]);
+      const next = row.moveWithin(active, 1, isFocusable);
+      if (next) return focusItem(next);
       return true;
     }
     if (keyCode === REMOTE_KEY.LEFT) {
-      if (idx > 0) return focusItem(actions[idx - 1]);
+      const prev = row.moveWithin(active, -1, isFocusable);
+      if (prev) return focusItem(prev);
       return true;
     }
     if (keyCode === REMOTE_KEY.DOWN) {
@@ -812,7 +807,7 @@ export function createFocusManager(
 
     collect();
     const activeEl = document.activeElement as FocusEl | null;
-    const current = activeEl && focusRow(activeEl) === 'settings' ? activeEl : null;
+    const current = activeEl && rowOf(activeEl) === 'settings' ? activeEl : null;
     const before = document.activeElement;
     moveSequential(current, dir);
     // If focus could not step (stuck / empty list), still scroll the pane.
@@ -868,20 +863,17 @@ export function createFocusManager(
   // Returns false when there is no same-row neighbour (row edge) so the caller
   // can continue across rows via moveByGlobalIndex.
   function moveByIndexInRow(active: FocusEl, delta: number): boolean {
-    const row = focusRow(active);
+    const def = rowById(rowOf(active));
+    if (!def) return false;
     const scoped = items.filter(function (item: FocusEl) {
-      return focusRow(item) === row;
+      return rowOf(item) === def.id;
     });
-    const idx = scoped.indexOf(active);
-    if (idx < 0) return false;
     // Walk outward skipping any neighbour that refuses focus, so a single
-    // hidden/unfocusable tile can't wedge left/right navigation.
-    for (let i = idx + delta; i >= 0 && i < scoped.length; i += delta) {
-      const next = scoped[i];
-      if (!isFocusable(next)) continue;
-      if (focusItem(next)) return true;
-    }
-    return false; // at the row edge (or no focusable neighbour); cross rows
+    // hidden/unfocusable tile can't wedge left/right navigation. False at the
+    // row edge (or no focusable neighbour) so the caller crosses rows.
+    const row = createRow(def, function () { return scoped; });
+    const next = row.moveWithin(active, delta, isFocusable);
+    return !!(next && focusItem(next));
   }
 
   // Final horizontal fallback: walk every focusable (except the settings
@@ -891,7 +883,7 @@ export function createFocusManager(
   // launching an app" freeze).
   function moveByGlobalIndex(active: FocusEl, delta: number): boolean {
     const scoped = items.filter(function (item: FocusEl) {
-      return focusRow(item) !== 'settings';
+      return rowOf(item) !== 'settings';
     });
     const idx = scoped.indexOf(active);
     if (idx < 0) return false;
@@ -968,19 +960,12 @@ export function createFocusManager(
     return !!(best && focusItem(best));
   }
 
-  // True when `el` is on the app grid's top row of tiles.
-  function onTopTileRow(el: FocusEl): boolean {
-    const grid = root.querySelector<FocusEl>('#app-grid');
-    if (!grid || !el) return false;
-    const tiles: FocusEl[] = Array.prototype.filter.call(
-      grid.querySelectorAll<FocusEl>('.focusable'),
-      isFocusable
-    );
-    if (!tiles.length) return false;
-    const top = Math.min.apply(null, tiles.map(function (t) {
-      return t.getBoundingClientRect().top;
-    }));
-    return el.getBoundingClientRect().top - top <= SAME_ROW_PX;
+  // Land on the nearest control of a named neighbour row (focus-row.ts).
+  function focusRowNeighbour(id: RowId, cx: number): boolean {
+    const def = rowById(id);
+    if (!def || !def.containerSelector) return false;
+    const container = root.querySelector<FocusEl>(def.containerSelector);
+    return focusNearestIn(container, cx, def.entry === 'top-row');
   }
 
   function focusSettingsButton(): boolean {
@@ -1036,7 +1021,7 @@ export function createFocusManager(
 
     // Entire Settings panel: sequential focus order (up/down and non-stepper left/right).
     // Photo grid gets special 2D handling first.
-    if (focusRow(active) === 'settings') {
+    if (rowOf(active) === 'settings') {
       // Save / Close header, then the category list.
       if (moveSettingsHeaderAction(active, keyCode)) return;
       if (moveSettingsTab(active, keyCode)) return;
@@ -1088,36 +1073,24 @@ export function createFocusManager(
     const cy = rect.top + rect.height / 2;
 
     // Between the home rows (channel strip when open, inputs, app tiles):
-    // Up/Down go straight to the nearest control in the next row. The rows'
+    // Up/Down hand off to the neighbour row nearest this column. The rows'
     // items rarely line up (chip and tile widths differ, names vary), so the
     // column-limited search below often found nothing: Down from HDMI 1 did
     // nothing on a TV with wider tile spacing, and Up would rather reach the
-    // Settings gear than the strip.
+    // Settings gear than the strip. The row-to-row edges live in focus-row.ts.
     if (isVertical) {
-      const row = focusRow(active);
-      const strip = root.querySelector<FocusEl>('#channel-strip');
-      const inputRow = root.querySelector<FocusEl>('#input-row');
-      const grid = root.querySelector<FocusEl>('#app-grid');
+      const row = rowOf(active);
+      const dir: Direction = keyCode === REMOTE_KEY.DOWN ? 'down' : 'up';
       // Wrapped app rows: a shorter row is centred under the one above, so
-      // its tiles sit half a tile to the side, outside the column search
-      // below. Down from a tile "in between" did nothing; only the pointer
-      // reached the bottom row.
+      // its tiles sit half a tile to the side, outside the column search.
+      // Move within the grid first; only a grid edge hands off to a row.
       if (row === 'apps' &&
-          focusAdjacentTileRow(active, keyCode === REMOTE_KEY.DOWN ? 1 : -1, cx)) {
+          focusAdjacentTileRow(active, dir === 'down' ? 1 : -1, cx)) {
         return;
       }
-      if (keyCode === REMOTE_KEY.DOWN) {
-        if (row === 'channels' && (focusNearestIn(inputRow, cx) || focusNearestIn(grid, cx, true))) {
-          return;
-        }
-        if (row === 'inputs' && focusNearestIn(grid, cx, true)) return;
-      }
-      if (keyCode === REMOTE_KEY.UP) {
-        if (row === 'inputs' && focusNearestIn(strip, cx)) return;
-        if (row === 'apps' && onTopTileRow(active) &&
-            (focusNearestIn(inputRow, cx) || focusNearestIn(strip, cx))) {
-          return;
-        }
+      const neighbours = neighbourRows(row, dir);
+      for (let n = 0; n < neighbours.length; n += 1) {
+        if (focusRowNeighbour(neighbours[n], cx)) return;
       }
     }
 
@@ -1128,7 +1101,7 @@ export function createFocusManager(
       if (item === active) return;
       if (!isFocusable(item)) return; // skip hidden/zero-size tiles that still report a rect
       // Don't spatial-nav into the settings overlay panel from the home dock.
-      if (focusRow(item) === 'settings') return;
+      if (rowOf(item) === 'settings') return;
 
       const r = item.getBoundingClientRect();
       const ix = r.left + r.width / 2;
@@ -1172,7 +1145,7 @@ export function createFocusManager(
 
     // Spatial search found nothing. Horizontal: index-order through the dock.
     if (isHorizontal) {
-      const row = focusRow(active);
+      const row = rowOf(active);
       if (row !== 'settings') {
         const delta = keyCode === REMOTE_KEY.RIGHT ? 1 : -1;
         if (moveByIndexInRow(active, delta)) return;
@@ -1184,7 +1157,7 @@ export function createFocusManager(
     // Vertical edges: UP always reaches Settings; DOWN from Settings returns
     // to the dock (inputs / apps). This is the main 10-foot path to the gear.
     if (keyCode === REMOTE_KEY.UP) {
-      if (focusRow(active) !== 'settings' && !isTopChrome(active)) {
+      if (rowOf(active) !== 'settings' && !isTopChrome(active)) {
         if (focusSettingsButton()) return;
       }
     }
@@ -1341,7 +1314,7 @@ export function createFocusManager(
       moveDirection(code);
       // Remember home screen moves, so the opposite key can go straight back.
       const to = document.activeElement as FocusEl | null;
-      lastMove = to !== from && focusRow(to) !== 'settings' ? {from: from, to: to, key: code} : null;
+      lastMove = to !== from && rowOf(to) !== 'settings' ? {from: from, to: to, key: code} : null;
       return;
     }
     if (code === REMOTE_KEY.ENTER) {

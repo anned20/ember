@@ -17,6 +17,7 @@ import {
 import {AERIAL_BACKGROUNDS} from './aerials.js';
 import {loadBuiltinMusicManifest, normalizeMusicConfig} from './builtin-music.js';
 import {applyActiveProfile, getProfileOverrides, PROFILE_OPTIONS} from './profiles.js';
+import {indexInRow} from './focus-row.js';
 import {fetchInputDevices, inputFromId, isTvInputId} from './inputs.js';
 import {findLoungeRoots, joinPath, discoverMusicTracks} from './usb.js';
 import {
@@ -576,7 +577,7 @@ export function createSettingsPanel(
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'settings-close focusable';
-    closeBtn.dataset.focusIndex = '900';
+    closeBtn.dataset.focusIndex = String(indexInRow('settings-header', 1));
     closeBtn.textContent = 'Close';
     closeBtn.addEventListener('click', requestHide);
     headerActions.appendChild(closeBtn);
@@ -965,7 +966,7 @@ export function createSettingsPanel(
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'settings-close focusable';
-    closeBtn.dataset.focusIndex = '900';
+    closeBtn.dataset.focusIndex = String(indexInRow('settings-header', 1));
     closeBtn.textContent = 'Close';
     closeBtn.addEventListener('click', requestHide);
     headerActions.appendChild(closeBtn);
@@ -1012,7 +1013,7 @@ export function createSettingsPanel(
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'settings-tab focusable' + (i === 0 ? ' active' : '');
-      btn.dataset.focusIndex = String(890 + i);
+      btn.dataset.focusIndex = String(indexInRow('settings-tabs', i));
       btn.setAttribute('role', 'tab');
       btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
       btn.dataset.tab = cat.id;
@@ -2190,7 +2191,7 @@ export function createSettingsPanel(
     let selectedAerialId = bg.aerial || (AERIAL_BACKGROUNDS[0] && AERIAL_BACKGROUNDS[0].id) || '';
     const aerialGallery = createGallery({
       heading: 'Choose an aerial clip (' + AERIAL_BACKGROUNDS.length + ' \u00b7 streams from Apple)',
-      focusIndex: 905,
+      focusIndex: indexInRow('settings-photo', 0),
       gridClassName: 'aerial-picker-grid',
       selectedId: selectedAerialId,
       entries: AERIAL_BACKGROUNDS.map(function (entry) {
@@ -2213,7 +2214,7 @@ export function createSettingsPanel(
     let selectedBuiltinId = bg.builtin || (builtinManifest[0] && builtinManifest[0].id) || '';
     const builtinGallery = createGallery({
       heading: 'Choose a built-in photo (~3840px, sharp on 4K)',
-      focusIndex: 905,
+      focusIndex: indexInRow('settings-photo', 0),
       selectedId: selectedBuiltinId,
       entries: (builtinManifest || []).map(function (entry) {
         return {
@@ -2303,7 +2304,7 @@ export function createSettingsPanel(
     };
     const remoteGallery = createGallery({
       heading: 'Choose an online photo (' + REMOTE_BACKGROUNDS.length + ' network images · nature + anime)',
-      focusIndex: 905,
+      focusIndex: indexInRow('settings-photo', 0),
       selectedId: selectedRemoteId,
       entries: REMOTE_BACKGROUNDS.map(function (entry): GalleryEntry {
         return {
@@ -3805,7 +3806,7 @@ export function createSettingsPanel(
     saveBtn = document.createElement('button');
     saveBtn.type = 'button';
     saveBtn.className = 'settings-save focusable';
-    saveBtn.dataset.focusIndex = '899';
+    saveBtn.dataset.focusIndex = String(indexInRow('settings-header', 0));
     saveBtn.textContent = 'Save';
     saveBtn.addEventListener('click', function () {
       // AI tab: send the voice service its settings only.

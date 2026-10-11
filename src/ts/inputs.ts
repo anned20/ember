@@ -1,4 +1,5 @@
 import {getAllInputStatus, getAllInputStatusViaRoot, switchInput} from './luna.js';
+import {indexInRow} from './focus-row.js';
 import type {Config, LauncherConfig, LunaResponse} from './types.js';
 
 const TV_INPUT_IDS = ['TV', 'LIVE_TV', 'TUNER'];
@@ -86,7 +87,7 @@ export function createInputRow(
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'input-chip focusable';
-      button.dataset.focusIndex = String(100 + index);
+      button.dataset.focusIndex = String(indexInRow('inputs', index));
       button.dataset.inputId = device.id;
       button.textContent = labelFor(device);
 
@@ -106,7 +107,7 @@ export function createInputRow(
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'input-chip input-chip-channels focusable';
-      button.dataset.focusIndex = String(100 + visible.length);
+      button.dataset.focusIndex = String(indexInRow('inputs', visible.length));
       button.dataset.channelsChip = '1';
       button.textContent = 'Channels';
       button.setAttribute('aria-expanded', channels.isOpen() ? 'true' : 'false');

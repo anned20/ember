@@ -9,6 +9,7 @@
  */
 
 import {getTvChannelNow, getTvChannels, launchApp, launchAppViaRoot, openTvChannel} from './luna.js';
+import {indexInRow} from './focus-row.js';
 import type {TvChannel} from './luna.js';
 import type {Config, LauncherConfig} from './types.js';
 
@@ -129,7 +130,7 @@ export function createChannelStrip(
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'channel-chip focusable' + (extraClass ? ' ' + extraClass : '');
-    button.dataset.focusIndex = String(150 + strip!.children.length);
+    button.dataset.focusIndex = String(indexInRow('channels', strip!.children.length));
     const num = document.createElement('span');
     num.className = 'channel-number';
     num.textContent = number;

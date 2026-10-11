@@ -10,6 +10,7 @@ import {
   setIconSrc
 } from './app-catalog.js';
 import {getAppIdCandidates, getBuiltinAppIcon} from './app-icons.js';
+import {indexInRow} from './focus-row.js';
 import type {AppCatalog, AppRecord, Config, CustomApp} from './types.js';
 
 const BUNDLED_SETTINGS_ICON = 'assets/app-icons/tv-settings.png';
@@ -134,7 +135,7 @@ export function createAppGrid(
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'app-tile focusable';
-    button.dataset.focusIndex = String(index);
+    button.dataset.focusIndex = String(indexInRow('apps', index));
     button.dataset.appId = app.id;
     button.setAttribute('aria-label', app.title);
 
@@ -168,7 +169,7 @@ export function createAppGrid(
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'app-tile settings-tile focusable';
-    button.dataset.focusIndex = String(index);
+    button.dataset.focusIndex = String(indexInRow('apps', index));
     button.dataset.action = 'tv-settings';
     button.setAttribute('aria-label', 'TV Settings');
 
@@ -213,7 +214,7 @@ export function createAppGrid(
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'app-tile all-apps-launcher focusable';
-    button.dataset.focusIndex = String(index);
+    button.dataset.focusIndex = String(indexInRow('apps', index));
     button.dataset.action = 'all-apps';
     button.setAttribute('aria-label', 'All apps');
 

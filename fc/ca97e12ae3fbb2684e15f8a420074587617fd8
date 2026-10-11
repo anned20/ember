@@ -1,0 +1,58 @@
+scripts/generate-aerials.js
+  s_2a912048e2ef9a::t_9348ea10462d46 75,81-82,85-87
+  s_2a912048e2ef9a::t_15e9eeb2ef5c10 76-80
+  s_2a912048e2ef9a::t_f2b19671a4aa2d 1-74,83-84,88-118
+src/js/settings.js
+  s_2a912048e2ef9a::t_dfb8a2d816d5fa 2110-2172
+  s_2a912048e2ef9a::t_31fd1c95ff207d 665-667
+  s_2a912048e2ef9a::t_f8aac2207aa091 3930
+  s_2a912048e2ef9a::t_1f13121ebaa834 646,651-652
+  s_2a912048e2ef9a::t_442decc809c572 16
+  s_2a912048e2ef9a::t_31609bee7ae1d6 2065-2066,2068-2070
+  s_2a912048e2ef9a::t_da8a5694687be0 2466
+src/styles/main.css
+  s_2a912048e2ef9a::t_93d041887365e2 2359-2375
+  s_2a912048e2ef9a::t_659b1b797d97ef 57-70
+src/js/aerials.js
+  s_2a912048e2ef9a::t_6724819db9eb5e 1-8,148
+  s_2a912048e2ef9a::t_0a2efac07bfe90 9-147
+src/js/config.js
+  s_2a912048e2ef9a::t_4b2cb79e126e9f 10
+  s_2a912048e2ef9a::t_67e73c9204c3b6 418-426
+  s_2a912048e2ef9a::t_6b4cd2e6e5f121 23-24
+src/js/backgrounds.js
+  s_2a912048e2ef9a::t_6c77b710a6b5d9 381-394,396-398
+  s_2a912048e2ef9a::t_45a7ec785232cf 380
+  s_2a912048e2ef9a::t_000a48ab733ade 379
+  s_2a912048e2ef9a::t_5ed0a1a5ad7bcf 283-284
+  s_2a912048e2ef9a::t_d61f2558301a28 4
+src/js/background.js
+  s_2a912048e2ef9a::t_b3548cd96a3aa0 1
+  s_2a912048e2ef9a::t_0dd397a02ebc67 269,274-279
+  s_2a912048e2ef9a::t_bdc639a2b6f319 318-321
+  s_2a912048e2ef9a::t_e8a9c4c792e271 171
+  s_2a912048e2ef9a::t_1d586a64bb1e4b 72
+  s_2a912048e2ef9a::t_99bf816af8cf01 111-170,172-200
+  s_2a912048e2ef9a::t_4b4a7ec20128d4 51-53
+  s_2a912048e2ef9a::t_5785417b2a3d80 280
+src/js/screensaver.js
+  s_2a912048e2ef9a::t_184ba71484ebc5 14
+  s_2a912048e2ef9a::t_cb5db72eee288a 243-245
+  s_2a912048e2ef9a::t_9a447fa1f0ad00 249
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fcca97e12ae3fbb2684e15f8a420074587617fd8",
+  "prompts": {},
+  "sessions": {
+    "s_2a912048e2ef9a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed5c58650ffepeVnPOWnFkQoAe",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

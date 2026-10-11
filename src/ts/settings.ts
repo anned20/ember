@@ -40,6 +40,18 @@ import {
 } from './voice-config.js';
 import {qrSvgMarkup} from './qr-svg.js';
 import {foldPlaceText, normalizeWeatherConfig, searchPlaces} from './weather.js';
+import {
+  labeledControl,
+  labeledBlock,
+  createHint,
+  createSection,
+  createToggle,
+  createTextField,
+  createMiniButton,
+  createAppRow,
+  createGallery
+} from './settings-controls.js';
+import type {GalleryEntry} from './settings-controls.js';
 import type {
   Config,
   CustomApp,
@@ -574,10 +586,7 @@ export function createSettingsPanel(
 
     const body = document.createElement('div');
     body.className = 'settings-body';
-    const loading = document.createElement('p');
-    loading.className = 'settings-hint settings-loading';
-    loading.textContent = 'Loading settings…';
-    body.appendChild(loading);
+    body.appendChild(createHint('Loading settings…', 'settings-loading'));
 
     panel.appendChild(header);
     panel.appendChild(body);
@@ -591,10 +600,7 @@ export function createSettingsPanel(
     const body = panel.querySelector('.settings-body');
     if (body) {
       body.innerHTML = '';
-      const msg = document.createElement('p');
-      msg.className = 'settings-hint';
-      msg.textContent = message || 'Could not load settings. Press Close and try again.';
-      body.appendChild(msg);
+      body.appendChild(createHint(message || 'Could not load settings. Press Close and try again.'));
     }
   }
 
@@ -642,27 +648,6 @@ export function createSettingsPanel(
       showErrorState('Could not load settings. Close and try again.');
       if (options.onRendered) options.onRendered();
     });
-  }
-
-  function labeledControl(label: string, control: Element): HTMLDivElement {
-    const wrap = document.createElement('div');
-    wrap.className = 'settings-row';
-    const span = document.createElement('span');
-    span.textContent = label;
-    wrap.appendChild(span);
-    wrap.appendChild(control);
-    return wrap;
-  }
-
-  function labeledBlock(label: string, control: Element): HTMLDivElement {
-    const wrap = document.createElement('div');
-    wrap.className = 'settings-block';
-    const heading = document.createElement('span');
-    heading.className = 'settings-block-label';
-    heading.textContent = label;
-    wrap.appendChild(heading);
-    wrap.appendChild(control);
-    return wrap;
   }
 
   function focusPhotoGallery(galleryEl: HTMLElement): void {
@@ -819,74 +804,63 @@ export function createSettingsPanel(
     pinnedOrder.forEach(function (appId, index) {
       const app: AppRecord = appsByIdMap[appId] ||
         {id: appId, launchId: undefined, title: appId, icon: ''};
-      const row = document.createElement('div');
-      row.className = 'settings-pinned-row';
-
-      if (app.icon) {
-        const icon = document.createElement('img');
-        icon.className = 'settings-app-icon';
-        icon.alt = '';
-        // TV-native icons are file:// paths WAM won't load directly.
-        icon.addEventListener('error', function () {
-          const bundled = getBuiltinAppIcon(app.launchId || app.id);
-          if (bundled && icon.dataset.fallbackTried !== '1') {
-            icon.dataset.fallbackTried = '1';
-            icon.src = bundled;
-            return;
-          }
-          icon.remove();
-        });
-        setIconSrc(icon, app.icon, undefined);
-        row.appendChild(icon);
-      }
-
-      const title = document.createElement('span');
-      title.className = 'settings-pinned-title';
-      title.textContent = app.title || app.id;
       // Not shown on the home row (see apps.js): say why, so it can go.
       const isCustom = customApps.some(function (entry) { return entry && entry.id === appId; });
-      if (!isCustom && !isAppInstalled(installedCatalog, appId)) {
-        title.textContent += ' \u2014 not installed on this TV';
-        row.classList.add('is-missing');
-      }
+      const missing = !isCustom && !isAppInstalled(installedCatalog, appId);
+      const row = createAppRow({
+        title: app.title || app.id,
+        icon: app.icon,
+        variant: 'pinned',
+        missing: missing,
+        titleSuffix: missing ? ' \u2014 not installed on this TV' : '',
+        mountIcon: function (icon) {
+          // TV-native icons are file:// paths WAM won't load directly.
+          icon.addEventListener('error', function () {
+            const bundled = getBuiltinAppIcon(app.launchId || app.id);
+            if (bundled && icon.dataset.fallbackTried !== '1') {
+              icon.dataset.fallbackTried = '1';
+              icon.src = bundled;
+              return;
+            }
+            icon.remove();
+          });
+          setIconSrc(icon, app.icon, undefined);
+        }
+      }).row;
 
-      const upBtn = document.createElement('button');
-      upBtn.type = 'button';
-      upBtn.className = 'settings-mini-btn focusable';
-      upBtn.dataset.focusIndex = String(1200 + index * 3);
-      upBtn.textContent = '↑';
+      const upBtn = createMiniButton({
+        label: '↑',
+        focusIndex: 1200 + index * 3,
+        onClick: function () { movePinned(index, -1); }
+      });
       // At the ends the arrow stays focusable but does nothing (dimmed): when
       // it was disabled, focus fell to the other arrow and the next OK moved
       // the app straight back.
       if (index === 0) upBtn.setAttribute('aria-disabled', 'true');
-      upBtn.addEventListener('click', function () { movePinned(index, -1); });
 
-      const downBtn = document.createElement('button');
-      downBtn.type = 'button';
-      downBtn.className = 'settings-mini-btn focusable';
-      downBtn.dataset.focusIndex = String(1201 + index * 3);
-      downBtn.textContent = '↓';
+      const downBtn = createMiniButton({
+        label: '↓',
+        focusIndex: 1201 + index * 3,
+        onClick: function () { movePinned(index, 1); }
+      });
       if (index === pinnedOrder.length - 1) downBtn.setAttribute('aria-disabled', 'true');
-      downBtn.addEventListener('click', function () { movePinned(index, 1); });
 
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'settings-mini-btn focusable';
-      removeBtn.dataset.focusIndex = String(1202 + index * 3);
-      removeBtn.textContent = '✕';
-      removeBtn.addEventListener('click', function () {
-        const keepFocus = container.contains(document.activeElement);
-        const removedId = pinnedOrder[index];
-        pinnedOrder.splice(index, 1);
-        for (let i = customApps.length - 1; i >= 0; i -= 1) {
-          if (customApps[i].id === removedId) customApps.splice(i, 1);
+      const removeBtn = createMiniButton({
+        label: '✕',
+        focusIndex: 1202 + index * 3,
+        onClick: function () {
+          const keepFocus = container.contains(document.activeElement);
+          const removedId = pinnedOrder[index];
+          pinnedOrder.splice(index, 1);
+          for (let i = customApps.length - 1; i >= 0; i -= 1) {
+            if (customApps[i].id === removedId) customApps.splice(i, 1);
+          }
+          renderPinnedList(container);
+          // The next app slides into this row; land on its ✕.
+          if (keepFocus) refocusListButton(container, index, [2]);
         }
-        renderPinnedList(container);
-        // The next app slides into this row; land on its ✕.
-        if (keepFocus) refocusListButton(container, index, [2]);
       });
 
-      row.appendChild(title);
       row.appendChild(upBtn);
       row.appendChild(downBtn);
       row.appendChild(removeBtn);
@@ -1164,53 +1138,38 @@ export function createSettingsPanel(
     // Settings opens on Look.
     setSettingsTab('look', {force: true});
 
-    const aiStatusSection = document.createElement('section');
-    aiStatusSection.className = 'settings-section';
-    aiStatusSection.innerHTML = '<h3>Voice service</h3>';
-    aiStatusLabel = document.createElement('p');
-    aiStatusLabel.className = 'settings-hint ai-status-line';
-    aiStatusLabel.textContent = 'Checking the voice service…';
+    const aiStatusSection = createSection('Voice service');
+    aiStatusLabel = createHint('Checking the voice service…', 'ai-status-line');
     aiStatusSection.appendChild(aiStatusLabel);
     aiCreditBanner = document.createElement('p');
     aiCreditBanner.className = 'ai-credit-banner';
     aiCreditBanner.hidden = true;
     aiStatusSection.appendChild(aiCreditBanner);
-    const aiStatusHint = document.createElement('p');
-    aiStatusHint.className = 'settings-hint';
-    aiStatusHint.textContent =
-      'Hold Voice on the Magic Remote to talk. Pick Grok, Gemini, or OpenRouter, add a key, then Save.';
-    aiStatusSection.appendChild(aiStatusHint);
+    aiStatusSection.appendChild(createHint(
+      'Hold Voice on the Magic Remote to talk. Pick Grok, Gemini, or OpenRouter, add a key, then Save.'
+    ));
     aiPane.appendChild(aiStatusSection);
 
     function makeKeyRow(label: string, focusIndex: number, placeholder: string): KeyRow {
-      const wrap = document.createElement('div');
-      wrap.className = 'settings-row settings-key-row';
-      const span = document.createElement('span');
-      span.textContent = label;
+      const field = createTextField({
+        label: label,
+        focusIndex: focusIndex,
+        type: 'password',
+        placeholder: placeholder || '',
+        spellcheck: false,
+        autocomplete: 'off'
+      });
+      field.row.classList.add('settings-key-row');
       const controls = document.createElement('div');
       controls.className = 'settings-key-controls';
-      const input = document.createElement('input');
-      input.type = 'password';
-      input.className = 'settings-text focusable';
-      input.dataset.focusIndex = String(focusIndex);
-      input.placeholder = placeholder || '';
-      input.spellcheck = false;
-      input.autocomplete = 'off';
-      const showBtn = document.createElement('button');
-      showBtn.type = 'button';
-      showBtn.className = 'settings-mini-btn focusable';
-      showBtn.dataset.focusIndex = String(focusIndex + 1);
-      showBtn.textContent = 'Show';
-      controls.appendChild(input);
+      controls.appendChild(field.input);
+      field.row.appendChild(controls);
+      const showBtn = createMiniButton({label: 'Show', focusIndex: focusIndex + 1});
       controls.appendChild(showBtn);
-      wrap.appendChild(span);
-      wrap.appendChild(controls);
-      return {row: wrap, input: input, showBtn: showBtn};
+      return {row: field.row, input: field.input, showBtn: showBtn};
     }
 
-    const aiKeySection = document.createElement('section');
-    aiKeySection.className = 'settings-section';
-    aiKeySection.innerHTML = '<h3>API keys</h3>';
+    const aiKeySection = createSection('API keys');
     aiAuthModeSelect = createOptionStepper('', 1990, [
       {value: 'API_KEY', label: 'Grok API key'},
       {value: 'SUPERGROK_OAUTH', label: 'SuperGrok sign-in'}
@@ -1224,16 +1183,12 @@ export function createSettingsPanel(
     aiGrokUsing.className = 'ai-using-badge';
     aiGrokUsing.hidden = true;
     aiKeySection.appendChild(aiGrokUsing);
-    const authHint = document.createElement('p');
-    authHint.className = 'settings-hint';
-    authHint.textContent = 'Get a key at console.x.ai — stored only on this TV.';
+    const authHint = createHint('Get a key at console.x.ai — stored only on this TV.');
     aiKeySection.appendChild(authHint);
 
     const oauthBox = document.createElement('div');
     oauthBox.hidden = true;
-    aiOauthStatus = document.createElement('p');
-    aiOauthStatus.className = 'settings-hint';
-    aiOauthStatus.textContent = 'SuperGrok: not signed in';
+    aiOauthStatus = createHint('SuperGrok: not signed in');
     oauthBox.appendChild(aiOauthStatus);
 
     // Full-panel modal so the QR cannot be scrolled away, dismissed by a
@@ -1268,15 +1223,14 @@ export function createSettingsPanel(
     aiOauthCode.className = 'ai-oauth-code';
     aiOauthCode.hidden = true;
     oauthCard.appendChild(aiOauthCode);
-    aiOauthHint = document.createElement('p');
-    aiOauthHint.className = 'settings-hint ai-oauth-modal-hint';
+    aiOauthHint = createHint('', 'ai-oauth-modal-hint');
     aiOauthHint.hidden = true;
     oauthCard.appendChild(aiOauthHint);
-    aiOauthModalCancel = document.createElement('button');
-    aiOauthModalCancel.type = 'button';
-    aiOauthModalCancel.className = 'settings-mini-btn focusable ai-oauth-modal-cancel';
-    aiOauthModalCancel.dataset.focusIndex = '1994';
-    aiOauthModalCancel.textContent = 'Cancel sign-in';
+    aiOauthModalCancel = createMiniButton({
+      label: 'Cancel sign-in',
+      focusIndex: '1994',
+      className: 'ai-oauth-modal-cancel'
+    });
     oauthCard.appendChild(aiOauthModalCancel);
     aiOauthModal.appendChild(oauthCard);
     next.appendChild(aiOauthModal);
@@ -1434,21 +1388,21 @@ export function createSettingsPanel(
     }
     const oauthRow = document.createElement('div');
     oauthRow.className = 'ai-oauth-row';
-    aiOauthSignInBtn = document.createElement('button');
-    aiOauthSignInBtn.type = 'button';
-    aiOauthSignInBtn.className = 'settings-mini-btn focusable btn-tone-ok';
-    aiOauthSignInBtn.dataset.focusIndex = '1991';
-    aiOauthSignInBtn.textContent = 'Sign in with SuperGrok';
-    aiOauthImportBtn = document.createElement('button');
-    aiOauthImportBtn.type = 'button';
-    aiOauthImportBtn.className = 'settings-mini-btn focusable btn-tone-quiet';
-    aiOauthImportBtn.dataset.focusIndex = '1992';
-    aiOauthImportBtn.textContent = 'Import login file';
-    aiOauthSignOutBtn = document.createElement('button');
-    aiOauthSignOutBtn.type = 'button';
-    aiOauthSignOutBtn.className = 'settings-mini-btn focusable btn-tone-danger';
-    aiOauthSignOutBtn.dataset.focusIndex = '1993';
-    aiOauthSignOutBtn.textContent = 'Sign out';
+    aiOauthSignInBtn = createMiniButton({
+      label: 'Sign in with SuperGrok',
+      focusIndex: '1991',
+      className: 'btn-tone-ok'
+    });
+    aiOauthImportBtn = createMiniButton({
+      label: 'Import login file',
+      focusIndex: '1992',
+      className: 'btn-tone-quiet'
+    });
+    aiOauthSignOutBtn = createMiniButton({
+      label: 'Sign out',
+      focusIndex: '1993',
+      className: 'btn-tone-danger'
+    });
     oauthRow.appendChild(aiOauthSignInBtn);
     oauthRow.appendChild(aiOauthImportBtn);
     oauthRow.appendChild(aiOauthSignOutBtn);
@@ -1671,27 +1625,27 @@ export function createSettingsPanel(
     aiApiKeyInput = xaiRow.input;
     aiApiKeyShowBtn = xaiRow.showBtn;
     aiKeySection.appendChild(xaiRow.row);
-    aiApiKeyHint = document.createElement('p');
-    aiApiKeyHint.className = 'settings-hint';
-    aiApiKeyHint.textContent = 'Get a key at console.x.ai — stored only on this TV. Leave blank to keep the current key.';
+    aiApiKeyHint = createHint(
+      'Get a key at console.x.ai — stored only on this TV. Leave blank to keep the current key.'
+    );
     aiKeySection.appendChild(aiApiKeyHint);
 
     gemRow = makeKeyRow('Gemini key', 2003, 'AIza…');
     aiGeminiKeyInput = gemRow.input;
     aiGeminiKeyShowBtn = gemRow.showBtn;
     aiKeySection.appendChild(gemRow.row);
-    aiGeminiKeyHint = document.createElement('p');
-    aiGeminiKeyHint.className = 'settings-hint';
-    aiGeminiKeyHint.textContent = 'Optional. Google AI Studio key (usually starts with AIza). Leave blank to keep current.';
+    aiGeminiKeyHint = createHint(
+      'Optional. Google AI Studio key (usually starts with AIza). Leave blank to keep current.'
+    );
     aiKeySection.appendChild(aiGeminiKeyHint);
 
     orRow = makeKeyRow('OpenRouter key', 2005, 'sk-or-…');
     aiOpenRouterKeyInput = orRow.input;
     aiOpenRouterKeyShowBtn = orRow.showBtn;
     aiKeySection.appendChild(orRow.row);
-    aiOpenRouterKeyHint = document.createElement('p');
-    aiOpenRouterKeyHint.className = 'settings-hint';
-    aiOpenRouterKeyHint.textContent = 'Get a key at openrouter.ai — stored only on this TV. Leave blank to keep current.';
+    aiOpenRouterKeyHint = createHint(
+      'Get a key at openrouter.ai — stored only on this TV. Leave blank to keep current.'
+    );
     aiKeySection.appendChild(aiOpenRouterKeyHint);
 
     aiApiKeyShowBtn.addEventListener('click', function () {
@@ -1739,21 +1693,15 @@ export function createSettingsPanel(
 
     aiPane.appendChild(aiKeySection);
 
-    const aiProviderSection = document.createElement('section');
-    aiProviderSection.className = 'settings-section';
-    aiProviderSection.innerHTML = '<h3>Assistant</h3>';
-    const providerHint = document.createElement('p');
-    providerHint.className = 'settings-hint';
-    providerHint.textContent = 'Who listens and answers when you press Voice.';
+    const aiProviderSection = createSection('Assistant');
+    const providerHint = createHint('Who listens and answers when you press Voice.');
     aiProviderSelect = createProviderPicker(1970, function () {
       syncProviderUi();
     });
     aiProviderSection.appendChild(aiProviderSelect);
     aiProviderSection.appendChild(providerHint);
 
-    const aiVoiceSection = document.createElement('section');
-    aiVoiceSection.className = 'settings-section';
-    aiVoiceSection.innerHTML = '<h3>Voice & chat</h3>';
+    const aiVoiceSection = createSection('Voice & chat');
     aiSttSelect = createOptionStepper('', 1973, [], '');
     aiVoiceSection.appendChild(labeledControl('Speech language', aiSttSelect));
     aiVoiceModelSelect = createOptionStepper('', 1974, [], '');
@@ -1783,10 +1731,9 @@ export function createSettingsPanel(
       {value: '30', label: '30 seconds'}
     ], '8');
     aiVoiceSection.appendChild(labeledControl('Answer card auto-dismiss', aiDismissSelect));
-    const aiSaveHint = document.createElement('p');
-    aiSaveHint.className = 'settings-hint';
-    aiSaveHint.textContent = 'Press Save after changes. Switching assistant or keys restarts the voice daemon.';
-    aiVoiceSection.appendChild(aiSaveHint);
+    aiVoiceSection.appendChild(createHint(
+      'Press Save after changes. Switching assistant or keys restarts the voice daemon.'
+    ));
 
     function currentAiProvider(): string {
       const v = aiProviderSelect && aiProviderSelect.value;
@@ -1869,28 +1816,24 @@ export function createSettingsPanel(
     // Voice assistant on/off. Launch Home installs and runs its own voice
     // daemon (voice/ in this app) as root; everything below talks to it, so
     // those sections only show while it is on.
-    const aiPowerSection = document.createElement('section');
-    aiPowerSection.className = 'settings-section';
-    aiPowerSection.innerHTML = '<h3>Voice assistant</h3>';
-    const aiPowerBtn = document.createElement('button');
-    aiPowerBtn.type = 'button';
-    aiPowerBtn.className = 'settings-mini-btn settings-scan-btn focusable';
-    aiPowerBtn.dataset.focusIndex = '1960';
+    const aiPowerSection = createSection('Voice assistant');
+    const aiPowerBtn = createMiniButton({
+      label: '',
+      focusIndex: '1960',
+      className: 'settings-scan-btn'
+    });
     aiPowerSection.appendChild(aiPowerBtn);
-    const aiPowerStatus = document.createElement('p');
-    aiPowerStatus.className = 'settings-hint ai-status-line';
+    const aiPowerStatus = createHint('', 'ai-status-line');
     aiPowerSection.appendChild(aiPowerStatus);
     const aiOtherVoice = document.createElement('p');
     aiOtherVoice.className = 'ai-credit-banner';
     aiOtherVoice.hidden = true;
     aiPowerSection.appendChild(aiOtherVoice);
-    const aiPowerHint = document.createElement('p');
-    aiPowerHint.className = 'settings-hint';
-    aiPowerHint.textContent =
+    aiPowerSection.appendChild(createHint(
       'Answers the Voice button on the Magic Remote with Grok, Gemini or OpenRouter. ' +
       'It runs in the background as root (Homebrew Channel). Turning it off hands the ' +
-      'button back to LG and keeps your keys and sign-in.';
-    aiPowerSection.appendChild(aiPowerHint);
+      'button back to LG and keeps your keys and sign-in.'
+    ));
 
     voiceOn = !!(config.launcher && config.launcher.voiceEnabled);
 
@@ -2165,9 +2108,7 @@ export function createSettingsPanel(
       });
     }
 
-    const profileSection = document.createElement('section');
-    profileSection.className = 'settings-section';
-    profileSection.innerHTML = '<h3>Profile</h3>';
+    const profileSection = createSection('Profile');
 
     const profileSelect = createOptionStepper('', 901,
       PROFILE_OPTIONS.map(function (entry) {
@@ -2177,15 +2118,12 @@ export function createSettingsPanel(
       function (value) { syncProfileBackgroundNote(value); });
     profileSection.appendChild(labeledControl('Active profile', profileSelect));
 
-    const profileHint = document.createElement('p');
-    profileHint.className = 'settings-hint';
-    profileHint.textContent = 'Night lowers ambient volume and darkens the scrim. Cinema disables music and uses a dark gradient.';
-    profileSection.appendChild(profileHint);
+    profileSection.appendChild(createHint(
+      'Night lowers ambient volume and darkens the scrim. Cinema disables music and uses a dark gradient.'
+    ));
     panes.look.appendChild(profileSection);
 
-    const section = document.createElement('section');
-    section.className = 'settings-section';
-    section.innerHTML = '<h3>Background</h3>';
+    const section = createSection('Background');
 
     const sourceSelect = createOptionStepper('', 902, [
       {value: 'preset', label: 'Gradient'},
@@ -2203,8 +2141,7 @@ export function createSettingsPanel(
 
     // A profile with its own background (Cinema) overrides the Source above.
     // Unexplained, Save looked like it reset photos back to Gradient.
-    const profileBgNote = document.createElement('p');
-    profileBgNote.className = 'settings-hint';
+    const profileBgNote = createHint('');
     section.appendChild(profileBgNote);
     function syncProfileBackgroundNote(profileId: string): void {
       const overrides = getProfileOverrides(
@@ -2239,180 +2176,80 @@ export function createSettingsPanel(
     section.appendChild(displayRow);
 
     // Aerial Slideshow only: randomise the clip order.
-    const bgShuffleToggle = document.createElement('input');
-    bgShuffleToggle.type = 'checkbox';
-    bgShuffleToggle.checked = !!bg.shuffle;
-    bgShuffleToggle.className = 'focusable';
-    bgShuffleToggle.dataset.focusIndex = '936';
-    const bgShuffleRow = labeledControl('Shuffle clips', bgShuffleToggle);
+    const bgShuffleField = createToggle({
+      label: 'Shuffle clips',
+      focusIndex: '936',
+      checked: !!bg.shuffle
+    });
+    const bgShuffleRow = bgShuffleField.row;
+    const bgShuffleToggle = bgShuffleField.input;
     section.appendChild(bgShuffleRow);
 
     // Aerial clips (Apple) — title-only picker; the clips stream from Apple's
     // CDN, so there are no packaged thumbnails to show.
     let selectedAerialId = bg.aerial || (AERIAL_BACKGROUNDS[0] && AERIAL_BACKGROUNDS[0].id) || '';
-    const aerialRow = document.createElement('div');
-    aerialRow.className = 'settings-block photo-picker-block';
-    const aerialHeading = document.createElement('span');
-    aerialHeading.className = 'settings-block-label';
-    aerialHeading.textContent =
-      'Choose an aerial clip (' + AERIAL_BACKGROUNDS.length + ' \u00b7 streams from Apple)';
-    aerialRow.appendChild(aerialHeading);
-
-    const aerialGrid = document.createElement('div');
-    aerialGrid.className = 'photo-picker-grid aerial-picker-grid';
-    aerialRow.appendChild(aerialGrid);
-
-    function markAerialSelection(): void {
-      const tiles = aerialGrid.querySelectorAll('.photo-picker-tile');
-      for (let i = 0; i < tiles.length; i += 1) {
-        const tile = tiles[i] as HTMLElement;
-        const id = tile.dataset.aerialId || '';
-        const isSel = id === selectedAerialId;
-        tile.classList.toggle('is-selected', isSel);
-        tile.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+    const aerialGallery = createGallery({
+      heading: 'Choose an aerial clip (' + AERIAL_BACKGROUNDS.length + ' \u00b7 streams from Apple)',
+      focusIndex: 905,
+      gridClassName: 'aerial-picker-grid',
+      selectedId: selectedAerialId,
+      entries: AERIAL_BACKGROUNDS.map(function (entry) {
+        return {id: entry.id, title: entry.title || entry.id, text: true};
+      }),
+      onSelect: function (id) {
+        selectedAerialId = id || '';
+        aerialGallery.markSelection(selectedAerialId);
       }
-    }
-
-    function selectAerial(id: string): void {
-      selectedAerialId = id || '';
-      markAerialSelection();
-    }
-
-    AERIAL_BACKGROUNDS.forEach(function (entry, index) {
-      const tile = document.createElement('div');
-      tile.className = 'photo-picker-tile photo-picker-tile-text focusable';
-      tile.setAttribute('role', 'button');
-      // Shares the gallery range with built-in / online; only one shows at once.
-      tile.dataset.focusIndex = String(905 + index);
-      tile.dataset.aerialId = entry.id;
-      tile.setAttribute('aria-label', entry.title || entry.id);
-      tile.tabIndex = 0;
-
-      const caption = document.createElement('span');
-      caption.className = 'photo-picker-caption';
-      caption.textContent = entry.title || entry.id;
-      caption.style.pointerEvents = 'none';
-
-      tile.appendChild(caption);
-      // Browse with arrows only; Select/click keeps is-selected when focus leaves.
-      tile.addEventListener('click', function (event) {
-        if (event && event.preventDefault) event.preventDefault();
-        selectAerial(entry.id);
-      });
-      aerialGrid.appendChild(tile);
     });
-    markAerialSelection();
-
-    const aerialHint = document.createElement('p');
-    aerialHint.className = 'settings-hint';
-    aerialHint.textContent =
-      'Clips stream from Apple\u2019s network (nothing is packaged) and play muted, full-screen and looping. The TV must be online; if a clip will not play, the gradient above is used instead. ' +
-      'Aerials are the heaviest background source (network plus continuous video decode), and Performance mode has no effect on video.';
-    aerialRow.appendChild(aerialHint);
+    const aerialRow = aerialGallery.row;
     section.appendChild(aerialRow);
+
+    aerialRow.appendChild(createHint(
+      'Clips stream from Apple\u2019s network (nothing is packaged) and play muted, full-screen and looping. The TV must be online; if a clip will not play, the gradient above is used instead. ' +
+      'Aerials are the heaviest background source (network plus continuous video decode), and Performance mode has no effect on video.'
+    ));
 
     // Built-in photo gallery (thumbnails) — only visible when Source is Built-in photos.
     let selectedBuiltinId = bg.builtin || (builtinManifest[0] && builtinManifest[0].id) || '';
-    const builtinRow = document.createElement('div');
-    builtinRow.className = 'settings-block photo-picker-block';
-    const builtinHeading = document.createElement('span');
-    builtinHeading.className = 'settings-block-label';
-    builtinHeading.textContent = 'Choose a built-in photo (~3840px, sharp on 4K)';
-    builtinRow.appendChild(builtinHeading);
-
-    const builtinGrid = document.createElement('div');
-    builtinGrid.className = 'photo-picker-grid';
-    builtinRow.appendChild(builtinGrid);
-
-    function markBuiltinSelection(): void {
-      const tiles = builtinGrid.querySelectorAll('.photo-picker-tile');
-      for (let i = 0; i < tiles.length; i += 1) {
-        const tile = tiles[i] as HTMLElement;
-        const id = tile.dataset.builtinId || '';
-        const isSel = id === selectedBuiltinId;
-        tile.classList.toggle('is-selected', isSel);
-        tile.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+    const builtinGallery = createGallery({
+      heading: 'Choose a built-in photo (~3840px, sharp on 4K)',
+      focusIndex: 905,
+      selectedId: selectedBuiltinId,
+      entries: (builtinManifest || []).map(function (entry) {
+        return {
+          id: entry.id,
+          title: entry.title || entry.id,
+          // 480px thumbnails: decoding the full wallpapers for 200px tiles
+          // stalled the panel on open and while scrolling past the gallery.
+          sources: [
+            builtinImageUrl('thumbs/' + entry.file),
+            builtinImageUrl(entry.file),
+            'assets/backgrounds/' + entry.file
+          ]
+        };
+      }),
+      onSelect: function (id) {
+        selectedBuiltinId = id || '';
+        builtinGallery.markSelection(selectedBuiltinId);
       }
-    }
-
-    function selectBuiltin(id: string): void {
-      selectedBuiltinId = id || '';
-      markBuiltinSelection();
-    }
-
-    (builtinManifest || []).forEach(function (entry, index) {
-      // div+role=button: native <button> on webOS often eats Select/OK and
-      // leaves focus stuck so you cannot scroll to the next settings rows.
-      const tile = document.createElement('div');
-      tile.className = 'photo-picker-tile focusable';
-      tile.setAttribute('role', 'button');
-      // 905… after Display (904), before USB filename (930).
-      tile.dataset.focusIndex = String(905 + index);
-      tile.dataset.builtinId = entry.id;
-      tile.setAttribute('aria-label', entry.title || entry.id);
-      tile.tabIndex = 0;
-
-      const img = document.createElement('img');
-      img.className = 'photo-picker-thumb';
-      img.alt = '';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.draggable = false;
-      img.style.pointerEvents = 'none';
-      // 480px thumbnails: decoding the full wallpapers for 200px tiles
-      // stalled the panel on open and while scrolling past the gallery.
-      const thumbSources = [
-        builtinImageUrl('thumbs/' + entry.file),
-        builtinImageUrl(entry.file),
-        'assets/backgrounds/' + entry.file
-      ];
-      let thumbIndex = 0;
-      img.src = thumbSources[0];
-      img.addEventListener('error', function () {
-        thumbIndex += 1;
-        if (thumbIndex >= thumbSources.length) {
-          tile.classList.add('photo-picker-thumb-failed');
-          return;
-        }
-        img.src = thumbSources[thumbIndex];
-      });
-
-      const caption = document.createElement('span');
-      caption.className = 'photo-picker-caption';
-      caption.textContent = entry.title || entry.id;
-      caption.style.pointerEvents = 'none';
-
-      tile.appendChild(img);
-      tile.appendChild(caption);
-      // Do NOT select on focus — arrows only browse. Select/OK/click chooses
-      // so the gold “is-selected” state stays when you scroll away.
-      tile.addEventListener('click', function (event) {
-        if (event && event.preventDefault) event.preventDefault();
-        selectBuiltin(entry.id);
-      });
-      builtinGrid.appendChild(tile);
     });
-    markBuiltinSelection();
-
-    const builtinPickHint = document.createElement('p');
-    builtinPickHint.className = 'settings-hint';
-    builtinPickHint.textContent =
-      'Packaged at ~3840px for 4K TVs; Performance mode downloads 1920px copies. Arrows browse \u00b7 OK chooses the photo and moves on.';
-    builtinRow.appendChild(builtinPickHint);
+    const builtinRow = builtinGallery.row;
+    builtinRow.appendChild(createHint(
+      'Packaged at ~3840px for 4K TVs; Performance mode downloads 1920px copies. Arrows browse \u00b7 OK chooses the photo and moves on.'
+    ));
     section.appendChild(builtinRow);
 
-    const usbHint = document.createElement('p');
-    usbHint.className = 'settings-hint';
-    usbHint.textContent = 'USB path: lounge/backgrounds/ with images.json. For a single file, enter the filename below.';
+    const usbHint = createHint('USB path: lounge/backgrounds/ with images.json. For a single file, enter the filename below.');
     section.appendChild(usbHint);
 
-    const usbFileInput = document.createElement('input');
-    usbFileInput.type = 'text';
-    usbFileInput.className = 'settings-text focusable';
-    usbFileInput.dataset.focusIndex = '930';
-    usbFileInput.placeholder = 'living-room.jpg';
-    usbFileInput.value = config.background.file || '';
-    const usbFileRow = labeledControl('USB filename', usbFileInput);
+    const usbField = createTextField({
+      label: 'USB filename',
+      focusIndex: '930',
+      placeholder: 'living-room.jpg',
+      value: config.background.file || ''
+    });
+    const usbFileInput = usbField.input;
+    const usbFileRow = usbField.row;
     section.appendChild(usbFileRow);
 
     // Match curated remote by saved id, else by URL, else default first entry.
@@ -2426,45 +2263,61 @@ export function createSettingsPanel(
       initialRemote = '';
     }
 
-    const urlHint = document.createElement('p');
-    urlHint.className = 'settings-hint';
-    urlHint.textContent = 'Loads over the network (not stored in the app package). Choose a photo below (nature or anime), or pick Custom URL and paste any direct https image link (Unsplash, Pexels, Wallhaven, your own host). TV must be online. Slideshow with no URLs uses the curated set.';
+    const urlHint = createHint('Loads over the network (not stored in the app package). Choose a photo below (nature or anime), or pick Custom URL and paste any direct https image link (Unsplash, Pexels, Wallhaven, your own host). TV must be online. Slideshow with no URLs uses the curated set.');
     section.appendChild(urlHint);
 
-    const urlInput = document.createElement('input');
-    urlInput.type = 'text';
-    urlInput.className = 'settings-text focusable';
-    urlInput.dataset.focusIndex = '931';
-    urlInput.placeholder = 'https://images.unsplash.com/photo-…';
+    const urlField = createTextField({
+      label: 'Image URL',
+      focusIndex: '931',
+      placeholder: 'https://images.unsplash.com/photo-…'
+    });
+    const urlInput = urlField.input;
+    const urlRow = urlField.row;
     // Prefer saved URL; if empty and a catalog pick is selected, prefill that.
     const remotePrefill = findRemoteBackgroundById(initialRemote);
     urlInput.value = bg.url || (remotePrefill && remotePrefill.url) || '';
 
     // Visual photo gallery (replaces text-only stepper) — D-pad pickable tiles.
     let selectedRemoteId = initialRemote;
-    const remoteRow = document.createElement('div');
-    remoteRow.className = 'settings-block photo-picker-block';
-    const remoteHeading = document.createElement('span');
-    remoteHeading.className = 'settings-block-label';
-    remoteHeading.textContent =
-      'Choose an online photo (' + REMOTE_BACKGROUNDS.length + ' network images · nature + anime)';
-    remoteRow.appendChild(remoteHeading);
-
-    const remoteGrid = document.createElement('div');
-    remoteGrid.className = 'photo-picker-grid';
-    remoteRow.appendChild(remoteGrid);
-
-    function markRemoteSelection(): void {
-      const tiles = remoteGrid.querySelectorAll('.photo-picker-tile');
-      for (let i = 0; i < tiles.length; i += 1) {
-        const tile = tiles[i] as HTMLElement;
-        const id = tile.dataset.remoteId || '';
-        const isSel = id === selectedRemoteId;
-        tile.classList.toggle('is-selected', isSel);
-        tile.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+    const customHint = document.createElement('span');
+    customHint.className = 'photo-picker-custom-hint';
+    customHint.textContent = 'Paste link below';
+    customHint.style.pointerEvents = 'none';
+    const customEntry: GalleryEntry = {
+      id: '',
+      title: 'Custom URL',
+      className: 'photo-picker-custom',
+      ariaLabel: 'Custom URL',
+      extra: customHint,
+      onSelect: function () {
+        selectRemote('');
+        try {
+          urlInput.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+        } catch (err) {
+          try { urlInput.scrollIntoView(true); } catch (err2) { /* ignore */ }
+        }
+        window.setTimeout(function () {
+          beginSettingsTextEdit(urlInput);
+        }, 120);
       }
+    };
+    const remoteGallery = createGallery({
+      heading: 'Choose an online photo (' + REMOTE_BACKGROUNDS.length + ' network images · nature + anime)',
+      focusIndex: 905,
+      selectedId: selectedRemoteId,
+      entries: REMOTE_BACKGROUNDS.map(function (entry): GalleryEntry {
+        return {
+          id: entry.id,
+          title: entry.title || entry.id,
+          sources: [remoteThumbUrl(entry.url)]
+        };
+      }).concat([customEntry]),
+      onSelect: function (id) { selectRemote(id); }
+    });
+    const remoteRow = remoteGallery.row;
+    function markRemoteSelection(): void {
+      remoteGallery.markSelection(selectedRemoteId);
     }
-
     function selectRemote(id: string): void {
       selectedRemoteId = id || '';
       const picked = findRemoteBackgroundById(selectedRemoteId);
@@ -2473,82 +2326,13 @@ export function createSettingsPanel(
       }
       markRemoteSelection();
     }
-
-    REMOTE_BACKGROUNDS.forEach(function (entry, index) {
-      const tile = document.createElement('div');
-      tile.className = 'photo-picker-tile focusable';
-      tile.setAttribute('role', 'button');
-      tile.dataset.focusIndex = String(905 + index);
-      tile.dataset.remoteId = entry.id;
-      tile.setAttribute('aria-label', entry.title || entry.id);
-      tile.tabIndex = 0;
-
-      const img = document.createElement('img');
-      img.className = 'photo-picker-thumb';
-      img.alt = '';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.draggable = false;
-      img.style.pointerEvents = 'none';
-      img.src = remoteThumbUrl(entry.url);
-      img.addEventListener('error', function () {
-        tile.classList.add('photo-picker-thumb-failed');
-      });
-
-      const caption = document.createElement('span');
-      caption.className = 'photo-picker-caption';
-      caption.textContent = entry.title || entry.id;
-      caption.style.pointerEvents = 'none';
-
-      tile.appendChild(img);
-      tile.appendChild(caption);
-      // Browse with arrows only; Select/click keeps is-selected when focus leaves.
-      tile.addEventListener('click', function (event) {
-        if (event && event.preventDefault) event.preventDefault();
-        selectRemote(entry.id);
-      });
-      remoteGrid.appendChild(tile);
-    });
-
-    const customTile = document.createElement('div');
-    customTile.className = 'photo-picker-tile photo-picker-custom focusable';
-    customTile.setAttribute('role', 'button');
-    customTile.dataset.focusIndex = String(905 + REMOTE_BACKGROUNDS.length);
-    customTile.dataset.remoteId = '';
-    customTile.setAttribute('aria-label', 'Custom URL');
-    customTile.tabIndex = 0;
-    const customCaption = document.createElement('span');
-    customCaption.className = 'photo-picker-caption';
-    customCaption.textContent = 'Custom URL';
-    customCaption.style.pointerEvents = 'none';
-    const customHint = document.createElement('span');
-    customHint.className = 'photo-picker-custom-hint';
-    customHint.textContent = 'Paste link below';
-    customHint.style.pointerEvents = 'none';
-    customTile.appendChild(customCaption);
-    customTile.appendChild(customHint);
-    customTile.addEventListener('click', function (event) {
-      if (event && event.preventDefault) event.preventDefault();
-      selectRemote('');
-      try {
-        urlInput.scrollIntoView({block: 'nearest', behavior: 'smooth'});
-      } catch (err) {
-        try { urlInput.scrollIntoView(true); } catch (err2) { /* ignore */ }
-      }
-      window.setTimeout(function () {
-        beginSettingsTextEdit(urlInput);
-      }, 120);
-    });
-    remoteGrid.appendChild(customTile);
-    markRemoteSelection();
     section.appendChild(remoteRow);
 
     // Keep remote id aligned when the user edits the URL by hand.
     // Under the field: whether the link loads as an image. A web page link
     // (an image host's page for the photo) was accepted and silently showed
     // nothing on the home screen.
-    const urlStatus = document.createElement('p');
-    urlStatus.className = 'settings-hint settings-url-status';
+    const urlStatus = createHint('', 'settings-url-status');
     urlStatus.hidden = true;
     let urlCheckTimer: ReturnType<typeof setTimeout> | null = null;
     let urlCheckGen = 0;
@@ -2598,54 +2382,62 @@ export function createSettingsPanel(
       urlCheckTimer = setTimeout(checkUrl, 800);
     });
 
-    const urlRow = labeledControl('Image URL', urlInput);
     section.appendChild(urlRow);
     section.appendChild(urlStatus);
     // A saved link is checked when Settings opens, too.
     if (urlInput.value.trim()) checkUrl();
 
-    const urlsInput = document.createElement('textarea');
-    urlsInput.className = 'settings-textarea focusable';
-    urlsInput.dataset.focusIndex = '932';
-    urlsInput.rows = 4;
-    urlsInput.placeholder = 'One https image URL per line (leave empty to use curated online set)';
-    urlsInput.value = (bg.urls || []).join('\n');
-    const urlsRow = labeledBlock('Slideshow URLs', urlsInput);
+    const urlsField = createTextField({
+      label: 'Slideshow URLs',
+      focusIndex: '932',
+      textarea: true,
+      rows: 4,
+      block: true,
+      placeholder: 'One https image URL per line (leave empty to use curated online set)',
+      value: (bg.urls || []).join('\n')
+    });
+    const urlsInput = urlsField.input;
+    const urlsRow = urlsField.row;
     section.appendChild(urlsRow);
 
-    const intervalInput = document.createElement('input');
-    intervalInput.type = 'number';
-    intervalInput.min = '30';
-    intervalInput.max = '3600';
-    intervalInput.step = '30';
-    intervalInput.className = 'settings-text focusable';
-    intervalInput.dataset.focusIndex = '933';
-    intervalInput.value = String(bg.slideshowIntervalSec || 300);
-    const intervalRow = labeledControl('Seconds per slide', intervalInput);
+    const intervalField = createTextField({
+      label: 'Seconds per slide',
+      focusIndex: '933',
+      type: 'number',
+      min: '30',
+      max: '3600',
+      step: '30',
+      value: String(bg.slideshowIntervalSec || 300)
+    });
+    const intervalInput = intervalField.input;
+    const intervalRow = intervalField.row;
     section.appendChild(intervalRow);
 
-    const kenBurnsToggle = document.createElement('input');
-    kenBurnsToggle.type = 'checkbox';
-    kenBurnsToggle.checked = !!bg.kenBurns;
-    kenBurnsToggle.className = 'focusable';
-    kenBurnsToggle.dataset.focusIndex = '934';
-    const kenBurnsRow = labeledControl('Slow zoom background', kenBurnsToggle);
+    const kenBurnsField = createToggle({
+      label: 'Slow zoom background',
+      focusIndex: '934',
+      checked: !!bg.kenBurns
+    });
+    const kenBurnsRow = kenBurnsField.row;
+    const kenBurnsToggle = kenBurnsField.input;
     section.appendChild(kenBurnsRow);
-    const kenBurnsHint = document.createElement('p');
-    kenBurnsHint.className = 'settings-hint';
-    kenBurnsHint.textContent =
+    const kenBurnsHint = createHint(
       'When on, the wallpaper slowly zooms in and drifts a little (like a calm slideshow). When off, the picture stays still. Photos only — not gradients. ' +
-      'While the wallpaper moves, tiles and buttons are tinted instead of frosted glass: blurring a moving picture makes TVs stutter.';
+      'While the wallpaper moves, tiles and buttons are tinted instead of frosted glass: blurring a moving picture makes TVs stutter.'
+    );
     section.appendChild(kenBurnsHint);
 
-    const overlayRange = document.createElement('input');
-    overlayRange.type = 'range';
-    overlayRange.min = '20';
-    overlayRange.max = '60';
-    overlayRange.value = String(Math.round((bg.overlayOpacity || 0.45) * 100));
-    overlayRange.className = 'focusable';
-    overlayRange.dataset.focusIndex = '935';
-    section.appendChild(labeledControl('Overlay opacity', overlayRange));
+    const overlayField = createTextField({
+      label: 'Overlay opacity',
+      focusIndex: '935',
+      type: 'range',
+      className: 'focusable',
+      min: '20',
+      max: '60',
+      value: String(Math.round((bg.overlayOpacity || 0.45) * 100))
+    });
+    const overlayRange = overlayField.input;
+    section.appendChild(overlayField.row);
 
     const oledNote = document.createElement('p');
     oledNote.className = 'oled-note';
@@ -2692,28 +2484,27 @@ export function createSettingsPanel(
 
     if (gen !== renderGen || !visible) return;
 
-    const musicSection = document.createElement('section');
-    musicSection.className = 'settings-section';
-    musicSection.innerHTML = '<h3>Music</h3>';
+    const musicSection = createSection('Music');
 
-    const musicEnabled = document.createElement('input');
-    musicEnabled.type = 'checkbox';
-    musicEnabled.checked = !!effective.music.enabled;
-    musicEnabled.className = 'focusable';
-    musicEnabled.dataset.focusIndex = '940';
-    musicSection.appendChild(labeledControl('Ambient music', musicEnabled));
+    const musicEnabledField = createToggle({
+      label: 'Ambient music',
+      focusIndex: '940',
+      checked: !!effective.music.enabled
+    });
+    const musicEnabled = musicEnabledField.input;
+    musicSection.appendChild(musicEnabledField.row);
 
-    const showMusicBar = document.createElement('input');
-    showMusicBar.type = 'checkbox';
-    showMusicBar.checked = !!music.showBar;
-    showMusicBar.className = 'focusable';
-    showMusicBar.dataset.focusIndex = '9405';
-    musicSection.appendChild(labeledControl('Show music bar', showMusicBar));
+    const showMusicBarField = createToggle({
+      label: 'Show music bar',
+      focusIndex: '9405',
+      checked: !!music.showBar
+    });
+    const showMusicBar = showMusicBarField.input;
+    musicSection.appendChild(showMusicBarField.row);
 
-    const musicBarHint = document.createElement('p');
-    musicBarHint.className = 'settings-hint';
-    musicBarHint.textContent = 'When on, shows the track name next to the volume control. Off by default (volume only).';
-    musicSection.appendChild(musicBarHint);
+    musicSection.appendChild(createHint(
+      'When on, shows the track name next to the volume control. Off by default (volume only).'
+    ));
 
     const musicSourceSelect = createOptionStepper('', 941, [
       {value: 'builtin', label: 'Built-in ambient (6 tracks)'},
@@ -2735,16 +2526,9 @@ export function createSettingsPanel(
         || savedBuiltinPlaylist.indexOf(entry.id) >= 0;
     });
 
-    const builtinPlaylistBlock = document.createElement('div');
-    builtinPlaylistBlock.className = 'settings-block';
-    const builtinPlaylistLabel = document.createElement('span');
-    builtinPlaylistLabel.className = 'settings-block-label';
-    builtinPlaylistLabel.textContent = 'Built-in tracks (tick to include)';
-    builtinPlaylistBlock.appendChild(builtinPlaylistLabel);
-
     const builtinPlaylistList = document.createElement('div');
     builtinPlaylistList.className = 'settings-track-list';
-    builtinPlaylistBlock.appendChild(builtinPlaylistList);
+    const builtinPlaylistBlock = labeledBlock('Built-in tracks (tick to include)', builtinPlaylistList);
 
     builtinTracks.forEach(function (entry, index) {
       const row = document.createElement('div');
@@ -2831,13 +2615,14 @@ export function createSettingsPanel(
         [{value: '', label: 'Could not scan USB drives — type a path below'}], '');
     });
 
-    const musicPathInput = document.createElement('input');
-    musicPathInput.type = 'text';
-    musicPathInput.className = 'settings-text focusable';
-    musicPathInput.dataset.focusIndex = '952';
-    musicPathInput.placeholder = 'e.g. /media/usb1/lounge/music';
-    musicPathInput.value = config.music.path || '';
-    const musicPathRow = labeledControl('Music folder', musicPathInput);
+    const musicPathField = createTextField({
+      label: 'Music folder',
+      focusIndex: '952',
+      placeholder: 'e.g. /media/usb1/lounge/music',
+      value: config.music.path || ''
+    });
+    const musicPathInput = musicPathField.input;
+    const musicPathRow = musicPathField.row;
     musicSection.appendChild(musicPathRow);
 
     musicPathInput.addEventListener('change', function () {
@@ -2848,21 +2633,12 @@ export function createSettingsPanel(
       scanUsbTracks(musicPathInput.value.trim());
     });
 
-    const usbPlaylistBlock = document.createElement('div');
-    usbPlaylistBlock.className = 'settings-block';
-    const usbPlaylistLabel = document.createElement('span');
-    usbPlaylistLabel.className = 'settings-block-label';
-    usbPlaylistLabel.textContent = 'USB tracks (tick to include)';
-    usbPlaylistBlock.appendChild(usbPlaylistLabel);
-
-    const usbScanStatus = document.createElement('p');
-    usbScanStatus.className = 'settings-hint';
-    usbScanStatus.textContent = 'Set a folder with playlist.m3u or tracks.json, then scan.';
-    usbPlaylistBlock.appendChild(usbScanStatus);
-
     const usbPlaylistList = document.createElement('div');
     usbPlaylistList.className = 'settings-track-list';
-    usbPlaylistBlock.appendChild(usbPlaylistList);
+    const usbPlaylistBlock = labeledBlock('USB tracks (tick to include)', usbPlaylistList);
+
+    const usbScanStatus = createHint('Set a folder with playlist.m3u or tracks.json, then scan.');
+    usbPlaylistBlock.insertBefore(usbScanStatus, usbPlaylistList);
     musicSection.appendChild(usbPlaylistBlock);
 
     // url -> checked
@@ -2934,12 +2710,13 @@ export function createSettingsPanel(
       scanUsbTracks(music.path);
     }
 
-    const shuffleToggle = document.createElement('input');
-    shuffleToggle.type = 'checkbox';
-    shuffleToggle.checked = config.music.shuffle !== false;
-    shuffleToggle.className = 'focusable';
-    shuffleToggle.dataset.focusIndex = '990';
-    const shuffleRow = labeledControl('Shuffle', shuffleToggle);
+    const shuffleField = createToggle({
+      label: 'Shuffle',
+      focusIndex: '990',
+      checked: config.music.shuffle !== false
+    });
+    const shuffleToggle = shuffleField.input;
+    const shuffleRow = shuffleField.row;
     musicSection.appendChild(shuffleRow);
 
     const repeatSelect = createOptionStepper('', 991, [
@@ -2950,19 +2727,21 @@ export function createSettingsPanel(
     const repeatRow = labeledControl('Repeat', repeatSelect);
     musicSection.appendChild(repeatRow);
 
-    const musicVolume = document.createElement('input');
-    musicVolume.type = 'range';
-    musicVolume.min = '0';
-    musicVolume.max = '50';
-    musicVolume.value = String(Math.round((effective.music.volume || 0.15) * 100));
-    musicVolume.className = 'focusable';
-    musicVolume.dataset.focusIndex = '992';
-    musicSection.appendChild(labeledControl('Ambient volume', musicVolume));
+    const musicVolumeField = createTextField({
+      label: 'Ambient volume',
+      focusIndex: '992',
+      type: 'range',
+      className: 'focusable',
+      min: '0',
+      max: '50',
+      value: String(Math.round((effective.music.volume || 0.15) * 100))
+    });
+    const musicVolume = musicVolumeField.input;
+    musicSection.appendChild(musicVolumeField.row);
 
-    const musicHint = document.createElement('p');
-    musicHint.className = 'settings-hint';
-    musicHint.textContent = 'Six built-in tracks ship in the app (48 kbps ambient, CC0 / CC BY). If music is silent at launch, press any remote key once (autoplay unlock). Red = pause, Green = skip. USB: Source → My tracks for more.';
-    musicSection.appendChild(musicHint);
+    musicSection.appendChild(createHint(
+      'Six built-in tracks ship in the app (48 kbps ambient, CC0 / CC BY). If music is silent at launch, press any remote key once (autoplay unlock). Red = pause, Green = skip. USB: Source → My tracks for more.'
+    ));
 
     function syncMusicFields(): void {
       const isBuiltin = musicSourceSelect.value === 'builtin';
@@ -2982,15 +2761,9 @@ export function createSettingsPanel(
     // The old Launcher section, now three: System (volume levels, then
     // Performance mode, Home button, boot), Screensaver, and Clock & icons in
     // Look. `launcherSection` is pointed at each in turn as controls are built.
-    const systemSection = document.createElement('section');
-    systemSection.className = 'settings-section';
-    systemSection.innerHTML = '<h3>System</h3>';
-    const screensaverSection = document.createElement('section');
-    screensaverSection.className = 'settings-section';
-    screensaverSection.innerHTML = '<h3>Screensaver</h3>';
-    const clockSection = document.createElement('section');
-    clockSection.className = 'settings-section';
-    clockSection.innerHTML = '<h3>Clock &amp; icons</h3>';
+    const systemSection = createSection('System');
+    const screensaverSection = createSection('Screensaver');
+    const clockSection = createSection('Clock & icons');
     let launcherSection = systemSection;
 
     // TV system volume levels (0–100), separate from ambient music slider.
@@ -3032,19 +2805,19 @@ export function createSettingsPanel(
     );
     launcherSection.appendChild(labeledControl('Volume when apps launch', volumeOnAppSelect));
 
-    const volumeLevelsHint = document.createElement('p');
-    volumeLevelsHint.className = 'settings-hint';
-    volumeLevelsHint.textContent = 'TV system volume (0–100). “Don’t change” keeps whatever you set with the remote. Otherwise Launch Home switches to the first level when you return home, and the second when Netflix / HDMI / other apps launch.';
-    launcherSection.appendChild(volumeLevelsHint);
+    launcherSection.appendChild(createHint(
+      'TV system volume (0–100). “Don’t change” keeps whatever you set with the remote. Otherwise Launch Home switches to the first level when you return home, and the second when Netflix / HDMI / other apps launch.'
+    ));
 
     // ── Launch Home (in-app) screensaver ──────────────────────────────
     launcherSection = screensaverSection;
-    const customSsToggle = document.createElement('input');
-    customSsToggle.type = 'checkbox';
-    customSsToggle.checked = config.launcher.customScreensaver !== false;
-    customSsToggle.className = 'focusable';
-    customSsToggle.dataset.focusIndex = '990';
-    launcherSection.appendChild(labeledControl('Launch Home screensaver', customSsToggle));
+    const customSsField = createToggle({
+      label: 'Launch Home screensaver',
+      focusIndex: '990',
+      checked: config.launcher.customScreensaver !== false
+    });
+    const customSsToggle = customSsField.input;
+    launcherSection.appendChild(customSsField.row);
 
     const customSsIdle = createOptionStepper('', 991, [
       {value: '2', label: '2 minutes'},
@@ -3076,41 +2849,40 @@ export function createSettingsPanel(
     ));
     launcherSection.appendChild(labeledControl('Photo change every', customSsSlide));
 
-    const customSsClock = document.createElement('input');
-    customSsClock.type = 'checkbox';
-    customSsClock.checked = config.launcher.customScreensaverShowClock !== false;
-    customSsClock.className = 'focusable';
-    customSsClock.dataset.focusIndex = '993';
-    launcherSection.appendChild(labeledControl('Screensaver clock', customSsClock));
+    const customSsClockField = createToggle({
+      label: 'Screensaver clock',
+      focusIndex: '993',
+      checked: config.launcher.customScreensaverShowClock !== false
+    });
+    const customSsClock = customSsClockField.input;
+    launcherSection.appendChild(customSsClockField.row);
 
-    const customSsDate = document.createElement('input');
-    customSsDate.type = 'checkbox';
-    customSsDate.checked = config.launcher.customScreensaverShowDate !== false;
-    customSsDate.className = 'focusable';
-    customSsDate.dataset.focusIndex = '994';
-    launcherSection.appendChild(labeledControl('Screensaver date', customSsDate));
+    const customSsDateField = createToggle({
+      label: 'Screensaver date',
+      focusIndex: '994',
+      checked: config.launcher.customScreensaverShowDate !== false
+    });
+    const customSsDate = customSsDateField.input;
+    launcherSection.appendChild(customSsDateField.row);
 
-    const customSsHint = document.createElement('p');
-    customSsHint.className = 'settings-hint';
-    customSsHint.textContent =
-      'Full-screen photo slideshow from your Launch Home wallpapers while this app is open. Any remote button wakes. Uses Ken Burns motion for OLED care.';
-    launcherSection.appendChild(customSsHint);
+    launcherSection.appendChild(createHint(
+      'Full-screen photo slideshow from your Launch Home wallpapers while this app is open. Any remote button wakes. Uses Ken Burns motion for OLED care.'
+    ));
 
-    const previewSsBtn = document.createElement('button');
-    previewSsBtn.type = 'button';
-    previewSsBtn.className = 'settings-preview-ss-btn focusable';
-    previewSsBtn.dataset.focusIndex = '996';
-    previewSsBtn.textContent = 'Preview screensaver now';
     // Preview over the open panel. Closing Settings first threw away any
     // unsaved changes; the saver sits above it and hands focus back here.
-    previewSsBtn.addEventListener('click', function () {
-      if (options.onPreviewScreensaver) {
-        options.onPreviewScreensaver();
-      } else if (options.onToast) {
-        options.onToast('Save & reopen Launch Home to preview');
+    launcherSection.appendChild(createMiniButton({
+      label: 'Preview screensaver now',
+      focusIndex: '996',
+      className: 'settings-preview-ss-btn',
+      onClick: function () {
+        if (options.onPreviewScreensaver) {
+          options.onPreviewScreensaver();
+        } else if (options.onToast) {
+          options.onToast('Save & reopen Launch Home to preview');
+        }
       }
-    });
-    launcherSection.appendChild(previewSsBtn);
+    }));
 
     // System LG gallery saver (rooted write). Pushed to 30 min when custom is on.
     const ssMins = coerceScreensaverMinutes(
@@ -3127,19 +2899,18 @@ export function createSettingsPanel(
     ], String(ssMins));
     launcherSection.appendChild(labeledControl('TV system screensaver', screensaverSelect));
 
-    const screensaverHint = document.createElement('p');
-    screensaverHint.className = 'settings-hint';
-    screensaverHint.textContent =
-      'LG system gallery timeout (3/10/20/30 min only). When Launch Home screensaver is on, leave this at 30 so the TV does not interrupt first. Requires rooted TV.';
-    launcherSection.appendChild(screensaverHint);
+    launcherSection.appendChild(createHint(
+      'LG system gallery timeout (3/10/20/30 min only). When Launch Home screensaver is on, leave this at 30 so the TV does not interrupt first. Requires rooted TV.'
+    ));
 
     launcherSection = clockSection;
-    const showClockToggle = document.createElement('input');
-    showClockToggle.type = 'checkbox';
-    showClockToggle.checked = config.launcher.showClock !== false;
-    showClockToggle.className = 'focusable';
-    showClockToggle.dataset.focusIndex = '1000';
-    launcherSection.appendChild(labeledControl('Show clock', showClockToggle));
+    const showClockField = createToggle({
+      label: 'Show clock',
+      focusIndex: '1000',
+      checked: config.launcher.showClock !== false
+    });
+    const showClockToggle = showClockField.input;
+    launcherSection.appendChild(showClockField.row);
 
     const clockFormatSelect = createOptionStepper('', 1090, [
       {value: '24', label: '24-hour (18:30)'},
@@ -3147,12 +2918,13 @@ export function createSettingsPanel(
     ], config.launcher.clockFormat === '12' ? '12' : '24');
     launcherSection.appendChild(labeledControl('Clock format', clockFormatSelect));
 
-    const showDateToggle = document.createElement('input');
-    showDateToggle.type = 'checkbox';
-    showDateToggle.checked = config.launcher.showDate !== false;
-    showDateToggle.className = 'focusable';
-    showDateToggle.dataset.focusIndex = '1001';
-    launcherSection.appendChild(labeledControl('Show date', showDateToggle));
+    const showDateField = createToggle({
+      label: 'Show date',
+      focusIndex: '1001',
+      checked: config.launcher.showDate !== false
+    });
+    const showDateToggle = showDateField.input;
+    launcherSection.appendChild(showDateField.row);
 
     const clockAlignSelect = createOptionStepper('', 1002, [
       {value: 'left', label: 'Top left'},
@@ -3206,68 +2978,60 @@ export function createSettingsPanel(
     ], String(perRowValue));
     launcherSection.appendChild(labeledControl('Icons per row (scroll mode)', iconsPerRowSelect));
 
-    const bundledIconsToggle = document.createElement('input');
-    bundledIconsToggle.type = 'checkbox';
-    bundledIconsToggle.checked = config.launcher.bundledIcons !== false;
-    bundledIconsToggle.className = 'focusable';
-    bundledIconsToggle.dataset.focusIndex = '1008';
-    launcherSection.appendChild(labeledControl('Use Launch Home app icons', bundledIconsToggle));
+    const bundledIconsField = createToggle({
+      label: 'Use Launch Home app icons',
+      focusIndex: '1008',
+      checked: config.launcher.bundledIcons !== false
+    });
+    const bundledIconsToggle = bundledIconsField.input;
+    launcherSection.appendChild(bundledIconsField.row);
 
-    const bundledIconsHint = document.createElement('p');
-    bundledIconsHint.className = 'settings-hint';
-    bundledIconsHint.textContent = 'Off = each app’s own icon from the TV (Netflix, YouTube, TV Settings, …). Reading the TV’s icons needs root; apps without one keep the Launch Home icon.';
-    launcherSection.appendChild(bundledIconsHint);
+    launcherSection.appendChild(createHint(
+      'Off = each app’s own icon from the TV (Netflix, YouTube, TV Settings, …). Reading the TV’s icons needs root; apps without one keep the Launch Home icon.'
+    ));
 
     launcherSection = systemSection;
-    const perfModeToggle = document.createElement('input');
-    perfModeToggle.type = 'checkbox';
-    perfModeToggle.checked = !!config.launcher.perfMode;
-    perfModeToggle.className = 'focusable';
-    perfModeToggle.dataset.focusIndex = '1009';
-    launcherSection.appendChild(labeledControl('Performance mode (low-spec TVs)', perfModeToggle));
-    const perfModeHint = document.createElement('p');
-    perfModeHint.className = 'settings-hint';
-    perfModeHint.textContent = 'Turns off the frosted glass and uses 1920px wallpapers. ' +
-      'With Slow zoom on (Look), the glass is already off while the wallpaper moves.';
-    launcherSection.appendChild(perfModeHint);
+    const perfModeField = createToggle({
+      label: 'Performance mode (low-spec TVs)',
+      focusIndex: '1009',
+      checked: !!config.launcher.perfMode
+    });
+    const perfModeToggle = perfModeField.input;
+    launcherSection.appendChild(perfModeField.row);
+    launcherSection.appendChild(createHint(
+      'Turns off the frosted glass and uses 1920px wallpapers. ' +
+      'With Slow zoom on (Look), the glass is already off while the wallpaper moves.'
+    ));
 
     // Off by default: when enabled, stock Home coming to the foreground
     // (Home button press after another app, or an app exiting to home)
     // relaunches Launch Home.
-    const launchOnHomeToggle = document.createElement('input');
-    launchOnHomeToggle.type = 'checkbox';
-    launchOnHomeToggle.checked = !!(config.launcher.launchOnHome || config.launcher.returnOnAppExit);
-    launchOnHomeToggle.className = 'focusable';
-    launchOnHomeToggle.dataset.focusIndex = '1010';
-    launcherSection.appendChild(labeledControl('Launch on Home button', launchOnHomeToggle));
+    const launchOnHomeField = createToggle({
+      label: 'Launch on Home button',
+      focusIndex: '1010',
+      checked: !!(config.launcher.launchOnHome || config.launcher.returnOnAppExit)
+    });
+    const launchOnHomeToggle = launchOnHomeField.input;
+    launcherSection.appendChild(launchOnHomeField.row);
 
-    const launchOnHomeHint = document.createElement('p');
-    launchOnHomeHint.className = 'settings-hint';
-    launchOnHomeHint.textContent = 'When enabled, a root service opens Launch Home whenever stock Home appears. A brief flash of the LG home screen is normal (the TV opens Home first; we cannot block the key without a separate input-hook app). Requires rooted TV + Homebrew Channel. Toggle off/on and Save after updates if it stops working.';
-    launcherSection.appendChild(launchOnHomeHint);
+    launcherSection.appendChild(createHint(
+      'When enabled, a root service opens Launch Home whenever stock Home appears. A brief flash of the LG home screen is normal (the TV opens Home first; we cannot block the key without a separate input-hook app). Requires rooted TV + Homebrew Channel. Toggle off/on and Save after updates if it stops working.'
+    ));
 
-    const bootToggle = document.createElement('input');
-    bootToggle.type = 'checkbox';
-    bootToggle.checked = !!config.launcher.bootOnStart;
-    bootToggle.className = 'focusable';
-    bootToggle.dataset.focusIndex = '1011';
-    launcherSection.appendChild(labeledControl('Boot on TV start', bootToggle));
+    const bootField = createToggle({
+      label: 'Boot on TV start',
+      focusIndex: '1011',
+      checked: !!config.launcher.bootOnStart
+    });
+    const bootToggle = bootField.input;
+    launcherSection.appendChild(bootField.row);
 
-    const bootHint = document.createElement('p');
-    bootHint.className = 'settings-hint';
-    bootHint.textContent = 'When enabled, a root init.d script launches Launch Home after the TV powers on. Requires rooted TV + Homebrew Channel (same as Home button). A short delay on boot is normal while webOS starts. With Quick Start+ on, the TV only wakes from standby and this doesn’t run; turn it off under General → Devices → TV Management.';
-    launcherSection.appendChild(bootHint);
+    launcherSection.appendChild(createHint(
+      'When enabled, a root init.d script launches Launch Home after the TV powers on. Requires rooted TV + Homebrew Channel (same as Home button). A short delay on boot is normal while webOS starts. With Quick Start+ on, the TV only wakes from standby and this doesn’t run; turn it off under General → Devices → TV Management.'
+    ));
     // ── Glass: the see-through tiles and buttons on the home screen ──────
-    const glassSection = document.createElement('section');
-    glassSection.className = 'settings-section';
-    glassSection.innerHTML = '<h3>Glass</h3>';
-    function glassNote(text: string): HTMLParagraphElement {
-      const note = document.createElement('p');
-      note.className = 'settings-hint';
-      note.textContent = text;
-      return note;
-    }
-    glassSection.appendChild(glassNote('How the see-through app tiles, input buttons and Settings button ' +
+    const glassSection = createSection('Glass');
+    glassSection.appendChild(createHint('How the see-through app tiles, input buttons and Settings button ' +
       'look over your wallpaper. The preview shows your choices; press Save to keep them.'));
 
     // A sample over the current wallpaper: a tile, the tile the remote is on,
@@ -3327,7 +3091,7 @@ export function createSettingsPanel(
       {value: 'warm', label: 'Warm'}
     ], config.launcher.glassTint || 'light', paintGlassPreview);
     glassSection.appendChild(labeledControl('Tile colour', glassSelect));
-    glassSection.appendChild(glassNote('Inside the app tiles, input buttons and Settings button. ' +
+    glassSection.appendChild(createHint('Inside the app tiles, input buttons and Settings button. ' +
       'Dark or Black suit dark wallpapers.'));
 
     const glassBorderSelect = createOptionStepper('', 1092, [
@@ -3342,7 +3106,7 @@ export function createSettingsPanel(
       {value: 'gold', label: 'Gold'}
     ], config.launcher.glassBorder || 'white', paintGlassPreview);
     glassSection.appendChild(labeledControl('Tile outline', glassBorderSelect));
-    glassSection.appendChild(glassNote('The thin line around each tile and button.'));
+    glassSection.appendChild(createHint('The thin line around each tile and button.'));
 
     const focusColourSelect = createOptionStepper('', 1093, [
       {value: 'warm', label: 'Warm (original)'},
@@ -3354,7 +3118,7 @@ export function createSettingsPanel(
       {value: 'gold', label: 'Gold'}
     ], config.launcher.focusColour || 'warm', paintGlassPreview);
     glassSection.appendChild(labeledControl('Selection highlight', focusColourSelect));
-    glassSection.appendChild(glassNote('The glow around the tile or button the remote is on, ' +
+    glassSection.appendChild(createHint('The glow around the tile or button the remote is on, ' +
       'and the colour of the current input.'));
     paintGlassPreview();
     panes.look.appendChild(glassSection);
@@ -3364,19 +3128,18 @@ export function createSettingsPanel(
     panes.system.appendChild(systemSection);
 
     // ── Weather (today + 4 days on the home screen) ─────────────────────
-    const weatherSection = document.createElement('section');
-    weatherSection.className = 'settings-section';
-    weatherSection.innerHTML = '<h3>Weather</h3>';
+    const weatherSection = createSection('Weather');
 
     const weatherCfg = normalizeWeatherConfig(config.weather);
     let weatherPlace: WeatherLocation = Object.assign({}, weatherCfg.location);
 
-    const weatherToggle = document.createElement('input');
-    weatherToggle.type = 'checkbox';
-    weatherToggle.checked = weatherCfg.enabled;
-    weatherToggle.className = 'focusable';
-    weatherToggle.dataset.focusIndex = '1020';
-    weatherSection.appendChild(labeledControl('Show weather', weatherToggle));
+    const weatherField = createToggle({
+      label: 'Show weather',
+      focusIndex: '1020',
+      checked: weatherCfg.enabled
+    });
+    const weatherToggle = weatherField.input;
+    weatherSection.appendChild(weatherField.row);
 
     const weatherUnitsSelect = createOptionStepper('', 1021, [
       {value: 'c', label: '°C'},
@@ -3384,8 +3147,7 @@ export function createSettingsPanel(
     ], weatherCfg.units);
     weatherSection.appendChild(labeledControl('Temperature', weatherUnitsSelect));
 
-    const weatherPlaceHint = document.createElement('p');
-    weatherPlaceHint.className = 'settings-hint';
+    const weatherPlaceHint = createHint('');
     function paintWeatherPlace(pending: boolean): void {
       weatherPlaceHint.textContent = 'Location: ' + weatherPlace.name +
         (pending ? ' — press Save to use it' : '');
@@ -3393,13 +3155,14 @@ export function createSettingsPanel(
     paintWeatherPlace(false);
     weatherSection.appendChild(weatherPlaceHint);
 
-    const weatherSearchInput = document.createElement('input');
-    weatherSearchInput.type = 'text';
-    weatherSearchInput.className = 'settings-text focusable';
-    weatherSearchInput.dataset.focusIndex = '1022';
-    weatherSearchInput.placeholder = 'Start typing a place, e.g. tok';
-    weatherSearchInput.setAttribute('autocomplete', 'off');
-    weatherSection.appendChild(labeledControl('Change location', weatherSearchInput));
+    const weatherSearchField = createTextField({
+      label: 'Change location',
+      focusIndex: '1022',
+      placeholder: 'Start typing a place, e.g. tok',
+      autocomplete: 'off'
+    });
+    const weatherSearchInput = weatherSearchField.input;
+    weatherSection.appendChild(weatherSearchField.row);
 
     // Type-ahead: matches appear under the field as you type ("tok" →
     // Tokyo, Japan). Close the keyboard, press Down, then OK to pick one.
@@ -3412,9 +3175,7 @@ export function createSettingsPanel(
     const WEATHER_IDLE_HINT = 'Start typing a town or city — matching places appear as you type. ' +
       'Forecast from Open-Meteo (no account needed); needs the TV to be online. ' +
       'Untick Show weather to hide it — nothing is downloaded while it’s off.';
-    const weatherStatus = document.createElement('p');
-    weatherStatus.className = 'settings-hint';
-    weatherStatus.textContent = WEATHER_IDLE_HINT;
+    const weatherStatus = createHint(WEATHER_IDLE_HINT);
     weatherSection.appendChild(weatherStatus);
 
     function clearWeatherSuggestions(): void {
@@ -3505,9 +3266,8 @@ export function createSettingsPanel(
     });
     panes.weather.appendChild(weatherSection);
 
-    const inputsSection = document.createElement('section');
-    inputsSection.className = 'settings-section';
-    inputsSection.innerHTML = '<h3>Inputs</h3><p class="settings-hint">Choose which inputs appear and set custom labels. Uncheck all to hide the input row entirely. One missing? Add it at the end of the list.</p>';
+    const inputsSection = createSection('Inputs');
+    inputsSection.appendChild(createHint('Choose which inputs appear and set custom labels. Uncheck all to hide the input row entirely. One missing? Add it at the end of the list.'));
 
     const inputsList = document.createElement('div');
     inputsList.className = 'settings-inputs';
@@ -3521,42 +3281,40 @@ export function createSettingsPanel(
     ], config.launcher.channels === 'all' || config.launcher.channels === 'off'
       ? config.launcher.channels : 'favourites');
     inputsSection.appendChild(labeledControl('TV channels', channelsSelect));
-    const channelsHint = document.createElement('p');
-    channelsHint.className = 'settings-hint';
-    channelsHint.textContent = 'Adds a Channels button after the inputs when the TV has Live TV ' +
-      'channels tuned: pick one to watch it, or see what\u2019s on now.';
-    inputsSection.appendChild(channelsHint);
+    inputsSection.appendChild(createHint(
+      'Adds a Channels button after the inputs when the TV has Live TV ' +
+      'channels tuned: pick one to watch it, or see what\u2019s on now.'
+    ));
     panes.inputs.appendChild(inputsSection);
 
-    const appsSection = document.createElement('section');
-    appsSection.className = 'settings-section';
-    appsSection.innerHTML = '<h3>Pinned apps</h3><p class="settings-hint">Reorder or remove apps pinned to the home row.</p>';
+    const appsSection = createSection('Pinned apps');
+    appsSection.appendChild(createHint('Reorder or remove apps pinned to the home row.'));
 
     // All apps: a tile on the home row that opens every app on the TV.
-    const allAppsTileToggle = document.createElement('input');
-    allAppsTileToggle.type = 'checkbox';
-    allAppsTileToggle.className = 'focusable';
-    allAppsTileToggle.dataset.focusIndex = '1190';
-    allAppsTileToggle.checked = config.launcher.allAppsTile !== false;
-    appsSection.appendChild(labeledControl('All apps tile on the home row', allAppsTileToggle));
-    const allAppsHint = document.createElement('p');
-    allAppsHint.className = 'settings-hint';
-    allAppsHint.textContent = 'Opens a grid of every app on the TV: open any app without pinning it here.';
-    appsSection.appendChild(allAppsHint);
+    const allAppsTileField = createToggle({
+      label: 'All apps tile on the home row',
+      focusIndex: '1190',
+      checked: config.launcher.allAppsTile !== false
+    });
+    const allAppsTileToggle = allAppsTileField.input;
+    appsSection.appendChild(allAppsTileField.row);
+    appsSection.appendChild(createHint(
+      'Opens a grid of every app on the TV: open any app without pinning it here.'
+    ));
 
     // Number keys: press 1-9 on the remote to open the home row tile at that
     // position (apps.js numbers the tiles and launches by number).
-    const numberKeyToggle = document.createElement('input');
-    numberKeyToggle.type = 'checkbox';
-    numberKeyToggle.className = 'focusable';
-    numberKeyToggle.dataset.focusIndex = '1191';
-    numberKeyToggle.checked = config.launcher.numberKeyLaunch !== false;
-    appsSection.appendChild(labeledControl('Number keys open home row tiles', numberKeyToggle));
-    const numberKeyHint = document.createElement('p');
-    numberKeyHint.className = 'settings-hint';
-    numberKeyHint.textContent = 'Press 1\u20139 on the remote to open the tile at that position ' +
-      '(1 is the first); each tile shows its number.';
-    appsSection.appendChild(numberKeyHint);
+    const numberKeyField = createToggle({
+      label: 'Number keys open home row tiles',
+      focusIndex: '1191',
+      checked: config.launcher.numberKeyLaunch !== false
+    });
+    const numberKeyToggle = numberKeyField.input;
+    appsSection.appendChild(numberKeyField.row);
+    appsSection.appendChild(createHint(
+      'Press 1\u20139 on the remote to open the tile at that position ' +
+      '(1 is the first); each tile shows its number.'
+    ));
 
     const pinnedList = document.createElement('div');
     pinnedList.className = 'settings-pinned-list';
@@ -3567,22 +3325,19 @@ export function createSettingsPanel(
     addHeading.textContent = 'Add an app';
     appsSection.appendChild(addHeading);
 
-    const addHint = document.createElement('p');
-    addHint.className = 'settings-hint';
-    addHint.textContent = 'Add every app from LG\u2019s home screen at once, or open the list and ' +
-      'press + next to an app to pin it to the home row.';
-    appsSection.appendChild(addHint);
+    appsSection.appendChild(createHint(
+      'Add every app from LG\u2019s home screen at once, or open the list and ' +
+      'press + next to an app to pin it to the home row.'
+    ));
 
     // Every app on LG's own home screen in one press, in LG's order, after
     // the ones already here (instead of adding them one by one).
-    const importLgBtn = document.createElement('button');
-    importLgBtn.type = 'button';
-    importLgBtn.className = 'settings-mini-btn focusable';
-    importLgBtn.dataset.focusIndex = '1298';
-    importLgBtn.textContent = 'Add all apps from LG\u2019s home screen';
+    const importLgBtn = createMiniButton({
+      label: 'Add all apps from LG\u2019s home screen',
+      focusIndex: '1298'
+    });
     appsSection.appendChild(importLgBtn);
-    const importLgStatus = document.createElement('p');
-    importLgStatus.className = 'settings-hint';
+    const importLgStatus = createHint('');
     importLgStatus.hidden = true;
     appsSection.appendChild(importLgStatus);
     let importingLg = false;
@@ -3623,22 +3378,23 @@ export function createSettingsPanel(
 
     // Collapsed by default: with root this lists every installed app, and
     // scrolling past it was the only way to reach the sections below.
-    const addAppsToggle = document.createElement('button');
-    addAppsToggle.type = 'button';
-    addAppsToggle.className = 'settings-mini-btn settings-apps-toggle focusable';
-    addAppsToggle.dataset.focusIndex = '1299';
+    const addAppsToggle = createMiniButton({
+      label: '',
+      focusIndex: '1299',
+      className: 'settings-apps-toggle'
+    });
     appsSection.appendChild(addAppsToggle);
 
-    const showHiddenToggle = document.createElement('input');
-    showHiddenToggle.type = 'checkbox';
-    showHiddenToggle.className = 'focusable';
-    showHiddenToggle.dataset.focusIndex = '1280';
-    showHiddenToggle.checked = showHiddenApps;
-    showHiddenToggle.addEventListener('change', function () {
-      showHiddenApps = showHiddenToggle.checked;
-      loadAppsLists(pinnedList, addAppsList, config);
+    const showHiddenField = createToggle({
+      label: 'Show hidden and system apps',
+      focusIndex: '1280',
+      checked: showHiddenApps,
+      onChange: function (checked) {
+        showHiddenApps = checked;
+        loadAppsLists(pinnedList, addAppsList, config);
+      }
     });
-    appsSection.appendChild(labeledControl('Show hidden and system apps', showHiddenToggle));
+    appsSection.appendChild(showHiddenField.row);
 
     const addAppsList = document.createElement('div');
     addAppsList.className = 'settings-apps';
@@ -3661,23 +3417,24 @@ export function createSettingsPanel(
     });
     syncAddAppsToggle();
 
-    const customSection = document.createElement('section');
-    customSection.className = 'settings-section';
-    customSection.innerHTML = '<h3>Custom app</h3><p class="settings-hint">Pin any installed app by its App ID and choose a bundled icon. Find the App ID on your TV or in the Homebrew app list.</p>';
+    const customSection = createSection('Custom app');
+    customSection.appendChild(createHint('Pin any installed app by its App ID and choose a bundled icon. Find the App ID on your TV or in the Homebrew app list.'));
 
-    const customAppIdInput = document.createElement('input');
-    customAppIdInput.type = 'text';
-    customAppIdInput.className = 'settings-text focusable';
-    customAppIdInput.dataset.focusIndex = '1400';
-    customAppIdInput.placeholder = 'e.g. com.spotify.tv';
-    customSection.appendChild(labeledControl('App ID', customAppIdInput));
+    const customAppIdField = createTextField({
+      label: 'App ID',
+      focusIndex: '1400',
+      placeholder: 'e.g. com.spotify.tv'
+    });
+    const customAppIdInput = customAppIdField.input;
+    customSection.appendChild(customAppIdField.row);
 
-    const customNameInput = document.createElement('input');
-    customNameInput.type = 'text';
-    customNameInput.className = 'settings-text focusable';
-    customNameInput.dataset.focusIndex = '1401';
-    customNameInput.placeholder = 'e.g. Spotify';
-    customSection.appendChild(labeledControl('Name', customNameInput));
+    const customNameField = createTextField({
+      label: 'Name',
+      focusIndex: '1401',
+      placeholder: 'e.g. Spotify'
+    });
+    const customNameInput = customNameField.input;
+    customSection.appendChild(customNameField.row);
 
     const iconPreview = document.createElement('img');
     iconPreview.className = 'settings-app-icon';
@@ -3692,41 +3449,40 @@ export function createSettingsPanel(
     iconRow.insertBefore(iconPreview, iconRow.lastChild);
     customSection.appendChild(iconRow);
 
-    const addCustomBtn = document.createElement('button');
-    addCustomBtn.type = 'button';
-    addCustomBtn.className = 'settings-mini-btn settings-add-custom focusable';
-    addCustomBtn.dataset.focusIndex = '1403';
-    addCustomBtn.textContent = 'Add custom app';
-    addCustomBtn.addEventListener('click', function () {
-      const launchId = customAppIdInput.value.trim();
-      if (!launchId) {
-        if (options.onToast) options.onToast('Enter an App ID first');
-        return;
+    const addCustomBtn = createMiniButton({
+      label: 'Add custom app',
+      focusIndex: '1403',
+      className: 'settings-add-custom',
+      onClick: function () {
+        const launchId = customAppIdInput.value.trim();
+        if (!launchId) {
+          if (options.onToast) options.onToast('Enter an App ID first');
+          return;
+        }
+
+        const id = 'custom:' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        const title = customNameInput.value.trim() || getBuiltinAppTitle(launchId) || launchId;
+
+        customApps.push({id: id, launchId: launchId, title: title, icon: iconSelect.value});
+        pinnedOrder.push(id);
+
+        customAppIdInput.value = '';
+        customNameInput.value = '';
+
+        loadAppsLists(pinnedList, addAppsList, config);
       }
-
-      const id = 'custom:' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-      const title = customNameInput.value.trim() || getBuiltinAppTitle(launchId) || launchId;
-
-      customApps.push({id: id, launchId: launchId, title: title, icon: iconSelect.value});
-      pinnedOrder.push(id);
-
-      customAppIdInput.value = '';
-      customNameInput.value = '';
-
-      loadAppsLists(pinnedList, addAppsList, config);
     });
     customSection.appendChild(addCustomBtn);
     panes.apps.appendChild(customSection);
 
-    const discoverSection = document.createElement('section');
-    discoverSection.className = 'settings-section';
-    discoverSection.innerHTML = '<h3>Discover apps</h3><p class="settings-hint">Scan this TV for installed apps, then add any of them to the dock. Discovered apps keep their own icon unless you pick a bundled one below.</p>';
+    const discoverSection = createSection('Discover apps');
+    discoverSection.appendChild(createHint('Scan this TV for installed apps, then add any of them to the dock. Discovered apps keep their own icon unless you pick a bundled one below.'));
 
-    const scanBtn = document.createElement('button');
-    scanBtn.type = 'button';
-    scanBtn.className = 'settings-mini-btn settings-scan-btn focusable';
-    scanBtn.dataset.focusIndex = '1500';
-    scanBtn.textContent = 'Scan for apps';
+    const scanBtn = createMiniButton({
+      label: 'Scan for apps',
+      focusIndex: '1500',
+      className: 'settings-scan-btn'
+    });
     discoverSection.appendChild(scanBtn);
 
     const discoverIconSelect = createOptionStepper(
@@ -3738,8 +3494,7 @@ export function createSettingsPanel(
     );
     discoverSection.appendChild(labeledControl('Icon override', discoverIconSelect));
 
-    const discoverStatus = document.createElement('p');
-    discoverStatus.className = 'settings-hint';
+    const discoverStatus = createHint('');
     discoverSection.appendChild(discoverStatus);
 
     const discoverList = document.createElement('div');
@@ -3770,45 +3525,36 @@ export function createSettingsPanel(
         : 'All discovered apps are already in your dock.';
 
       available.forEach(function (app, index) {
-        const row = document.createElement('div');
-        row.className = 'settings-app-row';
-
-        if (app.icon) {
-          const icon = document.createElement('img');
-          icon.className = 'settings-app-icon';
-          icon.alt = '';
-          icon.addEventListener('error', function () { icon.remove(); });
-          lazyLoadIcon(icon, app.icon, discoverList);
-          row.appendChild(icon);
-        }
-
-        const title = document.createElement('span');
-        title.textContent = app.title || app.id;
-
-        const addBtn = document.createElement('button');
-        addBtn.type = 'button';
-        addBtn.className = 'settings-mini-btn focusable';
-        addBtn.dataset.focusIndex = String(1510 + index);
-        addBtn.dataset.pointerFocus = 'off';
-        addBtn.textContent = '+';
-        addBtn.addEventListener('click', function () {
-          if (inDock(app.id)) return; // second OK before the list redraws
-          const keepFocus = document.activeElement === addBtn;
-          const override = discoverIconSelect.value;
-          if (override) {
-            const id = 'custom:' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-            customApps.push({id: id, launchId: app.id, title: app.title || app.id, icon: override});
-            pinnedOrder.push(id);
-          } else {
-            pinnedOrder.push(app.id);
+        const iconSrc = app.icon;
+        const addBtn = createMiniButton({
+          label: '+',
+          focusIndex: 1510 + index,
+          dataset: {pointerFocus: 'off'},
+          onClick: function () {
+            if (inDock(app.id)) return; // second OK before the list redraws
+            const keepFocus = document.activeElement === addBtn;
+            const override = discoverIconSelect.value;
+            if (override) {
+              const id = 'custom:' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+              customApps.push({id: id, launchId: app.id, title: app.title || app.id, icon: override});
+              pinnedOrder.push(id);
+            } else {
+              pinnedOrder.push(app.id);
+            }
+            loadAppsLists(pinnedList, addAppsList, config);
+            renderDiscoverList();
+            // The next app slides into this row; land on its +.
+            if (keepFocus) refocusListButton(discoverList, index, [0]);
           }
-          loadAppsLists(pinnedList, addAppsList, config);
-          renderDiscoverList();
-          // The next app slides into this row; land on its +.
-          if (keepFocus) refocusListButton(discoverList, index, [0]);
         });
-
-        row.appendChild(title);
+        const row = createAppRow({
+          title: app.title || app.id,
+          icon: iconSrc,
+          mountIcon: function (icon) {
+            icon.addEventListener('error', function () { icon.remove(); });
+            lazyLoadIcon(icon, iconSrc as string, discoverList);
+          }
+        }).row;
         row.appendChild(addBtn);
         discoverList.appendChild(row);
       });
@@ -3843,23 +3589,22 @@ export function createSettingsPanel(
     // them to another TV. Launch Home also keeps copies by itself, before each
     // restore and each update. Backups from other versions restore as far as
     // they fit (config.js, configFromBackup). Needs root (Homebrew Channel).
-    const backupSection = document.createElement('section');
-    backupSection.className = 'settings-section';
-    backupSection.innerHTML = '<h3>Backup &amp; restore</h3><p class="settings-hint">Saves all your Launch Home settings: apps, wallpaper, music, clock, weather and profiles. The copy on the TV is kept if you reinstall Launch Home. A plugged-in USB drive gets a copy too (lounge/launch-home-settings.json), to move your settings to another TV. Launch Home also keeps a copy by itself before each restore and each update. Backups made by other versions of Launch Home can be restored too: you’re told what fitted. Voice keys and sign-in aren’t included; they stay on the TV.</p>';
+    const backupSection = createSection('Backup & restore');
+    backupSection.appendChild(createHint('Saves all your Launch Home settings: apps, wallpaper, music, clock, weather and profiles. The copy on the TV is kept if you reinstall Launch Home. A plugged-in USB drive gets a copy too (lounge/launch-home-settings.json), to move your settings to another TV. Launch Home also keeps a copy by itself before each restore and each update. Backups made by other versions of Launch Home can be restored too: you’re told what fitted. Voice keys and sign-in aren’t included; they stay on the TV.'));
     const backupActions = document.createElement('div');
     backupActions.className = 'settings-backup-actions';
-    const backupBtn = document.createElement('button');
-    backupBtn.type = 'button';
-    backupBtn.className = 'settings-mini-btn settings-scan-btn focusable';
-    backupBtn.dataset.focusIndex = '1590';
-    backupBtn.dataset.backupAction = 'backup';
-    backupBtn.textContent = 'Back up settings';
-    const restoreBtn = document.createElement('button');
-    restoreBtn.type = 'button';
-    restoreBtn.className = 'settings-mini-btn settings-scan-btn focusable';
-    restoreBtn.dataset.focusIndex = '1591';
-    restoreBtn.dataset.backupAction = 'restore';
-    restoreBtn.textContent = 'Restore settings';
+    const backupBtn = createMiniButton({
+      label: 'Back up settings',
+      focusIndex: '1590',
+      className: 'settings-scan-btn',
+      dataset: {backupAction: 'backup'}
+    });
+    const restoreBtn = createMiniButton({
+      label: 'Restore settings',
+      focusIndex: '1591',
+      className: 'settings-scan-btn',
+      dataset: {backupAction: 'restore'}
+    });
     backupActions.appendChild(backupBtn);
     backupActions.appendChild(restoreBtn);
     backupSection.appendChild(backupActions);
@@ -3871,9 +3616,7 @@ export function createSettingsPanel(
     const backupPickRow = labeledControl('Backup to restore', backupPicker);
     backupPickRow.hidden = true;
     backupSection.appendChild(backupPickRow);
-    const backupStatus = document.createElement('p');
-    backupStatus.className = 'settings-hint';
-    backupStatus.textContent = backupNote || lastBackupNote();
+    const backupStatus = createHint(backupNote || lastBackupNote());
     backupNote = '';
     backupSection.appendChild(backupStatus);
     panes.tools.appendChild(backupSection);
@@ -3986,19 +3729,17 @@ export function createSettingsPanel(
     // TV check: a root script reports the TV's model, memory, CPU load and
     // background activity, and times how long TV Settings takes to open. The
     // summary is shown with a QR code so it can be sent from a phone.
-    const tvCheckSection = document.createElement('section');
-    tvCheckSection.className = 'settings-section';
-    tvCheckSection.innerHTML = '<h3>TV check</h3><p class="settings-hint">If the TV or TV Settings feels slow, this collects the TV model, memory, CPU load and what is running in the background, and times how long TV Settings takes to open. TV Settings opens and closes by itself, twice; it takes about 40 seconds. Scan the code with your phone to share the result.</p>';
+    const tvCheckSection = createSection('TV check');
+    tvCheckSection.appendChild(createHint('If the TV or TV Settings feels slow, this collects the TV model, memory, CPU load and what is running in the background, and times how long TV Settings takes to open. TV Settings opens and closes by itself, twice; it takes about 40 seconds. Scan the code with your phone to share the result.'));
 
-    const tvCheckBtn = document.createElement('button');
-    tvCheckBtn.type = 'button';
-    tvCheckBtn.className = 'settings-mini-btn settings-scan-btn focusable';
-    tvCheckBtn.dataset.focusIndex = '1600';
-    tvCheckBtn.textContent = 'Run TV check';
+    const tvCheckBtn = createMiniButton({
+      label: 'Run TV check',
+      focusIndex: '1600',
+      className: 'settings-scan-btn'
+    });
     tvCheckSection.appendChild(tvCheckBtn);
 
-    const tvCheckStatus = document.createElement('p');
-    tvCheckStatus.className = 'settings-hint';
+    const tvCheckStatus = createHint('');
     tvCheckSection.appendChild(tvCheckStatus);
 
     const tvCheckResult = document.createElement('div');
@@ -4351,21 +4092,20 @@ export function createSettingsPanel(
     addName.textContent = 'Add an input';
     addRow.appendChild(addName);
     addable.forEach(function (device, i) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'settings-mini-btn focusable';
-      btn.dataset.focusIndex = String(1190 + i);
-      btn.textContent = '+ ' + device.label;
-      btn.addEventListener('click', function () {
-        const rows = container.querySelectorAll('.settings-input-row').length;
-        const row = inputSettingsRow(device, rows, true, '', true);
-        container.insertBefore(row, addRow);
-        if (btn.parentNode) btn.parentNode.removeChild(btn);
-        if (!addRow.querySelector('button') && addRow.parentNode) {
-          addRow.parentNode.removeChild(addRow);
+      const btn = createMiniButton({
+        label: '+ ' + device.label,
+        focusIndex: 1190 + i,
+        onClick: function () {
+          const rows = container.querySelectorAll('.settings-input-row').length;
+          const row = inputSettingsRow(device, rows, true, '', true);
+          container.insertBefore(row, addRow);
+          if (btn.parentNode) btn.parentNode.removeChild(btn);
+          if (!addRow.querySelector('button') && addRow.parentNode) {
+            addRow.parentNode.removeChild(addRow);
+          }
+          // The pressed button is gone: go to the new input's tick.
+          focusSettingsControlNow(row.querySelector('input[type=checkbox]'));
         }
-        // The pressed button is gone: go to the new input's tick.
-        focusSettingsControlNow(row.querySelector('input[type=checkbox]'));
       });
       addRow.appendChild(btn);
     });
@@ -4494,50 +4234,38 @@ export function createSettingsPanel(
 
     addContainer.innerHTML = '';
     if (!remaining.length) {
-      const empty = document.createElement('p');
-      empty.className = 'settings-hint';
-      empty.textContent = candidates.length
+      addContainer.appendChild(createHint(candidates.length
         ? 'All available apps are already pinned.'
-        : 'No other apps were found on this TV.';
-      addContainer.appendChild(empty);
+        : 'No other apps were found on this TV.'));
     }
 
     remaining.forEach(function (app, index) {
-      const row = document.createElement('div');
-      row.className = 'settings-app-row';
-
-      if (app.icon) {
-        const icon = document.createElement('img');
-        icon.className = 'settings-app-icon';
-        icon.alt = '';
-        icon.addEventListener('error', function () { icon.remove(); });
-        lazyLoadIcon(icon, app.icon, addContainer);
-        row.appendChild(icon);
-      }
-
-      const title = document.createElement('span');
-      title.textContent = app.title || app.id;
-
-      const addBtn = document.createElement('button');
-      addBtn.type = 'button';
-      addBtn.className = 'settings-mini-btn focusable';
-      addBtn.dataset.focusIndex = String(1300 + index);
-      addBtn.dataset.pointerFocus = 'off';
-      addBtn.textContent = '+';
-      addBtn.addEventListener('click', function () {
-        if (pinnedOrder.indexOf(app.id) >= 0) return; // second OK before the redraw
-        const keepFocus = document.activeElement === addBtn;
-        pinnedOrder.push(app.id);
-        loadAppsLists(pinnedListEl, addContainer, config).then(function () {
-          // The next app slides into this row; land on its + (unless the
-          // user already moved on while the list was loading).
-          if (keepFocus && !panel.contains(document.activeElement)) {
-            refocusListButton(addContainer, index, [0]);
-          }
-        });
+      const iconSrc = app.icon;
+      const addBtn = createMiniButton({
+        label: '+',
+        focusIndex: 1300 + index,
+        dataset: {pointerFocus: 'off'},
+        onClick: function () {
+          if (pinnedOrder.indexOf(app.id) >= 0) return; // second OK before the redraw
+          const keepFocus = document.activeElement === addBtn;
+          pinnedOrder.push(app.id);
+          loadAppsLists(pinnedListEl, addContainer, config).then(function () {
+            // The next app slides into this row; land on its + (unless the
+            // user already moved on while the list was loading).
+            if (keepFocus && !panel.contains(document.activeElement)) {
+              refocusListButton(addContainer, index, [0]);
+            }
+          });
+        }
       });
-
-      row.appendChild(title);
+      const row = createAppRow({
+        title: app.title || app.id,
+        icon: iconSrc,
+        mountIcon: function (icon) {
+          icon.addEventListener('error', function () { icon.remove(); });
+          lazyLoadIcon(icon, iconSrc as string, addContainer);
+        }
+      }).row;
       row.appendChild(addBtn);
       addContainer.appendChild(row);
     });

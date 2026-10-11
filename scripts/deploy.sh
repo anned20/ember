@@ -4,6 +4,8 @@
 #
 # Usage:
 #   npm run deploy
+#   npm run deploy -- --no-launch
+#   npm run deploy -- --no-notify
 #   ARES_DEVICE=emulator npm run deploy
 #   LAUNCH=0 npm run deploy
 #
@@ -16,7 +18,14 @@
 # Environment:
 #   ARES_DEVICE      ares device name (default: the ares default device)
 #   LAUNCH           1 or 0 — launch the app after install (default: 1)
+#   NOTIFY           1 or 0 — show a toast on the TV for install result (default: 1)
 #   INSTALL_TIMEOUT  seconds to wait for the install (default: 90)
+#
+# Flags:
+#   --no-launch      skip launching the app after install (same as LAUNCH=0)
+#   --launch         force launching the app after install
+#   --no-notify      skip the install-result toast (same as NOTIFY=0)
+#   --notify         force the install-result toast
 
 set -euo pipefail
 
@@ -25,7 +34,18 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 ARES_DEVICE="${ARES_DEVICE:-}"
 LAUNCH="${LAUNCH:-1}"
+NOTIFY="${NOTIFY:-1}"
 INSTALL_TIMEOUT="${INSTALL_TIMEOUT:-90}"
+
+for arg in "$@"; do
+	case "$arg" in
+	--no-launch) LAUNCH=0 ;;
+	--launch) LAUNCH=1 ;;
+	--no-notify) NOTIFY=0 ;;
+	--notify) NOTIFY=1 ;;
+	*) printf "warning: ignoring unknown argument: %s\n" "$arg" >&2 ;;
+	esac
+done
 
 APP_ID="org.webosbrew.lounge.launcher"
 REMOTE_TMP="/media/developer/temp"
@@ -33,7 +53,26 @@ REMOTE_TMP="/media/developer/temp"
 c_grn() { printf '\033[32m%s\033[0m' "$*"; }
 c_red() { printf '\033[31m%s\033[0m' "$*"; }
 section() { printf "\n\033[1;36m━━ %s ━━\033[0m\n" "$*"; }
-die() { printf "%s\n" "$(c_red "error: $*")" >&2; exit 1; }
+
+# Toast on the TV so the result is visible on screen, not just in the terminal.
+# Silently no-ops until the TV is reachable (NOTIFY_READY) or when NOTIFY=0.
+NOTIFY_READY=0
+notify_tv() {
+	[[ "$NOTIFY" == "1" && "$NOTIFY_READY" == "1" ]] || return 0
+	local msg="$1" payload
+	payload="$(printf '{"sourceId":"%s","message":"%s"}' "$APP_ID" "$msg")"
+	ssh_tv "luna-send -n 1 -w 5000 -f -a '$APP_ID' 'luna://com.webos.notification/createToast' '$payload'" >/dev/null 2>&1 \
+		|| ssh_tv "luna-send -n 1 -w 5000 -f 'luna://com.webos.notification/createToast' '$payload'" >/dev/null 2>&1 \
+		|| ssh_tv "/usr/bin/luna-send-pub -n 1 -w 5000 'luna://com.webos.notification/createToast' '$payload'" >/dev/null 2>&1 \
+		|| true
+	return 0
+}
+
+die() {
+	notify_tv "Launch Home deploy failed"
+	printf "%s\n" "$(c_red "error: $*")" >&2
+	exit 1
+}
 
 # ── Resolve the target device ────────────────────────────────────────────────
 section "Resolving ares device"
@@ -77,6 +116,7 @@ APP_DIR="/media/developer/apps/usr/palm/applications/$APP_ID"
 # ── Install over SSH ─────────────────────────────────────────────────────────
 section "Installing to TV"
 wait_for_ssh || die "SSH to $TARGET failed."
+NOTIFY_READY=1
 
 # closeByAppId only suspends the web app; a plain reinstall then resumes the old
 # in-memory page, so hard-kill the WAM process to force a true cold start.
@@ -133,6 +173,7 @@ remote_icon_bytes="$(ssh_tv "wc -c <'${APP_DIR}/assets/icon-80-v8.png'" 2>/dev/n
 [[ "$remote_icon_bytes" == "$local_icon_bytes" ]] \
 	|| die "Install reported success but assets were not replaced (icon: ${remote_icon_bytes:-missing} vs ${local_icon_bytes} bytes)."
 printf "  %s\n" "$(c_grn "Installed ${APP_ID} ${VERSION}")"
+notify_tv "Launch Home ${VERSION} installed"
 
 ssh_tv "rm -f '${REMOTE_IPK}' /tmp/launch-home-install.log; /usr/sbin/ls-control scan-services" >/dev/null 2>&1 || true
 

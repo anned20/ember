@@ -59,7 +59,7 @@ async function build() {
   fs.mkdirSync(dist, {recursive: true});
 
   await esbuild.build({
-    entryPoints: [path.join(root, 'src/ts/main.ts')],
+    entryPoints: [path.join(root, 'src/ts/boot.ts')],
     outfile: path.join(dist, 'main.js'),
     bundle: true,
     format: 'iife',

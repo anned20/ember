@@ -20,6 +20,18 @@ interface TileApp extends AppRecord {
   custom?: boolean;
 }
 
+/**
+ * Anything the dock can launch: a full AppRecord, or a bare reference with
+ * just the launch candidates (e.g. a voice utterance match). Only the optional
+ * id fields are read.
+ */
+export interface LaunchableApp {
+  id?: string;
+  launchId?: string;
+  ids?: string[];
+  title?: string;
+}
+
 /** The home dock's inputs, read once per render. */
 interface DockParams {
   pinned: string[];
@@ -44,7 +56,7 @@ export interface AppGrid {
   refresh(opts?: {reuse?: boolean}): Promise<void>;
   renderShell(): boolean;
   isLoungeApp(id: string): boolean;
-  launchApp(app?: TileApp | null): Promise<string>;
+  launchApp(app?: LaunchableApp | null): Promise<string>;
   launchByNumber(n: number): boolean;
 }
 
@@ -221,7 +233,7 @@ export function createAppGrid(
     return button;
   }
 
-  async function openApp(app?: TileApp | null): Promise<string> {
+  async function openApp(app?: LaunchableApp | null): Promise<string> {
     if (options.onBeforeLaunch) options.onBeforeLaunch();
 
     const ids: string[] = [];

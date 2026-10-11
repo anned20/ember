@@ -30,8 +30,8 @@ export interface CustomScreensaver {
   resetIdle(): void;
   isActive(): boolean;
   applyConfig(): void;
-  preview?(): void;
-  hide?(): void;
+  preview(): void;
+  hide(): void;
 }
 
 interface ImageItem {
@@ -106,7 +106,9 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
       stop: function () {},
       resetIdle: function () {},
       isActive: function () { return false; },
-      applyConfig: function () {}
+      applyConfig: function () {},
+      preview: function () {},
+      hide: function () {}
     };
   }
 

@@ -2727,6 +2727,23 @@ body.settings-open .settings-panel .ai-provider-card.focused {
   }
 }
 
+/* Aerial clips fill the saver above the photo layers, under the scrim/clock. */
+.custom-screensaver-video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-color: #050508;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+
+.custom-screensaver-video.is-visible {
+  opacity: 1;
+}
+
 .custom-screensaver-scrim {
   position: absolute;
   inset: 0;

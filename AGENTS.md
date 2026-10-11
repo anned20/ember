@@ -11,6 +11,19 @@ Write **Conventional Commit** messages: `<type>(<scope>): <summary>`.
 
 Example: `feat(aerial): add the aerial-video background source (#11)`
 
+## Repository layout
+
+Where each module and directory lives, the `@apps`/`@music` import aliases, and
+the build/test commands: see `docs/agents/layout.md`. Read it before exploring
+the tree.
+
+## Guides
+
+- **`CONTEXT.md`**: the domain glossary. Use its terms in code, tests and issues.
+- **`docs/agents/architecture.md`**: how `main.ts` composes the modules, the focus router, and the lifecycle.
+- **`docs/agents/config-and-backups.md`**: the settings tree, schema/migrations, and backup compatibility.
+- **`docs/agents/adding-a-setting.md`**: the end-to-end path for a new setting.
+
 ## Agent skills
 
 ### Issue tracker

@@ -1,0 +1,103 @@
+# Launch Home context
+
+A single-context repo. This file is the ubiquitous language: the terms the code,
+tests, settings and issues all use. Use these words in code, comments, tests and
+issue titles instead of inventing synonyms. Architecture decisions are recorded
+in `docs/adr/` (added as decisions are made).
+
+Launch Home is a fullscreen home screen for a rooted LG webOS TV. It replaces
+the stock Home surface with a dock of app tiles, an inputs row, and ambient
+backgrounds and music, all on top of the webOS Luna service bus.
+
+## The screen
+
+- **Dock** (also home row): the row of app tiles the remote moves along
+  (`focus.focusHomeDock`). Its rows are `apps`, `inputs` and `channels`.
+- **Tile**: one focusable card in the dock. It can be a pinned or custom app, an
+  input, a channel, or the All-apps tile.
+- **App grid**: the dock's row of app tiles (`apps.ts`, `createAppGrid`).
+- **All apps**: the full-screen overlay listing every installed app
+  (`all-apps.ts`), opened by the All-apps tile.
+- **Inputs row**: the HDMI and TV input tiles (`inputs.ts`).
+- **Channels**: Live TV channels. The Channels chip opens the channel strip
+  above the inputs row (`channels.ts`). The setting is `favourites`, `all` or
+  `off`.
+- **Weather panel**: the home-screen forecast (`weather.ts`).
+- **Settings panel**: the category list and pane UI (`settings.ts`).
+- **Screensaver**: two different things. The system screensaver is LG's gallery
+  saver (`screensaverMinutes`). The in-app screensaver is Launch Home's own
+  slideshow and clock shown while idle (`customScreensaver*`).
+
+## Look
+
+- **Background source**: where the wallpaper comes from. One of `builtin`
+  (packaged photos), `preset` (gradient), `url` (online catalogue and custom
+  URLs), `usb`, or `aerial`.
+- **Aerial**: an Apple aerial clip played as video, streamed from Apple's CDN.
+  Nothing is packaged (`aerials.ts`).
+- **Glass**: the frosted tile material. Glass colour (`glassTint`), glass border
+  (`glassBorder`) and focus colour (`focusColour`) recolour it. The base look is
+  light glass with a white border.
+- **Profile**: a named overlay on the base config: `default`, `night` or
+  `cinema` (`profiles.ts`). A preset merged with `config.profiles[id]`.
+- **Performance mode** (`perfMode`): drops blur and animation for weaker TVs.
+- **Pinned app**: an app tile chosen by app id (`pinnedApps`). A **custom app**
+  is a tile added by hand (`customApps`), possibly with its own icon.
+
+## Lifecycle and the foreground
+
+- **Foreground check** (foreground watcher): the poll of the system foreground
+  app id (`pollForegroundOnce`). It also drives launch recovery. It polls every
+  800 ms while a launch is being watched, and every 3 s otherwise.
+- **Launch state**: the ghost-focus state machine (`launch-state.ts`). A pending
+  launch that never paints is a **stuck app**.
+- **Recovery**: what the launch state asks for. `reassert` brings the app's
+  native card forward once; `close` closes the stuck app and reclaims.
+- **Reclaim**: re-asserting keyboard and pointer focus plus a dock tile after
+  webOS routed input to stock Home or another surface (`reclaimInput`).
+- **Home watcher**: the root init.d script that relaunches Launch Home when
+  stock Home appears (`launchOnHome`). **Boot on start** (`bootOnStart`) does
+  the same at power-on.
+- **Homebrew Channel** (root): app scanning, the Home watcher, boot-on-start and
+  the voice assistant all need the elevated Luna service.
+- **Activity**: counters of what happened in the background (relaunches,
+  returns, closes, reclaims, foreground ids), shown under Settings → Tools →
+  TV check (`activity.ts`).
+
+## Luna
+
+- **Luna**: the webOS service bus. A **Luna request** is a call to a service
+  (`luna.ts`, `luna-transport.ts`). **Root exec** runs a shell command through
+  Homebrew Channel (`execRoot`).
+- **Ladder**: the ordered fallback strategies a Luna request tries
+  (`luna-transport.ts`, `LadderRung`), for services that differ across webOS
+  versions.
+
+## Settings, config and backups
+
+- **Config**: the whole settings tree (`Config` in `lib/types.ts`): `version`,
+  `profile`, `profiles`, `background`, `music`, `weather`, `launcher`.
+- **Schema version** (`CONFIG_SCHEMA_VERSION`): the layout version of the
+  settings. A **migration** brings an older config up one version
+  (`CONFIG_MIGRATIONS`). A **repair** is a fix that runs on every load
+  (`CONFIG_REPAIRS`).
+- **Backup**: a settings file with a **format** (wrapper layout) and a
+  **schema** (settings layout). Its **reason** is `manual`, `before-restore` or
+  `before-update`.
+- **Fit**: reshaping a backup's settings to this version (`configFromBackup`). A
+  setting of the wrong kind is a **skip** (`why: 'type'`) and keeps the TV's
+  current value. One from a newer version is `why: 'newer'`, kept but unused.
+- **Device settings**: settings that belong to the TV rather than the person
+  (`DEVICE_SETTINGS`), kept as-is across a restore (for example `voiceEnabled`).
+
+## Voice
+
+- **Voice assistant**: Launch Home's optional assistant for the Magic Remote's
+  Voice button (`voice/`), off by default.
+- **Daemon**: the Python process that talks to the voice provider and the TV
+  (`voice/daemon`, runs as root).
+- **Voice card** (overlay): the hidden `org.webosbrew.lounge.voice` app that
+  shows and speaks the answer (`voice/overlay`).
+- **Provider**: the assistant backend, one of Grok/xAI, Gemini or OpenRouter.
+
+See `docs/agents/` for how each of these is wired and extended.

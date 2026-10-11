@@ -1,6 +1,8 @@
 import {labeledControl, labeledBlock} from './labeled.js';
+import {textField} from '../../settings-binding.js';
+import type {ConfigField, FieldCodec} from '../../settings-binding.js';
 
-export interface TextFieldOptions {
+export interface TextFieldOptions extends FieldCodec {
   label: string;
   focusIndex: number | string;
   type?: 'text' | 'number' | 'password' | 'search' | 'url' | 'range';
@@ -14,6 +16,8 @@ export interface TextFieldOptions {
   step?: string;
   spellcheck?: boolean;
   autocomplete?: string;
+  /** The config path this field edits (see settings-binding.js). */
+  path?: string;
   /** Overrides the default `settings-text focusable` / textarea class. */
   className?: string;
   /** Lay the label out as a `settings-block` heading instead of a row. */
@@ -25,6 +29,8 @@ export interface TextFieldOptions {
 export interface TextField {
   row: HTMLDivElement;
   input: HTMLInputElement & HTMLTextAreaElement;
+  /** The control as a config field, when `path` was given. */
+  field?: ConfigField;
 }
 
 /** A labelled text field (or textarea), gated for the TV keyboard elsewhere. */
@@ -54,5 +60,10 @@ export function createTextField(options: TextFieldOptions): TextField {
     input.addEventListener('change', function () { options.onChange!(input.value); });
   }
   const row = options.block ? labeledBlock(options.label, input) : labeledControl(options.label, input);
-  return {row: row, input: input};
+  const field = options.path
+    ? textField(input, options.path, {
+      parse: options.parse, format: options.format, trim: options.trim
+    })
+    : undefined;
+  return {row: row, input: input, field: field};
 }

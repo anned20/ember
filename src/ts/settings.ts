@@ -53,6 +53,7 @@ import {
   createGallery
 } from './components/settings/index.js';
 import type {GalleryEntry} from './components/settings/index.js';
+import {createBinder, stepperField, textField, toggleField} from './settings-binding.js';
 import type {
   Config,
   CustomApp,
@@ -900,6 +901,11 @@ export function createSettingsPanel(
     const config = getConfig();
     const effective = applyActiveProfile(config);
     const bg = normalizeBackgroundConfig(effective.background);
+    // Every plain control is bound to the config path it edits; Save runs
+    // binder.collect(), which reads the whole field table back into `config`.
+    // Derived / asynchronous fields (galleries, playlists, the USB scan, the
+    // weather place, the AI keys) register hook()s instead.
+    const binder = createBinder(effective);
     // Cap waits so the panel never sits empty after we clear the loading shell.
     const loaded = await withDeadline(loadBuiltinManifest(), 4000);
     if (gen !== renderGen || !visible) return;
@@ -2115,8 +2121,9 @@ export function createSettingsPanel(
       PROFILE_OPTIONS.map(function (entry) {
         return {value: entry.id, label: entry.label};
       }),
-      config.profile || 'default',
+      undefined,
       function (value) { syncProfileBackgroundNote(value); });
+    binder.bind(stepperField(profileSelect, 'profile'));
     profileSection.appendChild(labeledControl('Active profile', profileSelect));
 
     profileSection.appendChild(createHint(
@@ -2133,11 +2140,12 @@ export function createSettingsPanel(
       {value: 'usb', label: 'USB folder'},
       {value: 'url', label: 'Online URL (nature + anime)'},
       {value: 'aerial', label: 'Aerial videos (Apple)'}
-    ], bg.source, function (value) {
+    ], undefined, function (value) {
       syncFields({
         revealGallery: value === 'url' || value === 'builtin' || value === 'aerial'
       });
     });
+    binder.bind(stepperField(sourceSelect, 'background.source'));
     section.appendChild(labeledControl('Source', sourceSelect));
 
     // A profile with its own background (Cinema) overrides the Source above.
@@ -2162,7 +2170,8 @@ export function createSettingsPanel(
       {value: 'cool-gradient', label: 'Cool gradient'},
       {value: 'midnight', label: 'Midnight'},
       {value: 'ember', label: 'Ember'}
-    ], bg.preset);
+    ], undefined);
+    binder.bind(stepperField(presetSelect, 'background.preset'));
     // Only shown when Source is Gradient / Animated Gradient (not when Photo is set).
     const presetRow = labeledControl('Gradient style', presetSelect);
     section.appendChild(presetRow);
@@ -2170,9 +2179,10 @@ export function createSettingsPanel(
     const displaySelect = createOptionStepper('', 904, [
       {value: 'static', label: 'Single image'},
       {value: 'slideshow', label: 'Slideshow'}
-    ], bg.mode, function () {
+    ], undefined, function () {
       syncFields();
     });
+    binder.bind(stepperField(displaySelect, 'background.mode'));
     const displayRow = labeledControl('Display', displaySelect);
     section.appendChild(displayRow);
 
@@ -2180,10 +2190,10 @@ export function createSettingsPanel(
     const bgShuffleField = createToggle({
       label: 'Shuffle clips',
       focusIndex: '936',
-      checked: !!bg.shuffle
+      path: 'background.shuffle'
     });
     const bgShuffleRow = bgShuffleField.row;
-    const bgShuffleToggle = bgShuffleField.input;
+    binder.bind(bgShuffleField.field!);
     section.appendChild(bgShuffleRow);
 
     // Aerial clips (Apple) — title-only picker; the clips stream from Apple's
@@ -2247,10 +2257,11 @@ export function createSettingsPanel(
       label: 'USB filename',
       focusIndex: '930',
       placeholder: 'living-room.jpg',
-      value: config.background.file || ''
+      path: 'background.file',
+      trim: true
     });
-    const usbFileInput = usbField.input;
     const usbFileRow = usbField.row;
+    binder.bind(usbField.field!);
     section.appendChild(usbFileRow);
 
     // Match curated remote by saved id, else by URL, else default first entry.
@@ -2277,6 +2288,9 @@ export function createSettingsPanel(
     // Prefer saved URL; if empty and a catalog pick is selected, prefill that.
     const remotePrefill = findRemoteBackgroundById(initialRemote);
     urlInput.value = bg.url || (remotePrefill && remotePrefill.url) || '';
+    // Derived init (a catalog pick prefills the field), so register the field
+    // without reading the raw config over it.
+    binder.add(textField(urlInput, 'background.url', {trim: true}));
 
     // Visual photo gallery (replaces text-only stepper) — D-pad pickable tiles.
     let selectedRemoteId = initialRemote;
@@ -2388,6 +2402,25 @@ export function createSettingsPanel(
     // A saved link is checked when Settings opens, too.
     if (urlInput.value.trim()) checkUrl();
 
+    // Gallery picks and the URL/remote-id alignment are derived fields.
+    binder.hook(function (cfg) {
+      cfg.background.builtin = selectedBuiltinId || '';
+      cfg.background.aerial = selectedAerialId || '';
+      // Online catalog is independent of built-in; only apply when source is url,
+      // and keep the remote id aligned with a matching URL.
+      cfg.background.remote = selectedRemoteId || '';
+      if (cfg.background.url) {
+        const match = findRemoteBackgroundByUrl(cfg.background.url);
+        if (match) cfg.background.remote = match.id;
+      } else if (selectedRemoteId) {
+        const picked = findRemoteBackgroundById(selectedRemoteId);
+        if (picked) {
+          cfg.background.url = picked.url;
+          cfg.background.remote = picked.id;
+        }
+      }
+    });
+
     const urlsField = createTextField({
       label: 'Slideshow URLs',
       focusIndex: '932',
@@ -2395,10 +2428,12 @@ export function createSettingsPanel(
       rows: 4,
       block: true,
       placeholder: 'One https image URL per line (leave empty to use curated online set)',
-      value: (bg.urls || []).join('\n')
+      path: 'background.urls',
+      parse: parseUrlList,
+      format: function (value) { return Array.isArray(value) ? value.join('\n') : ''; }
     });
-    const urlsInput = urlsField.input;
     const urlsRow = urlsField.row;
+    binder.bind(urlsField.field!);
     section.appendChild(urlsRow);
 
     const intervalField = createTextField({
@@ -2408,19 +2443,21 @@ export function createSettingsPanel(
       min: '30',
       max: '3600',
       step: '30',
-      value: String(bg.slideshowIntervalSec || 300)
+      path: 'background.slideshowIntervalSec',
+      parse: function (raw) { return Number(raw) || 300; },
+      format: function (value) { return String(value || 300); }
     });
-    const intervalInput = intervalField.input;
     const intervalRow = intervalField.row;
+    binder.bind(intervalField.field!);
     section.appendChild(intervalRow);
 
     const kenBurnsField = createToggle({
       label: 'Slow zoom background',
       focusIndex: '934',
-      checked: !!bg.kenBurns
+      path: 'background.kenBurns'
     });
     const kenBurnsRow = kenBurnsField.row;
-    const kenBurnsToggle = kenBurnsField.input;
+    binder.bind(kenBurnsField.field!);
     section.appendChild(kenBurnsRow);
     const kenBurnsHint = createHint(
       'When on, the wallpaper slowly zooms in and drifts a little (like a calm slideshow). When off, the picture stays still. Photos only — not gradients. ' +
@@ -2435,9 +2472,11 @@ export function createSettingsPanel(
       className: 'focusable',
       min: '20',
       max: '60',
-      value: String(Math.round((bg.overlayOpacity || 0.45) * 100))
+      path: 'background.overlayOpacity',
+      parse: function (raw) { return Number(raw) / 100; },
+      format: function (value) { return String(Math.round(Number(value || 0.45) * 100)); }
     });
-    const overlayRange = overlayField.input;
+    binder.bind(overlayField.field!);
     section.appendChild(overlayField.row);
 
     const oledNote = document.createElement('p');
@@ -2490,17 +2529,17 @@ export function createSettingsPanel(
     const musicEnabledField = createToggle({
       label: 'Ambient music',
       focusIndex: '940',
-      checked: !!effective.music.enabled
+      path: 'music.enabled'
     });
-    const musicEnabled = musicEnabledField.input;
+    binder.bind(musicEnabledField.field!);
     musicSection.appendChild(musicEnabledField.row);
 
     const showMusicBarField = createToggle({
       label: 'Show music bar',
       focusIndex: '9405',
-      checked: !!music.showBar
+      path: 'music.showBar'
     });
-    const showMusicBar = showMusicBarField.input;
+    binder.bind(showMusicBarField.field!);
     musicSection.appendChild(showMusicBarField.row);
 
     musicSection.appendChild(createHint(
@@ -2510,9 +2549,10 @@ export function createSettingsPanel(
     const musicSourceSelect = createOptionStepper('', 941, [
       {value: 'builtin', label: 'Built-in ambient (6 tracks)'},
       {value: 'usb', label: 'My tracks (USB)'}
-    ], music.source, function () {
+    ], undefined, function () {
       syncMusicFields();
     });
+    binder.bind(stepperField(musicSourceSelect, 'music.source'));
     const musicSourceRow = labeledControl('Source', musicSourceSelect);
     musicSection.appendChild(musicSourceRow);
 
@@ -2575,7 +2615,8 @@ export function createSettingsPanel(
 
     const builtinTrackSelect = createOptionStepper('', 950,
       builtinStartOptions(),
-      music.builtin);
+      undefined);
+    binder.bind(stepperField(builtinTrackSelect, 'music.builtin'));
     const builtinTrackRow = labeledControl('Start with', builtinTrackSelect);
     musicSection.appendChild(builtinTrackRow);
 
@@ -2620,10 +2661,12 @@ export function createSettingsPanel(
       label: 'Music folder',
       focusIndex: '952',
       placeholder: 'e.g. /media/usb1/lounge/music',
-      value: config.music.path || ''
+      path: 'music.path',
+      trim: true
     });
     const musicPathInput = musicPathField.input;
     const musicPathRow = musicPathField.row;
+    binder.bind(musicPathField.field!);
     musicSection.appendChild(musicPathRow);
 
     musicPathInput.addEventListener('change', function () {
@@ -2714,17 +2757,18 @@ export function createSettingsPanel(
     const shuffleField = createToggle({
       label: 'Shuffle',
       focusIndex: '990',
-      checked: config.music.shuffle !== false
+      path: 'music.shuffle'
     });
-    const shuffleToggle = shuffleField.input;
     const shuffleRow = shuffleField.row;
+    binder.bind(shuffleField.field!);
     musicSection.appendChild(shuffleRow);
 
     const repeatSelect = createOptionStepper('', 991, [
       {value: 'all', label: 'Repeat all'},
       {value: 'one', label: 'Repeat one'},
       {value: 'off', label: 'Play once'}
-    ], config.music.repeat || 'one');
+    ], undefined);
+    binder.bind(stepperField(repeatSelect, 'music.repeat'));
     const repeatRow = labeledControl('Repeat', repeatSelect);
     musicSection.appendChild(repeatRow);
 
@@ -2735,9 +2779,11 @@ export function createSettingsPanel(
       className: 'focusable',
       min: '0',
       max: '50',
-      value: String(Math.round((effective.music.volume || 0.15) * 100))
+      path: 'music.volume',
+      parse: function (raw) { return Number(raw) / 100; },
+      format: function (value) { return String(Math.round(Number(value || 0.15) * 100)); }
     });
-    const musicVolume = musicVolumeField.input;
+    binder.bind(musicVolumeField.field!);
     musicSection.appendChild(musicVolumeField.row);
 
     musicSection.appendChild(createHint(
@@ -2757,6 +2803,31 @@ export function createSettingsPanel(
     }
 
     syncMusicFields();
+    // The playlists come from the tick boxes, not a plain control.
+    binder.hook(function (cfg) {
+      // Empty array = all built-ins; otherwise only ticked ids.
+      let pickedBuiltin = enabledBuiltinIds();
+      if (!pickedBuiltin.length && builtinTracks.length) {
+        // Don't allow empty playlist — keep the start track (or first).
+        pickedBuiltin = [builtinTrackSelect.value || builtinTracks[0].id];
+      }
+      cfg.music.builtinPlaylist =
+        pickedBuiltin.length === builtinTracks.length ? [] : pickedBuiltin;
+
+      // Empty = all USB tracks found; otherwise only ticked urls.
+      let pickedUsb: string[] = [];
+      usbTrackEntries.forEach(function (entry) {
+        const url = entry && entry.url;
+        if (url && usbSelected[url]) pickedUsb.push(url);
+      });
+      if (!pickedUsb.length && usbTrackEntries.length) {
+        pickedUsb = [usbTrackEntries[0].url];
+      }
+      cfg.music.usbPlaylist =
+        usbTrackEntries.length && pickedUsb.length === usbTrackEntries.length
+          ? []
+          : pickedUsb;
+    });
     panes.music.appendChild(musicSection);
 
     // The old Launcher section, now three: System (volume levels, then
@@ -2771,6 +2842,11 @@ export function createSettingsPanel(
     // '' = "Don't change": leave whatever the remote set (stored as null).
     function volumeLevelValue(level: number | null): string {
       return typeof level === 'number' ? String(level) : '';
+    }
+
+    function volumeLevelParse(raw: string): number | null {
+      const level = parseInt(raw, 10);
+      return isNaN(level) ? null : level;
     }
 
     function volumeLevelOptions(selected: string): StepperOption[] {
@@ -2793,8 +2869,11 @@ export function createSettingsPanel(
       '',
       993,
       volumeLevelOptions(volumeAtHomeValue),
-      volumeAtHomeValue
+      undefined
     );
+    binder.bind(stepperField(volumeAtHomeSelect, 'launcher.volumeAtHome', {
+      parse: volumeLevelParse
+    }));
     launcherSection.appendChild(labeledControl('Volume in Launch Home', volumeAtHomeSelect));
 
     const volumeOnAppValue = volumeLevelValue(config.launcher.volumeOnAppLaunch);
@@ -2802,8 +2881,11 @@ export function createSettingsPanel(
       '',
       994,
       volumeLevelOptions(volumeOnAppValue),
-      volumeOnAppValue
+      undefined
     );
+    binder.bind(stepperField(volumeOnAppSelect, 'launcher.volumeOnAppLaunch', {
+      parse: volumeLevelParse
+    }));
     launcherSection.appendChild(labeledControl('Volume when apps launch', volumeOnAppSelect));
 
     launcherSection.appendChild(createHint(
@@ -2815,9 +2897,9 @@ export function createSettingsPanel(
     const customSsField = createToggle({
       label: 'Launch Home screensaver',
       focusIndex: '990',
-      checked: config.launcher.customScreensaver !== false
+      path: 'launcher.customScreensaver'
     });
-    const customSsToggle = customSsField.input;
+    binder.bind(customSsField.field!);
     launcherSection.appendChild(customSsField.row);
 
     const customSsIdle = createOptionStepper('', 991, [
@@ -2829,11 +2911,13 @@ export function createSettingsPanel(
       {value: '30', label: '30 minutes'},
       {value: '45', label: '45 minutes'},
       {value: '60', label: '60 minutes'}
-    ], String(
-      typeof config.launcher.customScreensaverMinutes === 'number'
-        ? config.launcher.customScreensaverMinutes
-        : 5
-    ));
+    ], undefined);
+    binder.bind(stepperField(customSsIdle, 'launcher.customScreensaverMinutes', {
+      parse: function (raw) {
+        const n = parseInt(raw, 10);
+        return isNaN(n) || n < 1 ? 5 : n;
+      }
+    }));
     launcherSection.appendChild(labeledControl('Start after (idle)', customSsIdle));
 
     const customSsSlide = createOptionStepper('', 992, [
@@ -2843,27 +2927,29 @@ export function createSettingsPanel(
       {value: '45', label: '45 seconds'},
       {value: '60', label: '1 minute'},
       {value: '120', label: '2 minutes'}
-    ], String(
-      typeof config.launcher.customScreensaverSlideSec === 'number'
-        ? config.launcher.customScreensaverSlideSec
-        : 20
-    ));
+    ], undefined);
+    binder.bind(stepperField(customSsSlide, 'launcher.customScreensaverSlideSec', {
+      parse: function (raw) {
+        const n = parseInt(raw, 10);
+        return isNaN(n) || n < 8 ? 20 : n;
+      }
+    }));
     launcherSection.appendChild(labeledControl('Photo change every', customSsSlide));
 
     const customSsClockField = createToggle({
       label: 'Screensaver clock',
       focusIndex: '993',
-      checked: config.launcher.customScreensaverShowClock !== false
+      path: 'launcher.customScreensaverShowClock'
     });
-    const customSsClock = customSsClockField.input;
+    binder.bind(customSsClockField.field!);
     launcherSection.appendChild(customSsClockField.row);
 
     const customSsDateField = createToggle({
       label: 'Screensaver date',
       focusIndex: '994',
-      checked: config.launcher.customScreensaverShowDate !== false
+      path: 'launcher.customScreensaverShowDate'
     });
-    const customSsDate = customSsDateField.input;
+    binder.bind(customSsDateField.field!);
     launcherSection.appendChild(customSsDateField.row);
 
     launcherSection.appendChild(createHint(
@@ -2898,6 +2984,19 @@ export function createSettingsPanel(
       {value: '20', label: '20 minutes'},
       {value: '30', label: '30 minutes'}
     ], String(ssMins));
+    // The TV enum is coerced, and the value is raised past the in-app saver.
+    binder.add(stepperField(screensaverSelect, 'launcher.screensaverMinutes', {
+      parse: function (raw) { return parseInt(raw, 10); }
+    }));
+    binder.hook(function (cfg) {
+      cfg.launcher.screensaverMinutes = coerceScreensaverMinutes(cfg.launcher.screensaverMinutes);
+      // Keep system saver from firing before the in-app one.
+      if (cfg.launcher.customScreensaver &&
+          cfg.launcher.screensaverMinutes > 0 &&
+          cfg.launcher.screensaverMinutes < 30) {
+        cfg.launcher.screensaverMinutes = 30;
+      }
+    });
     launcherSection.appendChild(labeledControl('TV system screensaver', screensaverSelect));
 
     launcherSection.appendChild(createHint(
@@ -2908,23 +3007,26 @@ export function createSettingsPanel(
     const showClockField = createToggle({
       label: 'Show clock',
       focusIndex: '1000',
-      checked: config.launcher.showClock !== false
+      path: 'launcher.showClock'
     });
-    const showClockToggle = showClockField.input;
+    binder.bind(showClockField.field!);
     launcherSection.appendChild(showClockField.row);
 
     const clockFormatSelect = createOptionStepper('', 1090, [
       {value: '24', label: '24-hour (18:30)'},
       {value: '12', label: '12-hour (6:30 PM)'}
-    ], config.launcher.clockFormat === '12' ? '12' : '24');
+    ], undefined);
+    binder.bind(stepperField(clockFormatSelect, 'launcher.clockFormat', {
+      parse: function (raw) { return raw === '12' ? '12' : '24'; }
+    }));
     launcherSection.appendChild(labeledControl('Clock format', clockFormatSelect));
 
     const showDateField = createToggle({
       label: 'Show date',
       focusIndex: '1001',
-      checked: config.launcher.showDate !== false
+      path: 'launcher.showDate'
     });
-    const showDateToggle = showDateField.input;
+    binder.bind(showDateField.field!);
     launcherSection.appendChild(showDateField.row);
 
     const clockAlignSelect = createOptionStepper('', 1002, [
@@ -2932,7 +3034,13 @@ export function createSettingsPanel(
       {value: 'center', label: 'Centre top'},
       {value: 'center-middle', label: 'Centre middle'},
       {value: 'right', label: 'Top right'}
-    ], config.launcher.clockAlign || 'center');
+    ], undefined);
+    binder.bind(stepperField(clockAlignSelect, 'launcher.clockAlign', {
+      // Normalise unknown legacy values to centre top.
+      parse: function (raw) {
+        return ['left', 'center', 'center-middle', 'right'].indexOf(raw) < 0 ? 'center' : raw;
+      }
+    }));
     launcherSection.appendChild(labeledControl('Clock position', clockAlignSelect));
 
     const clockSizeSelect = createOptionStepper('', 1003, [
@@ -2941,50 +3049,59 @@ export function createSettingsPanel(
       {value: 'large', label: 'Large'},
       {value: 'x-large', label: 'X-Large'},
       {value: 'xx-large', label: 'XX-Large'}
-    ], config.launcher.clockSize || 'large');
+    ], undefined);
+    binder.bind(stepperField(clockSizeSelect, 'launcher.clockSize', {
+      parse: function (raw) { return raw || 'large'; }
+    }));
     launcherSection.appendChild(labeledControl('Clock size', clockSizeSelect));
 
     const timezoneSelect = createOptionStepper('', 1004,
       TIMEZONE_OPTIONS.map(function (option) {
         return {value: option.value, label: option.label};
       }),
-      config.launcher.timezone || '');
+      undefined);
+    binder.bind(stepperField(timezoneSelect, 'launcher.timezone'));
     launcherSection.appendChild(labeledControl('Timezone', timezoneSelect));
 
     const iconSizeSelect = createOptionStepper('', 1005, [
       {value: 'small', label: 'Small'},
       {value: 'medium', label: 'Medium'},
       {value: 'large', label: 'Large'}
-    ], config.launcher.iconSize || 'medium');
+    ], undefined);
+    binder.bind(stepperField(iconSizeSelect, 'launcher.iconSize'));
     launcherSection.appendChild(labeledControl('Icon size', iconSizeSelect));
 
     const iconAlignSelect = createOptionStepper('', 1006, [
       {value: 'left', label: 'Left'},
       {value: 'center', label: 'Centre'},
       {value: 'right', label: 'Right'}
-    ], config.launcher.iconAlign || 'center');
+    ], undefined);
+    binder.bind(stepperField(iconAlignSelect, 'launcher.iconAlign'));
     launcherSection.appendChild(labeledControl('Icon alignment', iconAlignSelect));
 
     const iconLayoutSelect = createOptionStepper('', 1007, [
       {value: 'scroll', label: 'Scroll one row'},
       {value: 'wrap', label: 'Stacked rows'}
-    ], config.launcher.iconLayout || 'scroll');
+    ], undefined);
+    binder.bind(stepperField(iconLayoutSelect, 'launcher.iconLayout'));
     launcherSection.appendChild(labeledControl('Icon layout', iconLayoutSelect));
 
-    const perRowValue = config.launcher.iconsPerRow || 7;
     const iconsPerRowSelect = createOptionStepper('', 1008, [
       {value: '4', label: '4'}, {value: '5', label: '5'}, {value: '6', label: '6'},
       {value: '7', label: '7'}, {value: '8', label: '8'}, {value: '9', label: '9'},
       {value: '10', label: '10'}, {value: '11', label: '11'}, {value: '12', label: '12'}
-    ], String(perRowValue));
+    ], undefined);
+    binder.bind(stepperField(iconsPerRowSelect, 'launcher.iconsPerRow', {
+      parse: function (raw) { return parseInt(raw, 10) || 7; }
+    }));
     launcherSection.appendChild(labeledControl('Icons per row (scroll mode)', iconsPerRowSelect));
 
     const bundledIconsField = createToggle({
       label: 'Use Launch Home app icons',
       focusIndex: '1008',
-      checked: config.launcher.bundledIcons !== false
+      path: 'launcher.bundledIcons'
     });
-    const bundledIconsToggle = bundledIconsField.input;
+    binder.bind(bundledIconsField.field!);
     launcherSection.appendChild(bundledIconsField.row);
 
     launcherSection.appendChild(createHint(
@@ -2995,9 +3112,9 @@ export function createSettingsPanel(
     const perfModeField = createToggle({
       label: 'Performance mode (low-spec TVs)',
       focusIndex: '1009',
-      checked: !!config.launcher.perfMode
+      path: 'launcher.perfMode'
     });
-    const perfModeToggle = perfModeField.input;
+    binder.bind(perfModeField.field!);
     launcherSection.appendChild(perfModeField.row);
     launcherSection.appendChild(createHint(
       'Turns off the frosted glass and uses 1920px wallpapers. ' +
@@ -3014,6 +3131,11 @@ export function createSettingsPanel(
     });
     const launchOnHomeToggle = launchOnHomeField.input;
     launcherSection.appendChild(launchOnHomeField.row);
+    // The legacy key stays in sync so older builds / USB config still work.
+    binder.add(toggleField(launchOnHomeToggle, 'launcher.launchOnHome'));
+    binder.hook(function (cfg) {
+      cfg.launcher.returnOnAppExit = cfg.launcher.launchOnHome;
+    });
 
     launcherSection.appendChild(createHint(
       'When enabled, a root service opens Launch Home whenever stock Home appears. A brief flash of the LG home screen is normal (the TV opens Home first; we cannot block the key without a separate input-hook app). Requires rooted TV + Homebrew Channel. Toggle off/on and Save after updates if it stops working.'
@@ -3022,9 +3144,9 @@ export function createSettingsPanel(
     const bootField = createToggle({
       label: 'Boot on TV start',
       focusIndex: '1011',
-      checked: !!config.launcher.bootOnStart
+      path: 'launcher.bootOnStart'
     });
-    const bootToggle = bootField.input;
+    binder.bind(bootField.field!);
     launcherSection.appendChild(bootField.row);
 
     launcherSection.appendChild(createHint(
@@ -3090,7 +3212,10 @@ export function createSettingsPanel(
       {value: 'purple', label: 'Purple'},
       {value: 'green', label: 'Green'},
       {value: 'warm', label: 'Warm'}
-    ], config.launcher.glassTint || 'light', paintGlassPreview);
+    ], undefined, paintGlassPreview);
+    binder.bind(stepperField(glassSelect, 'launcher.glassTint', {
+      parse: function (raw) { return raw || 'light'; }
+    }));
     glassSection.appendChild(labeledControl('Tile colour', glassSelect));
     glassSection.appendChild(createHint('Inside the app tiles, input buttons and Settings button. ' +
       'Dark or Black suit dark wallpapers.'));
@@ -3105,7 +3230,10 @@ export function createSettingsPanel(
       {value: 'green', label: 'Green'},
       {value: 'warm', label: 'Warm'},
       {value: 'gold', label: 'Gold'}
-    ], config.launcher.glassBorder || 'white', paintGlassPreview);
+    ], undefined, paintGlassPreview);
+    binder.bind(stepperField(glassBorderSelect, 'launcher.glassBorder', {
+      parse: function (raw) { return raw || 'white'; }
+    }));
     glassSection.appendChild(labeledControl('Tile outline', glassBorderSelect));
     glassSection.appendChild(createHint('The thin line around each tile and button.'));
 
@@ -3117,7 +3245,10 @@ export function createSettingsPanel(
       {value: 'purple', label: 'Purple'},
       {value: 'green', label: 'Green'},
       {value: 'gold', label: 'Gold'}
-    ], config.launcher.focusColour || 'warm', paintGlassPreview);
+    ], undefined, paintGlassPreview);
+    binder.bind(stepperField(focusColourSelect, 'launcher.focusColour', {
+      parse: function (raw) { return raw || 'warm'; }
+    }));
     glassSection.appendChild(labeledControl('Selection highlight', focusColourSelect));
     glassSection.appendChild(createHint('The glow around the tile or button the remote is on, ' +
       'and the colour of the current input.'));
@@ -3137,15 +3268,18 @@ export function createSettingsPanel(
     const weatherField = createToggle({
       label: 'Show weather',
       focusIndex: '1020',
-      checked: weatherCfg.enabled
+      path: 'weather.enabled'
     });
-    const weatherToggle = weatherField.input;
+    binder.bind(weatherField.field!);
     weatherSection.appendChild(weatherField.row);
 
     const weatherUnitsSelect = createOptionStepper('', 1021, [
       {value: 'c', label: '°C'},
       {value: 'f', label: '°F'}
-    ], weatherCfg.units);
+    ], undefined);
+    binder.bind(stepperField(weatherUnitsSelect, 'weather.units', {
+      parse: function (raw) { return raw === 'f' ? 'f' : 'c'; }
+    }));
     weatherSection.appendChild(labeledControl('Temperature', weatherUnitsSelect));
 
     const weatherPlaceHint = createHint('');
@@ -3265,6 +3399,10 @@ export function createSettingsPanel(
         lookUpWeatherPlaces(typed);
       });
     });
+    // The place comes from the async place lookup, not a plain control.
+    binder.hook(function (cfg) {
+      cfg.weather.location = Object.assign({}, weatherPlace);
+    });
     panes.weather.appendChild(weatherSection);
 
     const inputsSection = createSection('Inputs');
@@ -3279,13 +3417,17 @@ export function createSettingsPanel(
       {value: 'favourites', label: 'Favourites (or all)'},
       {value: 'all', label: 'All channels'},
       {value: 'off', label: 'Off'}
-    ], config.launcher.channels === 'all' || config.launcher.channels === 'off'
-      ? config.launcher.channels : 'favourites');
+    ], undefined);
+    binder.bind(stepperField(channelsSelect, 'launcher.channels'));
     inputsSection.appendChild(labeledControl('TV channels', channelsSelect));
     inputsSection.appendChild(createHint(
       'Adds a Channels button after the inputs when the TV has Live TV ' +
       'channels tuned: pick one to watch it, or see what\u2019s on now.'
     ));
+    // The inputs grid (tick / label / added) is built from the device list.
+    binder.hook(function (cfg) {
+      saveInputSettings(inputsList, cfg);
+    });
     panes.inputs.appendChild(inputsSection);
 
     const appsSection = createSection('Pinned apps');
@@ -3295,9 +3437,9 @@ export function createSettingsPanel(
     const allAppsTileField = createToggle({
       label: 'All apps tile on the home row',
       focusIndex: '1190',
-      checked: config.launcher.allAppsTile !== false
+      path: 'launcher.allAppsTile'
     });
-    const allAppsTileToggle = allAppsTileField.input;
+    binder.bind(allAppsTileField.field!);
     appsSection.appendChild(allAppsTileField.row);
     appsSection.appendChild(createHint(
       'Opens a grid of every app on the TV: open any app without pinning it here.'
@@ -3308,9 +3450,9 @@ export function createSettingsPanel(
     const numberKeyField = createToggle({
       label: 'Number keys open home row tiles',
       focusIndex: '1191',
-      checked: config.launcher.numberKeyLaunch !== false
+      path: 'launcher.numberKeyLaunch'
     });
-    const numberKeyToggle = numberKeyField.input;
+    binder.bind(numberKeyField.field!);
     appsSection.appendChild(numberKeyField.row);
     appsSection.appendChild(createHint(
       'Press 1\u20139 on the remote to open the tile at that position ' +
@@ -3400,6 +3542,11 @@ export function createSettingsPanel(
     const addAppsList = document.createElement('div');
     addAppsList.className = 'settings-apps';
     appsSection.appendChild(addAppsList);
+    // The pin order and custom apps are edited by the lists, not a control.
+    binder.hook(function (cfg) {
+      cfg.launcher.pinnedApps = pinnedOrder.slice();
+      cfg.launcher.customApps = customApps.slice();
+    });
     panes.apps.appendChild(appsSection);
 
     let addAppsExpanded = false;
@@ -3874,125 +4021,8 @@ export function createSettingsPanel(
         return;
       }
 
-      config.profile = profileSelect.value;
-      config.background.source = sourceSelect.value;
-      config.background.mode = displaySelect.value;
-      config.background.preset = presetSelect.value;
-      config.background.builtin = selectedBuiltinId || '';
-      config.background.aerial = selectedAerialId || '';
-      config.background.file = usbFileInput.value.trim();
-      // Online catalog is independent of built-in; only apply when source is url.
-      config.background.remote = selectedRemoteId || '';
-      config.background.url = urlInput.value.trim();
-      // Keep remote id aligned when the URL still matches a catalog entry.
-      if (config.background.url) {
-        const match = findRemoteBackgroundByUrl(config.background.url);
-        if (match) config.background.remote = match.id;
-      } else if (selectedRemoteId) {
-        const picked = findRemoteBackgroundById(selectedRemoteId);
-        if (picked) {
-          config.background.url = picked.url;
-          config.background.remote = picked.id;
-        }
-      }
-      config.background.urls = parseUrlList(urlsInput.value);
-      config.background.slideshowIntervalSec = Number(intervalInput.value) || 300;
-      config.background.kenBurns = kenBurnsToggle.checked;
-      config.background.shuffle = bgShuffleToggle.checked;
-      config.background.overlayOpacity = Number(overlayRange.value) / 100;
-
-      config.music.enabled = musicEnabled.checked;
-      config.music.showBar = showMusicBar.checked;
-      config.music.source = musicSourceSelect.value;
-      config.music.builtin = builtinTrackSelect.value;
-      // Empty array = all built-ins; otherwise only ticked ids.
-      let pickedBuiltin = enabledBuiltinIds();
-      if (!pickedBuiltin.length && builtinTracks.length) {
-        // Don't allow empty playlist — keep the start track (or first).
-        pickedBuiltin = [builtinTrackSelect.value || builtinTracks[0].id];
-      }
-      config.music.builtinPlaylist =
-        pickedBuiltin.length === builtinTracks.length ? [] : pickedBuiltin;
-      config.music.path = musicPathInput.value.trim();
-      // Empty = all USB tracks found; otherwise only ticked urls.
-      let pickedUsb: string[] = [];
-      usbTrackEntries.forEach(function (entry) {
-        const url = entry && entry.url;
-        if (url && usbSelected[url]) pickedUsb.push(url);
-      });
-      if (!pickedUsb.length && usbTrackEntries.length) {
-        pickedUsb = [usbTrackEntries[0].url];
-      }
-      config.music.usbPlaylist =
-        usbTrackEntries.length && pickedUsb.length === usbTrackEntries.length
-          ? []
-          : pickedUsb;
-      config.music.shuffle = shuffleToggle.checked;
-      config.music.repeat = repeatSelect.value;
-      config.music.volume = Number(musicVolume.value) / 100;
-
-      // null = "Don't change" (leave the TV volume alone).
-      const homeLevel = parseInt(volumeAtHomeSelect.value, 10);
-      config.launcher.volumeAtHome = isNaN(homeLevel) ? null : homeLevel;
-      const appLevel = parseInt(volumeOnAppSelect.value, 10);
-      config.launcher.volumeOnAppLaunch = isNaN(appLevel) ? null : appLevel;
-      config.launcher.customScreensaver = customSsToggle.checked;
-      config.launcher.customScreensaverMinutes = parseInt(customSsIdle.value, 10);
-      if (isNaN(config.launcher.customScreensaverMinutes) ||
-          config.launcher.customScreensaverMinutes < 1) {
-        config.launcher.customScreensaverMinutes = 5;
-      }
-      config.launcher.customScreensaverSlideSec = parseInt(customSsSlide.value, 10);
-      if (isNaN(config.launcher.customScreensaverSlideSec) ||
-          config.launcher.customScreensaverSlideSec < 8) {
-        config.launcher.customScreensaverSlideSec = 20;
-      }
-      config.launcher.customScreensaverShowClock = customSsClock.checked;
-      config.launcher.customScreensaverShowDate = customSsDate.checked;
-      config.launcher.screensaverMinutes = coerceScreensaverMinutes(
-        parseInt(screensaverSelect.value, 10)
-      );
-      // Keep system saver from firing before the in-app one.
-      if (config.launcher.customScreensaver &&
-          config.launcher.screensaverMinutes > 0 &&
-          config.launcher.screensaverMinutes < 30) {
-        config.launcher.screensaverMinutes = 30;
-      }
-      config.launcher.showClock = showClockToggle.checked;
-      config.launcher.clockFormat = clockFormatSelect.value === '12' ? '12' : '24';
-      config.launcher.showDate = showDateToggle.checked;
-      config.launcher.clockAlign = clockAlignSelect.value || 'center';
-      // Normalise unknown legacy values to centre top.
-      if (['left', 'center', 'center-middle', 'right'].indexOf(config.launcher.clockAlign) < 0) {
-        config.launcher.clockAlign = 'center';
-      }
-      config.launcher.clockSize = clockSizeSelect.value || 'large';
-      config.launcher.timezone = timezoneSelect.value;
-      config.launcher.iconSize = iconSizeSelect.value;
-      config.launcher.iconAlign = iconAlignSelect.value;
-      config.launcher.iconLayout = iconLayoutSelect.value;
-      config.launcher.iconsPerRow = parseInt(iconsPerRowSelect.value, 10) || 7;
-      config.launcher.bundledIcons = bundledIconsToggle.checked;
-      config.launcher.perfMode = perfModeToggle.checked;
-      config.launcher.allAppsTile = allAppsTileToggle.checked;
-      config.launcher.numberKeyLaunch = numberKeyToggle.checked;
-      config.launcher.glassTint = glassSelect.value || 'light';
-      config.launcher.glassBorder = glassBorderSelect.value || 'white';
-      config.launcher.focusColour = focusColourSelect.value || 'warm';
-      config.launcher.launchOnHome = launchOnHomeToggle.checked;
-      // Keep legacy key in sync so older builds / USB config still work.
-      config.launcher.returnOnAppExit = launchOnHomeToggle.checked;
-      config.launcher.bootOnStart = bootToggle.checked;
-      config.launcher.pinnedApps = pinnedOrder.slice();
-      config.launcher.customApps = customApps.slice();
-      config.weather = {
-        enabled: weatherToggle.checked,
-        units: weatherUnitsSelect.value === 'f' ? 'f' : 'c',
-        location: Object.assign({}, weatherPlace)
-      };
-
-      saveInputSettings(inputsList, config);
-      config.launcher.channels = channelsSelect.value;
+      // One pass over the field table, then the derived-field hooks.
+      binder.collect(config);
 
       saveConfig(config);
       if (options.onSave) options.onSave(config);

@@ -21,4 +21,16 @@ describe('createTextField', () => {
     expect(field.row.className).toBe('settings-block');
     expect(field.row.querySelector('.settings-block-label')!.textContent).toBe('URLs');
   });
+
+  it('exposes a config field carrying the path when one is given', () => {
+    const plain = createTextField({label: 'URL', focusIndex: 931});
+    expect(plain.field).toBeUndefined();
+
+    const field = createTextField({label: 'URL', focusIndex: 931, path: 'background.url', trim: true});
+    expect(field.field!.path).toBe('background.url');
+    field.field!.write('https://example.com/a.jpg');
+    expect(field.input.value).toBe('https://example.com/a.jpg');
+    field.input.value = '  https://example.com/b.jpg  ';
+    expect(field.field!.read()).toBe('https://example.com/b.jpg');
+  });
 });

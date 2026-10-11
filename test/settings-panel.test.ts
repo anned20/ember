@@ -50,6 +50,7 @@ vi.mock('../src/ts/voice-config.js', () => ({
 
 import {loadConfig} from '../src/ts/config.js';
 import {createSettingsPanel} from '../src/ts/settings.js';
+import type {Config} from '../src/ts/types.js';
 
 async function waitFor(selector: string, root: ParentNode, ms = 3000): Promise<Element> {
   const start = Date.now();
@@ -91,5 +92,32 @@ describe('settings panel integration', () => {
     expect(panel.querySelectorAll('.settings-tab').length).toBeGreaterThan(5);
     handle.hide();
     expect(handle.isVisible()).toBe(false);
+  });
+
+  it('collects a plain binding into the config on Save', async () => {
+    const panel = document.createElement('div');
+    panel.id = 'settings-panel';
+    document.body.appendChild(panel);
+
+    const saved: Config[] = [];
+    const handle = createSettingsPanel(panel, loadConfig, {
+      onSave: function (config) { saved.push(config); }
+    });
+    handle.show();
+
+    const clock = await waitFor('input[data-focus-index="1000"]', panel);
+    expect((clock as HTMLInputElement).checked).toBe(true);
+    (clock as HTMLInputElement).checked = false;
+    clock.dispatchEvent(new Event('change'));
+
+    const saveBtn = await waitFor('.settings-save', panel);
+    // Wait out the open guard, which swallows the click sequence that opened us.
+    await new Promise(function (resolve) { setTimeout(resolve, 800); });
+    (saveBtn as HTMLButtonElement).click();
+
+    expect(saved.length).toBe(1);
+    expect(saved[0].launcher.showClock).toBe(false);
+    const stored = JSON.parse(localStorage.getItem('lounge.config.v1') || '{}');
+    expect(stored.launcher.showClock).toBe(false);
   });
 });

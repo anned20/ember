@@ -256,7 +256,8 @@ export function createAppGrid(container, getConfig, options) {
     const iconSize = (config.launcher && config.launcher.iconSize) || 'medium';
     container.style.setProperty('--tile-scale', String(scaleBySize[iconSize] || 1));
     const allAppsTile = !(config.launcher && config.launcher.allAppsTile === false);
-    const signature = JSON.stringify([pinned, customApps, iconSize, prefersBundledIcons(), allAppsTile]);
+    const numberKeys = !(config.launcher && config.launcher.numberKeyLaunch === false);
+    const signature = JSON.stringify([pinned, customApps, iconSize, prefersBundledIcons(), allAppsTile, numberKeys]);
     if (opts && opts.reuse && signature === builtSignature && container.children.length) {
       return;
     }
@@ -294,15 +295,17 @@ export function createAppGrid(container, getConfig, options) {
     // Number the home row 1-9 in the order it reads (pinned apps, then All
     // apps, then TV Settings) so the remote's number keys open a tile by
     // position. The badge is the visible half of the shortcut.
-    tiles.slice(0, 9).forEach(function (tile, i) {
-      const key = String(i + 1);
-      tile.dataset.appKey = key;
-      const badge = document.createElement('span');
-      badge.className = 'app-key';
-      badge.setAttribute('aria-hidden', 'true');
-      badge.textContent = key;
-      tile.appendChild(badge);
-    });
+    if (numberKeys) {
+      tiles.slice(0, 9).forEach(function (tile, i) {
+        const key = String(i + 1);
+        tile.dataset.appKey = key;
+        const badge = document.createElement('span');
+        badge.className = 'app-key';
+        badge.setAttribute('aria-hidden', 'true');
+        badge.textContent = key;
+        tile.appendChild(badge);
+      });
+    }
 
     // Swap in the freshly built tiles atomically. Clearing the container up
     // front instead would leave the dock empty (and unselectable) for the whole
@@ -332,6 +335,8 @@ export function createAppGrid(container, getConfig, options) {
      * it would. False when there is no such tile.
      */
     launchByNumber: function (n) {
+      const config = getConfig();
+      if (config.launcher && config.launcher.numberKeyLaunch === false) return false;
       const num = Number(n);
       if (!(num >= 1 && num <= 9)) return false;
       const tile = container.querySelector('.app-tile[data-app-key="' + num + '"]');

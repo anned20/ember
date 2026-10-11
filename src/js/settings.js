@@ -3329,6 +3329,20 @@ export function createSettingsPanel(panel, getConfig, options) {
     allAppsHint.textContent = 'Opens a grid of every app on the TV: open any app without pinning it here.';
     appsSection.appendChild(allAppsHint);
 
+    // Number keys: press 1-9 on the remote to open the home row tile at that
+    // position (apps.js numbers the tiles and launches by number).
+    const numberKeyToggle = document.createElement('input');
+    numberKeyToggle.type = 'checkbox';
+    numberKeyToggle.className = 'focusable';
+    numberKeyToggle.dataset.focusIndex = '1191';
+    numberKeyToggle.checked = config.launcher.numberKeyLaunch !== false;
+    appsSection.appendChild(labeledControl('Number keys open home row tiles', numberKeyToggle));
+    const numberKeyHint = document.createElement('p');
+    numberKeyHint.className = 'settings-hint';
+    numberKeyHint.textContent = 'Press 1\u20139 on the remote to open the tile at that position ' +
+      '(1 is the first); each tile shows its number.';
+    appsSection.appendChild(numberKeyHint);
+
     const pinnedList = document.createElement('div');
     pinnedList.className = 'settings-pinned-list';
     appsSection.appendChild(pinnedList);
@@ -4001,6 +4015,7 @@ export function createSettingsPanel(panel, getConfig, options) {
       config.launcher.bundledIcons = bundledIconsToggle.checked;
       config.launcher.perfMode = perfModeToggle.checked;
       config.launcher.allAppsTile = allAppsTileToggle.checked;
+      config.launcher.numberKeyLaunch = numberKeyToggle.checked;
       config.launcher.glassTint = glassSelect.value || 'light';
       config.launcher.glassBorder = glassBorderSelect.value || 'white';
       config.launcher.focusColour = focusColourSelect.value || 'warm';

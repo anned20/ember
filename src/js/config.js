@@ -7,7 +7,7 @@ const STORAGE_KEY = 'lounge.config.v1';
 // means, its type or its name? Bump this and add a step to migrateConfig():
 // stored settings and restored backups from older versions both go through
 // those steps (see configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 21;
+export const CONFIG_SCHEMA_VERSION = 22;
 
 export const DEFAULT_CONFIG = {
   version: CONFIG_SCHEMA_VERSION,
@@ -87,6 +87,8 @@ export const DEFAULT_CONFIG = {
     focusColour: 'warm',
     // All apps tile on the home row (opens the grid of every app on the TV).
     allAppsTile: true,
+    // Remote number keys (1-9) open the home row tile at that position.
+    numberKeyLaunch: true,
     // Clock placement: left | center (top) | center-middle | right.
     // right leaves room for the settings gear; center-middle is screen centre.
     clockAlign: 'center',
@@ -411,6 +413,14 @@ function migrateConfig(config) {
       config.launcher.screensaverMinutes = 30;
     }
     config.version = 21;
+  }
+
+  // v22: remote number keys open the home row tile at that position.
+  if ((config.version || 1) < 22) {
+    if (typeof config.launcher.numberKeyLaunch !== 'boolean') {
+      config.launcher.numberKeyLaunch = true;
+    }
+    config.version = 22;
   }
 
   return config;

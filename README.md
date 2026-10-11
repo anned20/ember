@@ -9,6 +9,7 @@ A fullscreen home screen for rooted LG webOS TVs. Pick an app, switch inputs, an
 ## Features
 
 - App grid with pinned streaming apps, plus custom app tiles (pin any installed app by App ID with a bundled icon)
+- **Number keys** on the remote open the home row tile at that position (1–9); each tile shows its number, and it can be turned off in Settings → Apps
 - HDMI and TV input shortcuts with custom labels (uncheck all inputs to hide the row entirely); add any input the TV doesn't list (Settings → Inputs & channels → Add an input)
 - Scenic backgrounds (built-in, USB, or **online nature + anime URLs** — no extra images in the IPK) and built-in ambient music that keeps playing while settings are open
 - Frosted-glass tiles in a colour of your choice, with a matching or contrasting outline and selection highlight, previewed as you choose (Settings → Look → Glass: Tile colour, Tile outline, Selection highlight), to suit dark or bright wallpapers

@@ -11,14 +11,15 @@ vi.mock('../src/js/luna.js', () => ({
 import {launchApp, listApps, getAppInfo} from '../src/js/luna.js';
 import {createAppGrid} from '../src/js/apps.js';
 
-function makeConfig(pinnedApps) {
+function makeConfig(pinnedApps, numberKeyLaunch) {
   return function () {
     return {
       launcher: {
         pinnedApps: pinnedApps,
         customApps: [],
         iconSize: 'medium',
-        allAppsTile: true
+        allAppsTile: true,
+        numberKeyLaunch: numberKeyLaunch
       }
     };
   };
@@ -31,10 +32,10 @@ function mockInstalled(ids) {
   getAppInfo.mockImplementation(async (id) => ({id: id, title: id}));
 }
 
-function buildGrid(pinnedApps) {
+function buildGrid(pinnedApps, numberKeyLaunch) {
   const container = document.createElement('div');
   document.body.appendChild(container);
-  const grid = createAppGrid(container, makeConfig(pinnedApps), {});
+  const grid = createAppGrid(container, makeConfig(pinnedApps, numberKeyLaunch), {});
   return {container, grid};
 }
 
@@ -89,6 +90,19 @@ describe('launchByNumber', () => {
 
     expect(grid.launchByNumber(0)).toBe(false);
     expect(grid.launchByNumber(9)).toBe(false);
+    expect(launchApp).not.toHaveBeenCalled();
+  });
+});
+
+describe('numberKeyLaunch off', () => {
+  it('numbers no tiles and does not launch by number', async () => {
+    mockInstalled(['netflix', 'youtube.leanback.v4']);
+    const {container, grid} = buildGrid(['netflix', 'youtube.leanback.v4'], false);
+    await grid.refresh();
+
+    expect(container.querySelectorAll('.app-tile[data-app-key]').length).toBe(0);
+    expect(container.querySelectorAll('.app-key').length).toBe(0);
+    expect(grid.launchByNumber(1)).toBe(false);
     expect(launchApp).not.toHaveBeenCalled();
   });
 });

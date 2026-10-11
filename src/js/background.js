@@ -189,10 +189,58 @@ export function createBackgroundController(elements, getConfig) {
     syncMovingBackground();
   }
 
+  // Whether the wallpaper should be in motion right now. Not while our surface
+  // is backgrounded to another app (document.hidden) or while an overlay such as
+  // LG Settings holds the remote (body.app-inactive) — the two states that still
+  // the 4K photo slideshow and the CSS zoom/gradient in main.css. The in-app
+  // Settings panel is neither: the wallpaper is its backdrop, so it keeps moving.
+  function wallpaperShouldAnimate() {
+    if (document.hidden) return false;
+    if (document.body && document.body.classList.contains('app-inactive')) return false;
+    return true;
+  }
+
+  // Pause the decoder rather than tearing it down, and resume the same stream
+  // (play(), never a src change), so returning from an app neither restarts the
+  // clip nor re-fetches it. Also starts a first attempt that was skipped while
+  // the surface was hidden.
+  function syncVideoPlayback() {
+    if (!wallpaperShouldAnimate()) {
+      if (videoEl && !videoEl.paused) {
+        try { videoEl.pause(); } catch (err) { /* ignore */ }
+      }
+      return;
+    }
+    if (!videoEl) {
+      if (videoClips.length) {
+        playVideoClip(normalizeBackgroundConfig(getConfig().background), refreshGen);
+      }
+      return;
+    }
+    if (videoEl.paused) {
+      try {
+        const p = videoEl.play();
+        if (p && p.catch) p.catch(function () { /* resumed elsewhere */ });
+      } catch (err) { /* ignore */ }
+    }
+  }
+
+  document.addEventListener('visibilitychange', syncVideoPlayback);
+  window.addEventListener('focus', syncVideoPlayback);
+  window.addEventListener('blur', syncVideoPlayback);
+  // app-inactive is a class flip (main.js) with no event of its own; a body
+  // observer catches it the same way main.css reacts to the class.
+  const bodyClassObserver = new MutationObserver(syncVideoPlayback);
+  if (document.body) {
+    bodyClassObserver.observe(document.body, {attributes: true, attributeFilter: ['class']});
+  }
+
   // Play videoClips[videoIndex]: looping in Single mode, once in Slideshow (the
-  // next clip then rides in on "ended"). True once playing; false when it fell
-  // back to the gradient, so a return retries.
+  // next clip then rides in on "ended"). True once playing. False when it fell
+  // back to the gradient (a return retries) or when the surface is hidden (the
+  // resume path starts it instead of decoding for nobody).
   async function playVideoClip(bg, gen) {
+    if (!wallpaperShouldAnimate()) return false;
     const clip = videoClips[videoIndex % videoClips.length];
     const video = ensureVideo();
     video.loop = !videoSlideshow;
@@ -212,6 +260,10 @@ export function createBackgroundController(elements, getConfig) {
       await video.play();
     } catch (err) {
       if (gen !== refreshGen) return false;
+      // play() aborted by a pause (the surface hid mid-start) is not a decode
+      // failure: keep the element for the resume path, not the gradient.
+      if (err && err.name === 'AbortError') return false;
+      if (!wallpaperShouldAnimate()) return false;
       onVideoError();
       return false;
     }
@@ -251,7 +303,7 @@ export function createBackgroundController(elements, getConfig) {
   // Not while another app or TV Settings (an overlay) is in front: the next
   // 4K photo would be decoded and drawn underneath for nobody to see.
   function slideshowTick() {
-    if (document.hidden || document.body.classList.contains('app-inactive')) return;
+    if (!wallpaperShouldAnimate()) return;
     showSlideshowImage();
   }
 
@@ -313,6 +365,9 @@ export function createBackgroundController(elements, getConfig) {
     ]);
     if (opts && opts.reuse && appliedSignature && signature === appliedSignature) {
       applyScrim();
+      // Returning from an app: the clip is already loaded (unpainted changes are
+      // ignored), so just resume the decoder we paused on the way out.
+      syncVideoPlayback();
       return;
     }
     appliedSignature = '';
@@ -384,6 +439,10 @@ export function createBackgroundController(elements, getConfig) {
     destroy: function () {
       clearSlideshow();
       teardownVideo();
+      document.removeEventListener('visibilitychange', syncVideoPlayback);
+      window.removeEventListener('focus', syncVideoPlayback);
+      window.removeEventListener('blur', syncVideoPlayback);
+      bodyClassObserver.disconnect();
     }
   };
 }

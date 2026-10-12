@@ -1,0 +1,30 @@
+test/settings-focus-index.test.ts
+  s_2a21db3d662acf::t_8a3bd5901c7ef9 1-128
+test/focus-row.test.ts
+  s_2a21db3d662acf::t_522397f2657291 9,19-64,66-89
+  s_2a21db3d662acf::t_71d10d0c45763e 245
+  s_2a21db3d662acf::t_d7506fe698b70c 150-178
+  s_2a21db3d662acf::t_7978531b2a0f0c 65
+  s_2a21db3d662acf::t_fd0b386675ef97 136-149,179-181
+  s_2a21db3d662acf::t_70c5db210602f4 17-18
+  s_2a21db3d662acf::t_4f619a77618001 243-244,246-270
+  s_2a21db3d662acf::t_b9fccc1026c996 90
+test/__snapshots__/settings-focus-index.test.ts.snap
+  s_2a21db3d662acf::t_2e2e97a421be8f 1-316
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "91a837689780026256697d245556949abc5240e9",
+  "prompts": {},
+  "sessions": {
+    "s_2a21db3d662acf": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed0975ad8ffearzKh1YYPN4FSP",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

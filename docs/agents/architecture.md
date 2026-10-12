@@ -90,7 +90,7 @@ listener.
      completeness.
   3. `await refreshAll()` fills in tiles, background, inputs, channels and music.
   4. `customScreensaver.start()`, the voice indicator and listener, the
-     document and window listeners, and `startForegroundWatcher()`.
+     document and window listeners, and `foregroundWatcher.start()`.
   5. `whenIdle(...)` runs the before-update backup, terminal auto-pin, weather,
      root hook re-assert and voice sync. These do root or network work and must
      not compete with the first paint.
@@ -106,20 +106,25 @@ where it was.
 
 ## The foreground watcher
 
-The watcher (`startForegroundWatcher` and `pollForegroundOnce`) polls the system
+`createForegroundWatcher` in `lib/foreground-watcher.ts` polls the system
 foreground app id and drives three things:
 
 1. Music. It pauses ambient audio when Launch Home actually left the foreground
    while a launch is pending (`launchState.shouldPauseForLaunch`).
 2. Launch recovery. It hands the observation to `launch-state.ts` and acts on
    the result: `reassert` brings the native card forward, `close` kills the
-   stuck app and calls `reclaimInput()`.
+   stuck app and calls the injected `reclaimInput()`.
 3. Home intercept and return, through `maybeReturnToLounge` and the reclaim
    bursts.
 
-The poll runs fast while a launch is pending and idle otherwise, and only one
-poll runs at a time so slow root calls cannot pile up. Do not add work to the
-poll that could block it.
+It owns the poll loop, its state (`lastForegroundAppId`, `returningToLounge`,
+the rate-limit) and the fast/idle cadence. Every side effect is an injected
+callback — `main.ts` constructs it with the foreground reader, the launch /
+close / reassert actions, the `isVisible` predicate, the music hook and the
+activity sink, then calls `start`, `stop`, `poke`, `noteResume` and
+`noteHidden`. The poll runs fast while a launch is pending and idle otherwise,
+and only one poll runs at a time so slow root calls cannot pile up. Do not add
+work to the poll that could block it.
 
 ## Platform compatibility
 

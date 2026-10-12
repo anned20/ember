@@ -35,6 +35,9 @@ log "start pid=$$"
 
 trap 'rm -f "$PIDFILE"; log "exit"; exit 0' INT TERM HUP
 
+# The stock-home ids. Kept in sync by hand with HOME_APP_IDS in
+# src/ts/lib/remote.ts; interpolating that list into this script at build time
+# is intentionally out of scope.
 is_home() {
   case "$1" in
     com.webos.app.home|com.webos.app.launcher|com.webos.app.homelauncher|\

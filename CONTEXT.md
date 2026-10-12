@@ -47,8 +47,9 @@ backgrounds and music, all on top of the webOS Luna service bus.
 ## Lifecycle and the foreground
 
 - **Foreground check** (foreground watcher): the poll of the system foreground
-  app id (`pollForegroundOnce`). It also drives launch recovery. It polls every
-  800 ms while a launch is being watched, and every 3 s otherwise.
+  app id (`createForegroundWatcher` in `lib/foreground-watcher.ts`). It also
+  drives launch recovery. It polls every 800 ms while a launch is being watched,
+  and every 3 s otherwise.
 - **Launch state**: the ghost-focus state machine (`launch-state.ts`). A pending
   launch that never paints is a **stuck app**.
 - **Recovery**: what the launch state asks for. `reassert` brings the app's

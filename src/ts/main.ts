@@ -41,7 +41,8 @@ import {
   setScreensaverTimeout,
   execRoot
 } from '@luna/luna.js';
-import {isHomeApp} from '@lib/remote.js';
+import {createForegroundWatcher, shouldInterceptHome} from '@lib/foreground-watcher.js';
+import type {ForegroundWatcher} from '@lib/foreground-watcher.js';
 import {isTerminalAppId, getAppIdCandidates} from '@apps/app-icons.js';
 import {setPreferBundledIcons} from '@apps/app-catalog.js';
 import {setLiteImages} from '@background/background-sources.js';
@@ -50,7 +51,6 @@ import {resolveVoiceLaunch} from '@voice/voice-launch.js';
 import {activity, noteForeground} from '@lib/activity.js';
 import {settingsBackupText} from '@settings/settings-backup.js';
 import {APP_VERSION} from '@lib/version.js';
-import {createLaunchState} from '@lib/launch-state.js';
 import type {Config, LauncherConfig, AppRecord, LunaResponse} from '@lib/types.js';
 
 const APP_ID = 'org.webosbrew.lounge.launcher';
@@ -94,14 +94,6 @@ export interface AppLifecycle {
 // it via root. Whichever answers first wins; a second launch of an app that
 // is already opening just brings it forward.
 const SYSTEM_APP_ROOT_AFTER_MS = 1200;
-
-// Each foreground check runs luna-send as root through Homebrew Channel (a new
-// shell and process every time). Polling every 800 ms around the clock, also
-// while another app was open, kept the TV busy. Poll quickly only while a
-// launch is being watched; otherwise slowly. The root home-watcher reacts to
-// the Home button itself; this is its backup.
-const FOREGROUND_POLL_FAST_MS = 800;
-const FOREGROUND_POLL_IDLE_MS = 3000;
 
 // Settings -> Backup & restore: the first start after an update keeps the
 // settings as the previous version stored them (auto/before-update-to-<this
@@ -238,23 +230,13 @@ export function createApp(): AppLifecycle {
   const storedSettingsAtStart = readStoredConfigText();
   let baseConfig: Config = loadConfig();
   let visible = true;
-  let returningToLounge = false;
-  let lastForegroundAppId = APP_ID;
-  let lastHomeLaunchAt = 0;
   let lastVoiceLaunchKey = '';
   let lastVoiceLaunchAt = 0;
-
-  // The ghost-focus launch state machine: which launch is being watched, and
-  // whether it turned into a stuck foreground app.
-  const launchState = createLaunchState({selfAppId: APP_ID});
 
   let started = false;
   let stopped = false;
 
   let clockTimer: ReturnType<typeof setInterval> | null = null;
-  let foregroundTimer: ReturnType<typeof setTimeout> | null = null;
-  let foregroundWatcherOn = false;
-  let foregroundPollBusy = false;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
   let resumeTimer: ReturnType<typeof setTimeout> | null = null;
   let reclaimTimer1: ReturnType<typeof setTimeout> | undefined;
@@ -296,6 +278,7 @@ export function createApp(): AppLifecycle {
   let inputs: InputRowHandle;
   let apps: AppGrid;
   let allApps: AllApps;
+  let foregroundWatcher: ForegroundWatcher;
 
   function getBaseConfig(): Config {
     return baseConfig;
@@ -407,7 +390,7 @@ export function createApp(): AppLifecycle {
       // as idle and start a 4K slideshow underneath it.
       if (document.body.classList.contains('app-inactive')) return true;
       if (settings.isVisible()) return true;
-      if (launchState.isPending()) return true;
+      if (foregroundWatcher.isPending()) return true;
       return false;
     },
     onShow: function () {
@@ -463,8 +446,7 @@ export function createApp(): AppLifecycle {
 
   apps = createAppGrid(elements.appGrid, getConfig, {
     onBeforeLaunch: function () {
-      launchState.noteLaunch(Date.now());
-      pokeForegroundWatcher();
+      foregroundWatcher.poke();
       customScreensaver.hide();
       const config = getConfig();
       if (config.music && config.music.pauseOnLaunch) {
@@ -1016,8 +998,7 @@ export function createApp(): AppLifecycle {
 
   function handleResume() {
     visible = true;
-    launchState.noteResume();
-    returningToLounge = false;
+    foregroundWatcher.noteResume();
     setAppInactive(false);
     voiceIndicator.start();
     // Debounce stacked resume events (visibility + webOSRelaunch + focus).
@@ -1053,7 +1034,7 @@ export function createApp(): AppLifecycle {
       visible = false;
       // Our surface was backgrounded, so any app we launched took the foreground
       // normally. This disarms the ghost-focus recovery for that launch.
-      launchState.noteHidden();
+      foregroundWatcher.noteHidden();
       voiceIndicator.hide();
       customScreensaver.hide();
       channelStrip.close();
@@ -1062,164 +1043,32 @@ export function createApp(): AppLifecycle {
     handleResume();
   }
 
-  function shouldInterceptHome(launcher: LauncherConfig | null | undefined) {
-    if (!launcher) return false;
-    // launchOnHome (preferred) or legacy returnOnAppExit: when the stock home
-    // comes to the foreground after another app (Home button or app exit),
-    // relaunch Launch Home so it acts as the home screen.
-    return !!(launcher.launchOnHome || launcher.returnOnAppExit);
-  }
-
-  async function launchLoungeBestEffort() {
-    try {
-      await launchApp(APP_ID);
-      return;
-    } catch (err) {
-      // Sandboxed launch often fails while we are backgrounded.
-    }
-    try {
-      await launchAppViaRoot(APP_ID);
-    } catch (err) {
-      // Best-effort.
-    }
-  }
-
-  async function maybeReturnToLounge(appId: string) {
-    const config = getConfig();
-    if (!shouldInterceptHome(config.launcher)) return;
-    if (returningToLounge) return;
-    if (appId === APP_ID) return;
-    if (!isHomeApp(appId)) return;
-
-    // Rate-limit: root watcher + in-app poll can both fire.
-    const now = Date.now();
-    if (now - lastHomeLaunchAt < 1500) return;
-    lastHomeLaunchAt = now;
-
-    // In-app backup for the root home-watcher: whenever stock Home is foreground,
-    // bring Launch Home forward. (Root watcher is the reliable path when suspended.)
-    activity.returns += 1;
-    returningToLounge = true;
-    try {
-      await launchLoungeBestEffort();
-    } finally {
-      returningToLounge = false;
-    }
-  }
-
-  function nextForegroundPollDelay() {
-    return launchState.isPending() ? FOREGROUND_POLL_FAST_MS : FOREGROUND_POLL_IDLE_MS;
-  }
-
-  function scheduleForegroundPoll(delay: number) {
-    clearTimeout(foregroundTimer ?? undefined);
-    foregroundTimer = setTimeout(runForegroundPoll, delay);
-  }
-
-  // Check soon after launching an app instead of waiting out the idle delay.
-  function pokeForegroundWatcher() {
-    if (!foregroundWatcherOn || foregroundPollBusy) return;
-    scheduleForegroundPoll(FOREGROUND_POLL_FAST_MS);
-  }
-
-  // One check at a time: the next is scheduled only after this one finishes,
-  // so slow root calls can't pile up on a busy TV.
-  async function runForegroundPoll() {
-    foregroundPollBusy = true;
-    try {
-      await pollForegroundOnce();
-    } finally {
-      foregroundPollBusy = false;
-      scheduleForegroundPoll(nextForegroundPollDelay());
-    }
-  }
-
-  function startForegroundWatcher() {
-    if (!window.webOS || !window.webOS.service) return;
-    foregroundWatcherOn = true;
-    scheduleForegroundPoll(nextForegroundPollDelay());
-  }
-
-  function stopForegroundWatcher() {
-    foregroundWatcherOn = false;
-    clearTimeout(foregroundTimer ?? undefined);
-    foregroundTimer = null;
-  }
-
-  async function pollForegroundOnce() {
-    // Keep polling while backgrounded only when we may need to intercept Home.
-    if (!visible && !shouldInterceptHome(getBaseConfig().launcher)) return;
-
-    try {
-      const res = (await getForegroundApp()) as {appId?: string; id?: string};
-      const appId = res.appId || res.id || '';
-      noteForeground(appId);
+  // Polls the system foreground app id and drives music pause, ghost-focus
+  // launch recovery and the home intercept. The poll loop, its state and its
+  // cadence live in lib/foreground-watcher.js; every side effect is injected.
+  foregroundWatcher = createForegroundWatcher({
+    selfAppId: APP_ID,
+    getForegroundApp: getForegroundApp,
+    launchApp: launchApp,
+    launchAppViaRoot: launchAppViaRoot,
+    closeApp: closeApp,
+    isVisible: function () { return visible; },
+    shouldInterceptHome: function () { return shouldInterceptHome(getBaseConfig().launcher); },
+    pauseMusic: function () {
       const config = getConfig();
-
-      // Only pause ambient when we actually left Launch Home (or launched an app).
-      // Pausing whenever getForegroundApp() != us kills music on cold start
-      // (poll often returns Home / empty for a few seconds after launch).
-      if (
-        appId &&
-        appId !== APP_ID &&
-        config.music &&
-        config.music.pauseOnLaunch &&
-        launchState.shouldPauseForLaunch(visible)
-      ) {
+      if (config.music && config.music.pauseOnLaunch) {
         music.fadeOutAndPause();
       }
-
-      // Ghost-focus recovery (see launch-state.js). A launch that took the
-      // remote but never painted is either re-asserted once (native streaming
-      // apps) or closed and reclaimed.
-      const recovery = launchState.observeForeground({
-        now: Date.now(),
-        appId: appId,
-        visible: visible,
-        returningToLounge: returningToLounge
-      });
-
-      if (recovery === 'reassert') {
-        try {
-          await launchAppViaRoot(appId);
-        } catch (errAssert) {
-          /* keep waiting for the native card */
-        }
-        return;
-      }
-
-      if (recovery === 'close') {
-        returningToLounge = true;
-        activity.closes += 1;
-        try {
-          await closeApp(appId);
-        } catch (err) {
-          // The stuck app may already be gone; keep going.
-        }
-        try {
-          await launchApp(APP_ID);
-        } catch (err) {
-          // Best-effort reclaim.
-        } finally {
-          returningToLounge = false;
-        }
-        reclaimInput();
-        lastForegroundAppId = APP_ID;
-        return;
-      }
-
-      // We just became the system foreground again (e.g. after Home intercept).
-      // Force input reclaim even if visibilitychange was flaky.
-      if (appId === APP_ID && lastForegroundAppId && lastForegroundAppId !== APP_ID) {
-        scheduleReclaimBursts();
-      }
-
-      await maybeReturnToLounge(appId);
-      lastForegroundAppId = appId || lastForegroundAppId;
-    } catch (err) {
-      // Foreground polling is best-effort.
+    },
+    reclaimInput: reclaimInput,
+    reclaimBursts: scheduleReclaimBursts,
+    isAvailable: function () { return !!(window.webOS && window.webOS.service); },
+    activity: {
+      noteForeground: noteForeground,
+      noteReturn: function () { activity.returns += 1; },
+      noteClose: function () { activity.closes += 1; }
     }
-  }
+  });
 
   function handlePowerOff() {
     music.stop();
@@ -1441,7 +1290,7 @@ export function createApp(): AppLifecycle {
       setAppInactive(false);
     }, true);
     on(window, 'pagehide', handlePowerOff);
-    startForegroundWatcher();
+    foregroundWatcher.start();
 
     // Side work that the first usable screen does not need: the before-update
     // settings backup, the terminal auto-pin, the weather timers, and re-asserting
@@ -1488,7 +1337,7 @@ export function createApp(): AppLifecycle {
     clearTimeout(reclaimTimer3);
     pendingTimers.forEach(function (timer) { clearTimeout(timer); });
     pendingTimers.length = 0;
-    stopForegroundWatcher();
+    foregroundWatcher.stop();
     if (settings.isVisible()) settings.hide();
     weather.stop();
     customScreensaver.stop();

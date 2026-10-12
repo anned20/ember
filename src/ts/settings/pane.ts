@@ -77,10 +77,10 @@ export interface SettingsAppsState {
  * A category pane. `build` draws the pane and registers its bindings and hooks;
  * `load` is the pane's optional asynchronous fill, driven by the root under a
  * deadline; `onSave` overrides Save for a pane with special write behaviour and
- * returns whether it handled the save.
+ * returns whether it handled the save (the root then skips the field table).
  */
 export interface PaneHandle {
   build(ctx: SettingsContext): void;
   load?(ctx: SettingsContext): Promise<void>;
-  onSave?(ctx: SettingsContext, config: Config): boolean;
+  onSave?(ctx: SettingsContext, config: Config, saveBtn: HTMLButtonElement): boolean;
 }

@@ -1,12 +1,9 @@
 import {loadConfig, saveConfig, TIMEZONE_OPTIONS} from '@config/config.js';
-import {listInstalledApps} from '@apps/apps.js';
-import {lgHomeAppsToAdd} from '@apps/lg-home.js';
-import {isAppInstalled, loadAppCatalog, rememberApps, resolvePinnedApp, setIconSrc, lazyLoadIcon} from '@apps/app-catalog.js';
-import {KNOWN_BUILTIN_APPS, getBuiltinAppIcon, getBuiltinAppTitle, BUILTIN_ICON_CHOICES} from '@apps/app-icons.js';
+import {setIconSrc} from '@apps/app-catalog.js';
 import {applyActiveProfile, PROFILE_OPTIONS} from '@config/profiles.js';
 import {indexInRow} from '@focus/focus-row.js';
 import {
-  disableVoice, enableVoice, isVoiceRunning, listLaunchPoints, whoAmI
+  disableVoice, enableVoice, isVoiceRunning, whoAmI
 } from '@luna/luna.js';
 import {attachInputScrollHelpers} from './text-gate.js';
 import {APP_VERSION} from '@lib/version.js';
@@ -27,6 +24,7 @@ import {createToolsPane} from './panes/tools.js';
 import {createBackgroundPane} from './panes/background.js';
 import {createScreensaverPane} from './panes/screensaver.js';
 import {createSystemPane} from './panes/system.js';
+import {createAppsPane} from './panes/apps.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from './pane.js';
 export type {SettingsPanelOptions} from './pane.js';
 import {
@@ -36,18 +34,12 @@ import {
   createToggle,
   createTextField,
   createMiniButton,
-  createAppRow,
   createOptionStepper,
   createProviderPicker
 } from './components/index.js';
 import type {OptionStepperElement, ProviderPickerElement, StepperOption} from './components/index.js';
 import {createBinder, stepperField, textField} from './settings-binding.js';
-import type {
-  Config,
-  CustomApp,
-  AppCatalog,
-  AppRecord
-} from '@lib/types.js';
+import type {Config} from '@lib/types.js';
 
 // The focus manager reads the text-field keyboard gate through the panel module.
 export {isSettingsTextField, isEditingSettingsText, beginSettingsTextEdit, endSettingsTextEdit} from './text-gate.js';
@@ -84,29 +76,15 @@ export function createSettingsPanel(
   // Built once: the Tools pane holds its restore report across the redraw a
   // restore triggers, which rebuilds the panel and every other pane.
   const toolsPane = createToolsPane();
-  let pinnedOrder: string[] = [];
-  let pinnedContainer: HTMLElement | null = null;
-  let appsByIdMap: AppCatalog = {};
-  // The installed-apps catalog behind the lists (see isAppInstalled).
-  let installedCatalog: AppCatalog | null = null;
-  // Settings -> Apps -> Show hidden and system apps (for this visit only).
-  let showHiddenApps = false;
-  let customApps: CustomApp[] = [];
+  // Built once too: the Apps pane remembers whether hidden apps are shown for
+  // the rest of the visit, across the redraw a restore triggers.
+  const appsPane = createAppsPane();
   // After open, ignore pointer/click for a short window so the Magic Remote
   // "click" that opened Settings (gear is top-right, Close is also top-right)
   // does not immediately hit Close and dismiss the panel.
   let openGuardUntil = 0;
   let guardHandler: ((event: Event) => void) | null = null;
   let aiOauthPollTimer: ReturnType<typeof setInterval> | null = null;
-  // Updates the "Show installed apps (N)" button after the list re-renders.
-  let syncAddAppsToggle: (() => void) | null = null;
-
-  function findCustomApp(id: string): CustomApp | null {
-    for (let i = 0; i < customApps.length; i += 1) {
-      if (customApps[i].id === id) return customApps[i];
-    }
-    return null;
-  }
 
   function clearOpenGuard() {
     openGuardUntil = 0;
@@ -344,89 +322,6 @@ export function createSettingsPanel(
     }
   }
 
-  function movePinned(index: number, delta: number): void {
-    const next = index + delta;
-    if (next < 0 || next >= pinnedOrder.length) return;
-    const tmp = pinnedOrder[index];
-    pinnedOrder[index] = pinnedOrder[next];
-    pinnedOrder[next] = tmp;
-    if (!pinnedContainer) return;
-    const keepFocus = pinnedContainer.contains(document.activeElement);
-    renderPinnedList(pinnedContainer);
-    // Stay on the moved app's arrow so repeated presses keep moving it.
-    if (keepFocus) refocusListButton(pinnedContainer, next, delta < 0 ? [0] : [1]);
-  }
-
-  function renderPinnedList(container: HTMLElement): void {
-    container.innerHTML = '';
-
-    pinnedOrder.forEach(function (appId, index) {
-      const app: AppRecord = appsByIdMap[appId] ||
-        {id: appId, launchId: undefined, title: appId, icon: ''};
-      // Not shown on the home row (see apps.js): say why, so it can go.
-      const isCustom = customApps.some(function (entry) { return entry && entry.id === appId; });
-      const missing = !isCustom && !isAppInstalled(installedCatalog, appId);
-      const row = createAppRow({
-        title: app.title || app.id,
-        icon: app.icon,
-        variant: 'pinned',
-        missing: missing,
-        titleSuffix: missing ? ' \u2014 not installed on this TV' : '',
-        mountIcon: function (icon) {
-          // TV-native icons are file:// paths WAM won't load directly.
-          icon.addEventListener('error', function () {
-            const bundled = getBuiltinAppIcon(app.launchId || app.id);
-            if (bundled && icon.dataset.fallbackTried !== '1') {
-              icon.dataset.fallbackTried = '1';
-              icon.src = bundled;
-              return;
-            }
-            icon.remove();
-          });
-          setIconSrc(icon, app.icon, undefined);
-        }
-      }).row;
-
-      const upBtn = createMiniButton({
-        label: '↑',
-        focusIndex: 1200 + index * 3,
-        onClick: function () { movePinned(index, -1); }
-      });
-      // At the ends the arrow stays focusable but does nothing (dimmed): when
-      // it was disabled, focus fell to the other arrow and the next OK moved
-      // the app straight back.
-      if (index === 0) upBtn.setAttribute('aria-disabled', 'true');
-
-      const downBtn = createMiniButton({
-        label: '↓',
-        focusIndex: 1201 + index * 3,
-        onClick: function () { movePinned(index, 1); }
-      });
-      if (index === pinnedOrder.length - 1) downBtn.setAttribute('aria-disabled', 'true');
-
-      const removeBtn = createMiniButton({
-        label: '✕',
-        focusIndex: 1202 + index * 3,
-        onClick: function () {
-          const keepFocus = container.contains(document.activeElement);
-          const removedId = pinnedOrder[index];
-          pinnedOrder.splice(index, 1);
-          for (let i = customApps.length - 1; i >= 0; i -= 1) {
-            if (customApps[i].id === removedId) customApps.splice(i, 1);
-          }
-          renderPinnedList(container);
-          // The next app slides into this row; land on its ✕.
-          if (keepFocus) refocusListButton(container, index, [2]);
-        }
-      });
-
-      row.appendChild(upBtn);
-      row.appendChild(downBtn);
-      row.appendChild(removeBtn);
-      container.appendChild(row);
-    });
-  }
-
   // After a restore: draw the panel again from the restored settings and put
   // focus back on the Restore button.
   function redrawAfterRestore(): void {
@@ -462,11 +357,6 @@ export function createSettingsPanel(
     // Derived / asynchronous fields (galleries, playlists, the USB scan, the
     // weather place, the AI keys) register hook()s instead.
     const binder = createBinder(effective);
-
-    pinnedOrder = (config.launcher.pinnedApps || []).slice();
-    customApps = (config.launcher.customApps || []).map(function (entry) {
-      return Object.assign({}, entry);
-    });
 
     // Keep the loading shell until we have a header ready, then replace in one go
     // via a document fragment so the panel is never empty/black.
@@ -607,9 +497,11 @@ export function createSettingsPanel(
       binder: binder,
       panes: panes,
       options: options,
+      apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
       isVisible: function () { return visible; },
       focusControl: focusSettingsControl,
       focusNow: focusSettingsControlNow,
+      focusInPanel: function () { return panel.contains(document.activeElement); },
       focusGallery: focusPhotoGallery,
       refocusListButton: refocusListButton,
       withDeadline: withDeadline,
@@ -2025,310 +1917,9 @@ export function createSettingsPanel(
     paneHandles.inputs = inputsPane;
     inputsPane.build(context);
 
-    const appsSection = createSection('Pinned apps');
-    appsSection.appendChild(createHint('Reorder or remove apps pinned to the home row.'));
-
-    // All apps: a tile on the home row that opens every app on the TV.
-    const allAppsTileField = createToggle({
-      label: 'All apps tile on the home row',
-      focusIndex: '1190',
-      path: 'launcher.allAppsTile'
-    });
-    binder.bind(allAppsTileField.field!);
-    appsSection.appendChild(allAppsTileField.row);
-    appsSection.appendChild(createHint(
-      'Opens a grid of every app on the TV: open any app without pinning it here.'
-    ));
-
-    // Number keys: press 1-9 on the remote to open the home row tile at that
-    // position (apps.js numbers the tiles and launches by number).
-    const numberKeyField = createToggle({
-      label: 'Number keys open home row tiles',
-      focusIndex: '1191',
-      path: 'launcher.numberKeyLaunch'
-    });
-    binder.bind(numberKeyField.field!);
-    appsSection.appendChild(numberKeyField.row);
-    appsSection.appendChild(createHint(
-      'Press 1\u20139 on the remote to open the tile at that position ' +
-      '(1 is the first); each tile shows its number.'
-    ));
-
-    const pinnedList = document.createElement('div');
-    pinnedList.className = 'settings-pinned-list';
-    appsSection.appendChild(pinnedList);
-
-    const addHeading = document.createElement('h4');
-    addHeading.className = 'settings-subheading';
-    addHeading.textContent = 'Add an app';
-    appsSection.appendChild(addHeading);
-
-    appsSection.appendChild(createHint(
-      'Add every app from LG\u2019s home screen at once, or open the list and ' +
-      'press + next to an app to pin it to the home row.'
-    ));
-
-    // Every app on LG's own home screen in one press, in LG's order, after
-    // the ones already here (instead of adding them one by one).
-    const importLgBtn = createMiniButton({
-      label: 'Add all apps from LG\u2019s home screen',
-      focusIndex: '1298'
-    });
-    appsSection.appendChild(importLgBtn);
-    const importLgStatus = createHint('');
-    importLgStatus.hidden = true;
-    appsSection.appendChild(importLgStatus);
-    let importingLg = false;
-    importLgBtn.addEventListener('click', async function () {
-      if (importingLg) return;
-      importingLg = true;
-      // Not disabled while busy: a disabled button drops focus.
-      importLgBtn.textContent = 'Reading LG\u2019s home screen\u2026';
-      importLgStatus.hidden = false;
-      importLgStatus.textContent = '';
-      try {
-        const points = await listLaunchPoints();
-        // Their names and icons, for when the TV can't be asked later.
-        rememberApps(points);
-        if (!points.length) {
-          importLgStatus.textContent = 'Couldn\u2019t read LG\u2019s home screen. It needs root ' +
-            '(Homebrew Channel).';
-          return;
-        }
-        const toAdd = lgHomeAppsToAdd(points, pinnedOrder, customApps);
-        if (!toAdd.length) {
-          importLgStatus.textContent = 'Every app on LG\u2019s home screen is already here.';
-          return;
-        }
-        toAdd.forEach(function (id) { pinnedOrder.push(id); });
-        await loadAppsLists(pinnedList, addAppsList, config);
-        importLgStatus.textContent = 'Added ' + toAdd.length + (toAdd.length === 1 ? ' app' : ' apps') +
-          ' from LG\u2019s home screen, in LG\u2019s order, after the ones you had. Remove or move ' +
-          'any of them above, then press Save to keep them.';
-      } catch (err: any) {
-        importLgStatus.textContent = 'Couldn\u2019t read LG\u2019s home screen: ' +
-          ((err && err.message) || 'it needs root (Homebrew Channel)');
-      } finally {
-        importingLg = false;
-        importLgBtn.textContent = 'Add all apps from LG\u2019s home screen';
-      }
-    });
-
-    // Collapsed by default: with root this lists every installed app, and
-    // scrolling past it was the only way to reach the sections below.
-    const addAppsToggle = createMiniButton({
-      label: '',
-      focusIndex: '1299',
-      className: 'settings-apps-toggle'
-    });
-    appsSection.appendChild(addAppsToggle);
-
-    const showHiddenField = createToggle({
-      label: 'Show hidden and system apps',
-      focusIndex: '1280',
-      checked: showHiddenApps,
-      onChange: function (checked) {
-        showHiddenApps = checked;
-        loadAppsLists(pinnedList, addAppsList, config);
-      }
-    });
-    appsSection.appendChild(showHiddenField.row);
-
-    const addAppsList = document.createElement('div');
-    addAppsList.className = 'settings-apps';
-    appsSection.appendChild(addAppsList);
-    // The pin order and custom apps are edited by the lists, not a control.
-    binder.hook(function (cfg) {
-      cfg.launcher.pinnedApps = pinnedOrder.slice();
-      cfg.launcher.customApps = customApps.slice();
-    });
-    panes.apps.appendChild(appsSection);
-
-    let addAppsExpanded = false;
-    syncAddAppsToggle = function () {
-      const count = addAppsList.querySelectorAll('.settings-app-row').length;
-      // No rows: skip the button and show the "all pinned / none found" note.
-      addAppsToggle.hidden = !count;
-      addAppsList.hidden = !!count && !addAppsExpanded;
-      addAppsToggle.textContent = addAppsExpanded
-        ? 'Hide installed apps'
-        : 'Show installed apps (' + count + ')';
-    };
-    addAppsToggle.addEventListener('click', function () {
-      addAppsExpanded = !addAppsExpanded;
-      if (syncAddAppsToggle) syncAddAppsToggle();
-    });
-    syncAddAppsToggle();
-
-    const customSection = createSection('Custom app');
-    customSection.appendChild(createHint('Pin any installed app by its App ID and choose a bundled icon. Find the App ID on your TV or in the Homebrew app list.'));
-
-    const customAppIdField = createTextField({
-      label: 'App ID',
-      focusIndex: '1400',
-      placeholder: 'e.g. com.spotify.tv'
-    });
-    const customAppIdInput = customAppIdField.input;
-    customSection.appendChild(customAppIdField.row);
-
-    const customNameField = createTextField({
-      label: 'Name',
-      focusIndex: '1401',
-      placeholder: 'e.g. Spotify'
-    });
-    const customNameInput = customNameField.input;
-    customSection.appendChild(customNameField.row);
-
-    const iconPreview = document.createElement('img');
-    iconPreview.className = 'settings-app-icon';
-    iconPreview.alt = '';
-    iconPreview.src = BUILTIN_ICON_CHOICES[0].value;
-
-    const iconSelect = createOptionStepper({
-      focusIndex: 1402,
-      choices: BUILTIN_ICON_CHOICES,
-      value: BUILTIN_ICON_CHOICES[0].value,
-      onChange: function (value) {
-        iconPreview.src = value;
-      }
-    });
-
-    const iconRow = labeledControl('Icon', iconSelect);
-    iconRow.insertBefore(iconPreview, iconRow.lastChild);
-    customSection.appendChild(iconRow);
-
-    const addCustomBtn = createMiniButton({
-      label: 'Add custom app',
-      focusIndex: '1403',
-      className: 'settings-add-custom',
-      onClick: function () {
-        const launchId = customAppIdInput.value.trim();
-        if (!launchId) {
-          if (options.onToast) options.onToast('Enter an App ID first');
-          return;
-        }
-
-        const id = 'custom:' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-        const title = customNameInput.value.trim() || getBuiltinAppTitle(launchId) || launchId;
-
-        customApps.push({id: id, launchId: launchId, title: title, icon: iconSelect.value});
-        pinnedOrder.push(id);
-
-        customAppIdInput.value = '';
-        customNameInput.value = '';
-
-        loadAppsLists(pinnedList, addAppsList, config);
-      }
-    });
-    customSection.appendChild(addCustomBtn);
-    panes.apps.appendChild(customSection);
-
-    const discoverSection = createSection('Discover apps');
-    discoverSection.appendChild(createHint('Scan this TV for installed apps, then add any of them to the dock. Discovered apps keep their own icon unless you pick a bundled one below.'));
-
-    const scanBtn = createMiniButton({
-      label: 'Scan for apps',
-      focusIndex: '1500',
-      className: 'settings-scan-btn'
-    });
-    discoverSection.appendChild(scanBtn);
-
-    const discoverIconSelect = createOptionStepper({
-      focusIndex: 1501,
-      choices: [{value: '', label: 'Use native icon'}].concat(BUILTIN_ICON_CHOICES),
-      value: ''
-    });
-    discoverSection.appendChild(labeledControl('Icon override', discoverIconSelect));
-
-    const discoverStatus = createHint('');
-    discoverSection.appendChild(discoverStatus);
-
-    const discoverList = document.createElement('div');
-    discoverList.className = 'settings-apps';
-    discoverSection.appendChild(discoverList);
-    panes.apps.appendChild(discoverSection);
-
-    let discovered: AppRecord[] = [];
-
-    function inDock(appId: string): boolean {
-      if (pinnedOrder.indexOf(appId) >= 0) return true;
-      for (let i = 0; i < customApps.length; i += 1) {
-        if (customApps[i].launchId === appId) return true;
-      }
-      return false;
-    }
-
-    function renderDiscoverList(): void {
-      discoverList.innerHTML = '';
-      if (!discovered.length) return;
-
-      const available = discovered.filter(function (app) {
-        return app && app.id && !inDock(app.id);
-      });
-
-      discoverStatus.textContent = available.length
-        ? 'Found ' + discovered.length + ' apps.'
-        : 'All discovered apps are already in your dock.';
-
-      available.forEach(function (app, index) {
-        const iconSrc = app.icon;
-        const addBtn = createMiniButton({
-          label: '+',
-          focusIndex: 1510 + index,
-          dataset: {pointerFocus: 'off'},
-          onClick: function () {
-            if (inDock(app.id)) return; // second OK before the list redraws
-            const keepFocus = document.activeElement === addBtn;
-            const override = discoverIconSelect.value;
-            if (override) {
-              const id = 'custom:' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-              customApps.push({id: id, launchId: app.id, title: app.title || app.id, icon: override});
-              pinnedOrder.push(id);
-            } else {
-              pinnedOrder.push(app.id);
-            }
-            loadAppsLists(pinnedList, addAppsList, config);
-            renderDiscoverList();
-            // The next app slides into this row; land on its +.
-            if (keepFocus) refocusListButton(discoverList, index, [0]);
-          }
-        });
-        const row = createAppRow({
-          title: app.title || app.id,
-          icon: iconSrc,
-          mountIcon: function (icon) {
-            icon.addEventListener('error', function () { icon.remove(); });
-            lazyLoadIcon(icon, iconSrc as string, discoverList);
-          }
-        }).row;
-        row.appendChild(addBtn);
-        discoverList.appendChild(row);
-      });
-    }
-
-    let scanning = false;
-    scanBtn.addEventListener('click', async function () {
-      if (scanning) return;
-      scanning = true;
-      scanBtn.disabled = true;
-      discoverStatus.textContent = 'Scanning\u2026';
-      try {
-        discovered = await listInstalledApps({includeHidden: true});
-        discovered.sort(function (a, b) {
-          return (a.title || a.id).localeCompare(b.title || b.id);
-        });
-        if (!discovered.length) {
-          discoverStatus.textContent = 'No apps found on this TV.';
-        } else {
-          renderDiscoverList();
-        }
-      } catch (err) {
-        discoverStatus.textContent = 'Could not scan for apps.';
-      } finally {
-        scanning = false;
-        scanBtn.disabled = false;
-      }
-    });
+    // ── Apps (pinned apps, custom app, Discover) ────────────────────────
+    paneHandles.apps = appsPane;
+    appsPane.build(context);
 
     paneHandles.tools = toolsPane;
     toolsPane.build(context);
@@ -2434,148 +2025,9 @@ export function createSettingsPanel(
       if (gen !== renderGen || !visible) return;
     }
 
-    await withDeadline(loadAppsLists(pinnedList, addAppsList, config), 8000);
-    if (gen !== renderGen || !visible) return;
     attachInputScrollHelpers(body);
     // Load AI tab in background so Home settings stay snappy.
     loadAiTab();
-  }
-
-  async function loadAppsLists(
-    pinnedListEl: HTMLElement,
-    addContainer: HTMLElement,
-    config: Config
-  ): Promise<void> {
-    // The old list stays up (and keeps focus) until the new one is ready; it
-    // is cleared just before the synchronous rebuild below.
-    const catalog = await loadAppCatalog();
-    installedCatalog = catalog;
-    const listed = await listInstalledApps({includeHidden: true});
-    const apps = listed.filter(function (app) { return !app.hidden; });
-    appsByIdMap = Object.assign({}, catalog);
-    apps.forEach(function (app) {
-      appsByIdMap[app.id] = app;
-    });
-
-    customApps.forEach(function (entry) {
-      if (!entry || !entry.id) return;
-      appsByIdMap[entry.id] = {
-        id: entry.id,
-        launchId: entry.launchId,
-        title: entry.title || entry.launchId || entry.id,
-        icon: entry.icon || ''
-      };
-    });
-
-    for (let i = 0; i < pinnedOrder.length; i += 1) {
-      const appId = pinnedOrder[i];
-      if (findCustomApp(appId)) continue;
-      if (!appsByIdMap[appId] || !appsByIdMap[appId].title || !appsByIdMap[appId].icon) {
-        appsByIdMap[appId] = (await resolvePinnedApp(appId, appsByIdMap)) as AppRecord;
-      }
-    }
-
-    KNOWN_BUILTIN_APPS.forEach(function (id) {
-      if (appsByIdMap[id] && appsByIdMap[id].title) return;
-      appsByIdMap[id] = {
-        id: id,
-        title: getBuiltinAppTitle(id) || id,
-        icon: getBuiltinAppIcon(id) || ''
-      };
-    });
-
-    pinnedContainer = pinnedListEl;
-    // Redrawn after a + elsewhere: keep focus if the user is in this list.
-    let pinnedSpot: {row: number; button: number} | null = null;
-    const oldRows = pinnedListEl.querySelectorAll('.settings-pinned-row');
-    for (let r = 0; r < oldRows.length; r += 1) {
-      const btns = Array.prototype.slice.call(oldRows[r].querySelectorAll('.settings-mini-btn'));
-      const b = btns.indexOf(document.activeElement);
-      if (b >= 0) pinnedSpot = {row: r, button: b};
-    }
-    renderPinnedList(pinnedListEl);
-    if (pinnedSpot) refocusListButton(pinnedListEl, pinnedSpot.row, [pinnedSpot.button, 0, 1, 2]);
-
-    const seen: Record<string, boolean> = {};
-    const candidates: AppRecord[] = [];
-    apps.forEach(function (app) {
-      if (app && app.id && !seen[app.id]) {
-        seen[app.id] = true;
-        candidates.push(app);
-      }
-    });
-    // Hidden and system apps only on request: with root the TV lists every
-    // installed app, and the list ran to hundreds of rows.
-    if (showHiddenApps) {
-      listed.forEach(function (app) {
-        if (app && app.id && !seen[app.id]) {
-          seen[app.id] = true;
-          candidates.push(app);
-        }
-      });
-    }
-    // The TV's list couldn't be read (no root): offer the apps Launch Home knows.
-    if (!listed.length) {
-      KNOWN_BUILTIN_APPS.forEach(function (id) {
-        const app = appsByIdMap[id];
-        if (app && app.title && !seen[id]) {
-          seen[id] = true;
-          candidates.push(app);
-        }
-      });
-    }
-
-    candidates.sort(function (a, b) {
-      return (a.title || a.id).localeCompare(b.title || b.id);
-    });
-
-    const customLaunchIds: Record<string, boolean> = {};
-    customApps.forEach(function (entry) {
-      if (entry && entry.launchId) customLaunchIds[entry.launchId] = true;
-    });
-
-    const remaining = candidates.filter(function (app) {
-      return pinnedOrder.indexOf(app.id) < 0 && !customLaunchIds[app.id];
-    });
-
-    addContainer.innerHTML = '';
-    if (!remaining.length) {
-      addContainer.appendChild(createHint(candidates.length
-        ? 'All available apps are already pinned.'
-        : 'No other apps were found on this TV.'));
-    }
-
-    remaining.forEach(function (app, index) {
-      const iconSrc = app.icon;
-      const addBtn = createMiniButton({
-        label: '+',
-        focusIndex: 1300 + index,
-        dataset: {pointerFocus: 'off'},
-        onClick: function () {
-          if (pinnedOrder.indexOf(app.id) >= 0) return; // second OK before the redraw
-          const keepFocus = document.activeElement === addBtn;
-          pinnedOrder.push(app.id);
-          loadAppsLists(pinnedListEl, addContainer, config).then(function () {
-            // The next app slides into this row; land on its + (unless the
-            // user already moved on while the list was loading).
-            if (keepFocus && !panel.contains(document.activeElement)) {
-              refocusListButton(addContainer, index, [0]);
-            }
-          });
-        }
-      });
-      const row = createAppRow({
-        title: app.title || app.id,
-        icon: iconSrc,
-        mountIcon: function (icon) {
-          icon.addEventListener('error', function () { icon.remove(); });
-          lazyLoadIcon(icon, iconSrc as string, addContainer);
-        }
-      }).row;
-      row.appendChild(addBtn);
-      addContainer.appendChild(row);
-    });
-    if (syncAddAppsToggle) syncAddAppsToggle();
   }
 
   return {

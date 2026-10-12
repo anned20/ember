@@ -1,4 +1,4 @@
-import type {Config} from '@lib/types.js';
+import type {AppCatalog, Config, CustomApp} from '@lib/types.js';
 import type {SettingsBinder} from './settings-binding.js';
 
 /**
@@ -37,12 +37,16 @@ export interface SettingsContext {
   readonly panes: Record<string, HTMLDivElement>;
   /** The host hooks the panel was created with. */
   readonly options: SettingsPanelOptions;
+  /** The Apps pane's shared state (the lists edit it in place on Save). */
+  readonly apps: SettingsAppsState;
   /** Whether the panel is open; an async fill drops its result once it isn't. */
   isVisible(): boolean;
   /** Put focus (and the row highlight) on a control. */
   focusControl(el: Element): void;
   /** Focus a control immediately, without the deferral. */
   focusNow(el: Element | null): boolean;
+  /** Whether the focused element is currently inside the panel. */
+  focusInPanel(): boolean;
   /** Scroll a photo gallery into view and focus its first tile. */
   focusGallery(el: HTMLElement): void;
   /** Focus the button in the same spot after a list rebuild. */
@@ -51,6 +55,22 @@ export interface SettingsContext {
   withDeadline<T>(promise: Promise<T>, ms: number): Promise<T | null>;
   /** Rebuild the panel from config and refocus the Restore control. */
   redraw(): void;
+}
+
+/**
+ * The Apps pane's shared state. It lives on the context (rather than a
+ * panel-local closure) so the pinned list and the app lists can be redrawn and
+ * their focus restored from the same data the pane was built with.
+ */
+export interface SettingsAppsState {
+  /** The pinned app ids, in home-row order. */
+  pinnedOrder: string[];
+  /** The user-defined apps (id, launch id, title and icon). */
+  customApps: CustomApp[];
+  /** Every app the lists can resolve, by id (catalog + installed + custom). */
+  appsByIdMap: AppCatalog;
+  /** The installed-app catalog behind the lists, or null before it is read. */
+  installedCatalog: AppCatalog | null;
 }
 
 /**

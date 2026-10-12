@@ -35,6 +35,8 @@ function buildPane(
     binder: createBinder(config),
     panes: {look: pane},
     options: options,
+    apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
+    focusInPanel: function () { return true; },
     isVisible: function () { return true; },
     focusControl: function () {},
     focusNow: function () { return true; },

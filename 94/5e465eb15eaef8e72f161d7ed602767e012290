@@ -1,0 +1,22 @@
+voice/overlay/appinfo.json
+  h_1a6b0cc05bf029 6
+version.md
+  h_1a6b0cc05bf029 1
+package.json
+  h_1a6b0cc05bf029 3
+appinfo.json
+  h_1a6b0cc05bf029 3
+package-lock.json
+  h_1a6b0cc05bf029 3,9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "945e465eb15eaef8e72f161d7ed602767e012290",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

@@ -1,0 +1,59 @@
+src/ts/background/media-playback.ts
+  s_a68e8fb47dca0a::t_ce6e1184e651fe 230,232,234,238
+  s_a68e8fb47dca0a::t_e685c1167ebb49 368-370
+  s_a68e8fb47dca0a::t_e5e8228a886bb6 1-229,231,233,235-237,239-367,371-387
+src/ts/background/backgrounds.ts
+  s_a68e8fb47dca0a::t_77c25101111806 1,5
+  s_a68e8fb47dca0a::t_3c47c1518b170c 28-29
+src/ts/background/screensaver.ts
+  s_a68e8fb47dca0a::t_b94081389d1abb 11-14,18-23,57,109-111,176-212,229-235,237,256-257,265-267,273,287-289,291,318,349-360,372,375,383,537-540
+src/ts/main.ts
+  s_a68e8fb47dca0a::t_267f33f51e5e5f 47
+src/ts/background/media.ts
+  s_a68e8fb47dca0a::t_043917148e02c8 7,9-12,15
+  s_a68e8fb47dca0a::t_f7869e029e15f2 97
+  s_a68e8fb47dca0a::t_7a75b75782b2af 72
+  s_a68e8fb47dca0a::t_c76cd41731823c 1-6,8,13-14,16-71,73-96,98-104
+test/background-sources.test.ts
+  s_a68e8fb47dca0a::t_69b2cbc8c41021 1-89
+src/ts/settings/panes/background.ts
+  s_a68e8fb47dca0a::t_7df8389df73b69 14
+  s_a68e8fb47dca0a::t_f3d1d530e377c0 173
+  s_a68e8fb47dca0a::t_b7018bfaeee10d 13
+  s_a68e8fb47dca0a::t_f07d04603bb000 193
+  s_a68e8fb47dca0a::t_e9ab82fda5a10e 392-396,402
+test/media-playback.test.ts
+  s_a68e8fb47dca0a::t_d52a2e9d69fdae 132,140
+  s_a68e8fb47dca0a::t_e469108a584b41 84-104
+  s_a68e8fb47dca0a::t_0d1ed0d957995d 1-28,30-47,49-83,105-118,130-131,133-139,141-164
+  s_a68e8fb47dca0a::t_58527562d322c9 119-129
+  s_a68e8fb47dca0a::t_5efedfb221c81d 29,48
+src/ts/background/background-sources.ts
+  s_a68e8fb47dca0a::t_06a3ef4a0c87be 261-270
+  s_a68e8fb47dca0a::t_b447e958eee183 1-21,23-37,39-149,156,158-159,161-182,184-185,187-219,228-240,246-260,271-287
+  s_a68e8fb47dca0a::t_3059bf4a37bd6d 150-155
+  s_a68e8fb47dca0a::t_ed8d6e13940df4 38
+  s_a68e8fb47dca0a::t_5f82fa3fa5d129 157,160,183,186
+  s_a68e8fb47dca0a::t_9e420e8e261525 241-245
+  s_a68e8fb47dca0a::t_0b867aa65cc671 22
+  s_a68e8fb47dca0a::t_3ee19d3135b825 220-227
+src/ts/background/background.ts
+  s_a68e8fb47dca0a::t_4e37f8190a3908 139-141
+  s_a68e8fb47dca0a::t_a8b21ea2e063bf 1-6,8,10,33,40,52-55,110-138,142,144-147,173-174,184,190-191,205,207,225-230,246,258,264,268,276,279,284-286,288,292,295,299,303,312-325,328
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0bd57e5fcedcd017d7d3f5cd0dc7a1c63effd8ec",
+  "prompts": {},
+  "sessions": {
+    "s_a68e8fb47dca0a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ece70141effeEkmK22JfON64b0",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

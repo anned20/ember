@@ -24,11 +24,12 @@ import {
   disableVoice, enableVoice, execRoot, isVoiceRunning, listLaunchPoints, readSettingsBackups,
   runTvCheck, whoAmI, writeAutoBackup, writeSettingsBackup
 } from '@luna/luna.js';
-import {activity} from '@lib/activity.js';
 import {
   LAST_BACKUP_KEY, backupLabel, backupWhen, compatibilityNote, lastBackupNote, listBackups,
   restoreReport, settingsBackupText
 } from './settings-backup.js';
+import {attachInputScrollHelpers, beginSettingsTextEdit} from './text-gate.js';
+import {startLauncherProbe, tvCheckHead, tvCheckSummary} from './tv-check.js';
 import {APP_VERSION} from '@lib/version.js';
 import {
   getVoiceConfig,
@@ -67,8 +68,10 @@ import type {
   WeatherLocation
 } from '@lib/types.js';
 
+// The focus manager reads the text-field keyboard gate through the panel module.
+export {isSettingsTextField, isEditingSettingsText, beginSettingsTextEdit, endSettingsTextEdit} from './text-gate.js';
+
 const DEFAULT_INPUTS = ['HDMI_1', 'HDMI_2', 'HDMI_3', 'TV'];
-const KEYBOARD_SCROLL_RESERVE = 420;
 
 /** One choice in a createOptionStepper picker. */
 interface StepperOption {
@@ -162,91 +165,6 @@ interface BackupRecord {
 /** A parsed voice-service config / status payload (untyped JSON). */
 type VoicePayload = Record<string, any>;
 
-/**
- * Gate virtual keyboard on TV text fields.
- *
- * webOS opens the on-screen keyboard as soon as a text input is focused, which
- * is painful when D-pad scrolling through Settings. Keep fields read-only until
- * the user presses OK/Select (or clicks), then unlock for editing. On blur,
- * re-lock so the next focus via arrows won't pop the keyboard again.
- */
-export function isSettingsTextField(el: Element | null): boolean {
-  if (!el || !el.tagName) return false;
-  const tag = el.tagName;
-  if (tag === 'TEXTAREA') return true;
-  if (tag !== 'INPUT') return false;
-  const input = el as HTMLInputElement;
-  const t = String(input.type || 'text').toLowerCase();
-  return t === 'text' || t === 'number' || t === 'search' || t === 'url' || t === 'password';
-}
-
-export function isEditingSettingsText(el: Element | null): boolean {
-  if (!isSettingsTextField(el)) return false;
-  const input = el as HTMLInputElement;
-  return input.readOnly === false && input.dataset.tvEdit === '1';
-}
-
-export function beginSettingsTextEdit(el: Element | null): boolean {
-  if (!isSettingsTextField(el)) return false;
-  const input = el as HTMLInputElement;
-  input.readOnly = false;
-  input.dataset.tvEdit = '1';
-  try { input.focus(); } catch (err) { /* ignore */ }
-  // Some webOS builds only raise the keyboard after a click once editable.
-  try { input.click(); } catch (err) { /* ignore */ }
-  return true;
-}
-
-export function endSettingsTextEdit(el: Element | null): void {
-  if (!isSettingsTextField(el)) return;
-  const input = el as HTMLInputElement;
-  input.readOnly = true;
-  delete input.dataset.tvEdit;
-}
-
-function gateTextField(input: Element): void {
-  const field = input as HTMLInputElement | HTMLTextAreaElement;
-  if (!field || field.dataset.tvKeyboardGated === '1') return;
-  field.dataset.tvKeyboardGated = '1';
-  field.readOnly = true;
-
-  field.addEventListener('blur', function () {
-    endSettingsTextEdit(field);
-  });
-
-  // Magic Remote pointer: click should enter edit mode (same as OK).
-  field.addEventListener('click', function (event) {
-    if (field.readOnly) {
-      event.preventDefault();
-      beginSettingsTextEdit(field);
-    }
-  });
-}
-
-function attachInputScrollHelpers(scrollContainer: HTMLElement | null): void {
-  if (!scrollContainer) return;
-
-  scrollContainer.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(function (input) {
-    gateTextField(input);
-
-    input.addEventListener('focus', function () {
-      // Only scroll for keyboard when actually editing (Select pressed).
-      if ((input as HTMLInputElement).readOnly) return;
-      window.setTimeout(function () {
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const inputRect = input.getBoundingClientRect();
-        const visibleBottom = containerRect.bottom - KEYBOARD_SCROLL_RESERVE;
-
-        if (inputRect.bottom > visibleBottom) {
-          scrollContainer.scrollTop += inputRect.bottom - visibleBottom + 32;
-        } else if (inputRect.top < containerRect.top + 16) {
-          scrollContainer.scrollTop -= containerRect.top + 16 - inputRect.top;
-        }
-      }, 320);
-    });
-  });
-}
-
 function createOptionStepper(
   className: string,
   focusIndex: number,
@@ -339,83 +257,6 @@ function createOptionStepper(
   index = start >= 0 ? start : 0;
   render();
   return el;
-}
-
-/**
- * Settings -> TV check: one line about Launch Home itself. It heads the text
- * on screen and is saved in the report file too.
- */
-function tvCheckHead(config: Config): string {
-  const launcher = (config && config.launcher) || ({} as Config['launcher']);
-  const bg = normalizeBackgroundConfig(applyActiveProfile(config).background);
-  const chrome = (String(navigator.userAgent).match(/Chrome\/(\d+)/) || [])[1] || '?';
-  return 'Launch Home ' + APP_VERSION +
-    ' | perf ' + (launcher.perfMode ? 'on' : 'off') +
-    ' | wallpaper ' + bg.source + (bg.kenBurns ? ' + slow zoom' : '') +
-    ' | profile ' + ((config && config.profile) || 'default') +
-    ' | Home button ' + (launcher.launchOnHome ? 'on' : 'off') +
-    ' | boot ' + (launcher.bootOnStart ? 'on' : 'off') +
-    ' | ' + (window.devicePixelRatio || 1) + 'x, Chrome ' + chrome;
-}
-
-/**
- * Settings -> TV check: watch Launch Home itself while the check opens TV
- * Settings over it. Counts only the moments something else has the remote
- * (TV Settings), and shows whether Launch Home got in the way: relaunching or
- * bringing itself back, taking focus, or still animating underneath.
- */
-function startLauncherProbe() {
-  const start = Object.assign({}, activity);
-  const t0 = Date.now();
-  let away = 0;
-  let awayPaused = 0;
-  let awayAnims = 0;
-  let awayFrames = 0;
-  let running = true;
-  function frame() {
-    if (!running) return;
-    if (!document.hasFocus()) awayFrames += 1;
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
-  const timer = setInterval(function () {
-    if (document.hasFocus()) return;
-    away += 1;
-    if (document.body.classList.contains('app-inactive')) awayPaused += 1;
-    const anims = document.getAnimations
-      ? document.getAnimations().filter(function (a) { return a.playState === 'running'; }).length
-      : 0;
-    if (anims > awayAnims) awayAnims = anims;
-  }, 500);
-  return {
-    stop: function () {
-      running = false;
-      clearInterval(timer);
-      const newSeen = Math.min(activity.foregroundSeq - start.foregroundSeq, activity.foreground.length);
-      const seen = newSeen > 0 ? activity.foreground.slice(-newSeen).join(', ') : 'nothing new';
-      const counts = 'relaunched ' + (activity.relaunches - start.relaunches) +
-        ', back from home ' + (activity.returns - start.returns) +
-        ', closed apps ' + (activity.closes - start.closes) +
-        ', took focus ' + (activity.reclaims - start.reclaims);
-      const under = away > 0
-        ? 'under TV Settings ' + Math.round(away / 2) + ' s: paused ' +
-          Math.round(100 * awayPaused / away) + '%, animations up to ' + awayAnims +
-          ', ' + Math.round(awayFrames / (away / 2)) + ' frames/s'
-        : 'never lost focus to TV Settings';
-      return 'Launch Home during the check: ' + counts + ' | ' + under +
-        ' | foreground seen: ' + seen + ' (' + Math.round((Date.now() - t0) / 1000) + ' s)';
-    }
-  };
-}
-
-/**
- * Settings -> TV check text: the Launch Home line, then the summary part of
- * the root script's report (its details stay in /tmp).
- */
-function tvCheckSummary(report: string, head: string): string {
-  const text = String(report || '');
-  const cut = text.indexOf('=== details ===');
-  return head + '\n' + (cut >= 0 ? text.slice(0, cut) : text).trim();
 }
 
 function createProviderPicker(focusIndex: number, onChange?: (value: string) => void): ProviderPickerElement {

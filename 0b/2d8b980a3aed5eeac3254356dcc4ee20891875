@@ -1,0 +1,31 @@
+docs/agents/adding-a-setting.md
+  s_2a21db3d662acf::t_179e6af869d6bc 45-51
+src/ts/settings/settings.ts
+  s_2a21db3d662acf::t_7bba11d710d6a1 851-861,1388-1392,1394-1398,1401-1405,1408-1412,1415-1419,1422-1426,1429-1433,1436-1447,1828-1830,1833-1834,1845-1859,1881-1889,1895-1903,2269-2277,2340-2343,2357-2367,2496-2503,2601-2604,2611-2614,2634-2646,2655-2665,2715-2725,2754-2760,2774-2782,2791-2800,2806-2808,2811,2815-2822,2826-2833,2837-2843,2847-2854,2968-2980,2988-3002,3009-3021,3049-3055,3192-3199,3371-3377,3420-3424,3543-3549
+  s_2a21db3d662acf::t_d75e4c50ff6d23 2810
+test/settings/components/option-stepper.test.ts
+  s_2a21db3d662acf::t_8320ac171684d3 41,51
+  s_2a21db3d662acf::t_f4dbdfbe674101 4,12
+  s_2a21db3d662acf::t_b7734ab820abbe 24
+src/ts/settings/components/option-stepper.ts
+  s_2a21db3d662acf::t_b688f9f95b7b84 50,54-55,61,66,70,73,77,82
+  s_2a21db3d662acf::t_593b41faf1b67f 15
+  s_2a21db3d662acf::t_7f631a54fd2e3d 111
+  s_2a21db3d662acf::t_286feed2b08e91 16-26,28-29,32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0b2d8b980a3aed5eeac3254356dcc4ee20891875",
+  "prompts": {},
+  "sessions": {
+    "s_2a21db3d662acf": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed0975ad8ffearzKh1YYPN4FSP",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

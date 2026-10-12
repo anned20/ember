@@ -51,9 +51,11 @@ import {
   createTextField,
   createMiniButton,
   createAppRow,
-  createGallery
+  createGallery,
+  createOptionStepper,
+  createProviderPicker
 } from './components/index.js';
-import type {GalleryEntry} from './components/index.js';
+import type {GalleryEntry, OptionStepperElement, ProviderPickerElement, StepperOption} from './components/index.js';
 import {createBinder, stepperField, textField, toggleField} from './settings-binding.js';
 import type {
   Config,
@@ -72,26 +74,6 @@ import type {
 export {isSettingsTextField, isEditingSettingsText, beginSettingsTextEdit, endSettingsTextEdit} from './text-gate.js';
 
 const DEFAULT_INPUTS = ['HDMI_1', 'HDMI_2', 'HDMI_3', 'TV'];
-
-/** One choice in a createOptionStepper picker. */
-interface StepperOption {
-  value: string;
-  label: string;
-}
-
-/** A createOptionStepper control: a div carrying the picker's own API. */
-interface OptionStepperElement extends HTMLDivElement {
-  value: string;
-  setOptions(options: StepperOption[], value?: string): void;
-  setValue(value: string): void;
-  __step(dir: number): void;
-}
-
-/** A createProviderPicker control: a div carrying the picker's own API. */
-interface ProviderPickerElement extends HTMLDivElement {
-  value: string;
-  setValue(value: string): void;
-}
 
 /** Hooks the launcher passes into createSettingsPanel. */
 export interface SettingsPanelOptions {
@@ -164,158 +146,6 @@ interface BackupRecord {
 
 /** A parsed voice-service config / status payload (untyped JSON). */
 type VoicePayload = Record<string, any>;
-
-function createOptionStepper(
-  className: string,
-  focusIndex: number,
-  optionList: StepperOption[],
-  currentValue?: string,
-  onChange?: (value: string) => void
-): OptionStepperElement {
-  const el = document.createElement('div') as OptionStepperElement;
-  el.className = 'option-stepper focusable' + (className ? ' ' + className : '');
-  el.dataset.focusIndex = String(focusIndex);
-  el.tabIndex = 0;
-
-  const prev = document.createElement('span');
-  prev.className = 'stepper-arrow';
-  prev.textContent = '\u2039';
-
-  const labelEl = document.createElement('span');
-  labelEl.className = 'stepper-label';
-
-  const next = document.createElement('span');
-  next.className = 'stepper-arrow';
-  next.textContent = '\u203A';
-
-  el.appendChild(prev);
-  el.appendChild(labelEl);
-  el.appendChild(next);
-
-  let options = optionList.slice();
-  let index = 0;
-
-  function indexOfValue(value: string | undefined): number {
-    for (let i = 0; i < options.length; i += 1) {
-      if (options[i].value === value) return i;
-    }
-    return -1;
-  }
-
-  function render() {
-    const opt = options[index] || {value: '', label: ''};
-    labelEl.textContent = opt.label;
-    el.value = opt.value;
-    el.dataset.value = opt.value;
-    prev.classList.toggle('is-disabled', index <= 0);
-    next.classList.toggle('is-disabled', index >= options.length - 1);
-  }
-
-  el.__step = function (dir: number) {
-    if (!options.length) return;
-    let n = index + dir;
-    if (n < 0) n = 0;
-    if (n > options.length - 1) n = options.length - 1;
-    if (n !== index) {
-      index = n;
-      render();
-      if (onChange) onChange(el.value);
-    }
-  };
-
-  el.setOptions = function (newOptions: StepperOption[], newValue?: string) {
-    options = (newOptions || []).slice();
-    const found = indexOfValue(newValue);
-    index = found >= 0 ? found : 0;
-    render();
-  };
-
-  el.setValue = function (value: string) {
-    const found = indexOfValue(value);
-    if (found >= 0 && found !== index) {
-      index = found;
-      render();
-    }
-  };
-
-  prev.addEventListener('click', function (event) {
-    event.stopPropagation();
-    el.__step(-1);
-  });
-
-  next.addEventListener('click', function (event) {
-    event.stopPropagation();
-    el.__step(1);
-  });
-
-  el.addEventListener('click', function (event) {
-    if (event.target === prev || event.target === next) return;
-    el.__step(1);
-  });
-
-  const start = indexOfValue(currentValue);
-  index = start >= 0 ? start : 0;
-  render();
-  return el;
-}
-
-function createProviderPicker(focusIndex: number, onChange?: (value: string) => void): ProviderPickerElement {
-  const wrap = document.createElement('div') as ProviderPickerElement;
-  wrap.className = 'ai-provider-pick';
-  wrap.setAttribute('role', 'radiogroup');
-  wrap.setAttribute('aria-label', 'AI assistant');
-
-  function makeCard(value: string, name: string, sub: string, indexOffset: number): HTMLButtonElement {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ai-provider-card focusable';
-    btn.dataset.focusIndex = String(focusIndex + indexOffset);
-    btn.dataset.value = value;
-    btn.setAttribute('role', 'radio');
-    const title = document.createElement('span');
-    title.className = 'ai-provider-card-name';
-    title.textContent = name;
-    const detail = document.createElement('span');
-    detail.className = 'ai-provider-card-sub';
-    detail.textContent = sub;
-    btn.appendChild(title);
-    btn.appendChild(detail);
-    return btn;
-  }
-
-  const grokBtn = makeCard('xai', 'Grok', 'xAI · voice, chat, and spoken answers', 0);
-  const gemBtn = makeCard('gemini', 'Gemini', 'Google · speech and chat answers', 1);
-  const orBtn = makeCard('openrouter', 'OpenRouter', 'Many models · chat answers', 2);
-  wrap.appendChild(grokBtn);
-  wrap.appendChild(gemBtn);
-  wrap.appendChild(orBtn);
-  wrap.value = 'xai';
-
-  function paint() {
-    const v = wrap.value;
-    grokBtn.classList.toggle('is-selected', v === 'xai');
-    gemBtn.classList.toggle('is-selected', v === 'gemini');
-    orBtn.classList.toggle('is-selected', v === 'openrouter');
-    grokBtn.setAttribute('aria-checked', v === 'xai' ? 'true' : 'false');
-    gemBtn.setAttribute('aria-checked', v === 'gemini' ? 'true' : 'false');
-    orBtn.setAttribute('aria-checked', v === 'openrouter' ? 'true' : 'false');
-  }
-
-  function select(value: string, silent?: boolean) {
-    const next = (value === 'gemini' || value === 'openrouter') ? value : 'xai';
-    const changed = wrap.value !== next;
-    wrap.value = next;
-    paint();
-    if (!silent && changed && onChange) onChange(next);
-  }
-
-  grokBtn.addEventListener('click', function () { select('xai'); });
-  gemBtn.addEventListener('click', function () { select('gemini'); });
-  orBtn.addEventListener('click', function () { select('openrouter'); });
-  wrap.setValue = function (value: string) { select(value, true); };
-  paint();
-  return wrap;
-}
 
 export function createSettingsPanel(
   panel: HTMLElement,

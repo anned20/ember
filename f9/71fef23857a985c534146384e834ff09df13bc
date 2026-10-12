@@ -1,0 +1,36 @@
+src/ts/settings/pane.ts
+  s_2a21db3d662acf::t_b269127bde68ce 40-41
+test/settings/panes/inputs.test.ts
+  s_2a21db3d662acf::t_caffcc4d0466b8 41
+src/ts/settings/panes/music.ts
+  s_2a21db3d662acf::t_704267221ceb2c 1-372
+test/settings/panes/weather.test.ts
+  s_2a21db3d662acf::t_1ce236260b2c02 43
+test/settings/panes/music.test.ts
+  s_2a21db3d662acf::t_7c9444543b9fe7 161
+  s_2a21db3d662acf::t_e423541932ce9f 1-160,162-191
+docs/agents/architecture.md
+  s_2a21db3d662acf::t_f6be43e1df83c7 60-66
+src/ts/settings/settings.ts
+  s_2a21db3d662acf::t_672081ba797bb4 708
+  s_2a21db3d662acf::t_0509c2edc9d407 2240-2242
+  s_2a21db3d662acf::t_1d7f0ec230e826 20
+  s_2a21db3d662acf::t_20ac380818c575 68
+  s_2a21db3d662acf::t_a0c05cde759578 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f971fef23857a985c534146384e834ff09df13bc",
+  "prompts": {},
+  "sessions": {
+    "s_2a21db3d662acf": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed0975ad8ffearzKh1YYPN4FSP",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

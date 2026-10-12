@@ -1,0 +1,57 @@
+docs/agents/layout.md
+  s_e51f691ed32ac7::t_c6e977f19b4d58 31
+test/focus-row.test.ts
+  s_e51f691ed32ac7::t_1ba7f56e8c4347 203,211,221,235
+  s_e51f691ed32ac7::t_97828e2126bf7d 228
+  s_e51f691ed32ac7::t_8eade3908fa1f5 219-220,222-224,229
+src/ts/settings/navigation.ts
+  s_e51f691ed32ac7::t_8d90404922eecf 620
+  s_e51f691ed32ac7::t_4b65ae07404ce9 1-20,22-138,147-204,206-240,242-254,256-310,312-588,593,595-619,621-634
+  s_e51f691ed32ac7::t_2ddc2620eaf7cc 21
+  s_e51f691ed32ac7::t_74e844b109d9ac 139-146
+  s_e51f691ed32ac7::t_502c47800da124 255
+  s_e51f691ed32ac7::t_f73f22d71a0982 205
+  s_e51f691ed32ac7::t_2281fb83445c47 241
+  s_e51f691ed32ac7::t_d5fb06aae8c1c9 311
+  s_e51f691ed32ac7::t_d925809aa42f23 589-592,594
+src/ts/settings/settings.ts
+  s_e51f691ed32ac7::t_586af3563fb1e1 198,202,209-210,212,214,218-222,224
+  s_e51f691ed32ac7::t_daa44c8636cacf 242,253,264,437-438,440,617
+test/focus.test.ts
+  s_e51f691ed32ac7::t_9f59c362c6e960 1
+  s_e51f691ed32ac7::t_6a8c9e29ab00ff 130-133,145-147,149-154,156-162,170-172,174,195-196
+  s_e51f691ed32ac7::t_10b33b03e56b7b 134-144,148,155,163-169,173,175-194
+docs/agents/architecture.md
+  s_e51f691ed32ac7::t_5e428e7f99dcae 71-82
+src/ts/focus/focus-row.ts
+  s_e51f691ed32ac7::t_e0935f7351250d 133-137
+src/ts/focus/focus.ts
+  s_e51f691ed32ac7::t_aa05341e860bb6 74-75
+  s_e51f691ed32ac7::t_160e5ec8564b72 529-530,535-536,538-539
+  s_e51f691ed32ac7::t_12ba9ac5ce3aab 104-114
+  s_e51f691ed32ac7::t_ffbd78290e0dbe 48-56
+  s_e51f691ed32ac7::t_7f226dc2eb6cfe 15-17
+  s_e51f691ed32ac7::t_fc2893c80d79fe 831
+  s_e51f691ed32ac7::t_731d3c2422968c 841-847
+  s_e51f691ed32ac7::t_f87f41e6cf77c1 396
+test/settings/navigation.test.ts
+  s_e51f691ed32ac7::t_b15b389d3e352d 1-163
+src/ts/settings/text-gate.ts
+  s_e51f691ed32ac7::t_4a22f5be333886 9-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3fcaa4d73800aff292d79c0ac8d606e0673c8d3c",
+  "prompts": {},
+  "sessions": {
+    "s_e51f691ed32ac7": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ece412a87ffencj33Xrq9uyPBk",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

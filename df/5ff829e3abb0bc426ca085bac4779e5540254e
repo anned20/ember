@@ -1,0 +1,32 @@
+src/ts/settings/pane.ts
+  s_2a21db3d662acf::t_4662c03cad6f2b 13-28,38-39
+src/ts/settings/settings.ts
+  s_2a21db3d662acf::t_cef817b9f79a72 44-46
+  s_2a21db3d662acf::t_7e54ae2a04e246 710
+  s_2a21db3d662acf::t_a333fe241981b1 3041-3044
+src/ts/settings/panes/inputs.ts
+  s_2a21db3d662acf::t_b0f6c329e325c2 1-195
+test/settings/panes/weather.test.ts
+  s_2a21db3d662acf::t_bc622e6f8076b6 42
+docs/agents/architecture.md
+  s_2a21db3d662acf::t_94427449afff11 60-61
+  s_2a21db3d662acf::t_249a9720cc7628 62-64
+test/settings/panes/inputs.test.ts
+  s_2a21db3d662acf::t_43b72abf0c369d 1-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "df5ff829e3abb0bc426ca085bac4779e5540254e",
+  "prompts": {},
+  "sessions": {
+    "s_2a21db3d662acf": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed0975ad8ffearzKh1YYPN4FSP",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

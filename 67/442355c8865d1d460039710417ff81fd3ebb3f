@@ -1,0 +1,41 @@
+src/ts/settings/pane.ts
+  s_2a21db3d662acf::t_22af7afd04c892 44
+  s_2a21db3d662acf::t_1966f542f73977 1-43,45-46
+src/ts/settings/panes/weather.ts
+  s_2a21db3d662acf::t_fa3eadaaedefe3 1-7,10,12-30,33-55,57-89,93,95,97-105,107-108,112-113,115-119,121-125,127,129-172,175-180
+  s_2a21db3d662acf::t_9c2bab265cac98 8-9,11,31-32,56,90-92,94,96,106,109-111,114,120,126,128,173-174
+test/settings/panes/weather.test.ts
+  s_2a21db3d662acf::t_9d02a1f7cfd5a5 124,132
+  s_2a21db3d662acf::t_5f4d82a417b45f 1-45,58-74,84-123,125-131,133-134
+  s_2a21db3d662acf::t_776d91ee1f8c8c 75-83
+  s_2a21db3d662acf::t_380c136bdb6f54 46-57
+docs/agents/layout.md
+  s_2a21db3d662acf::t_5cc8c61a41addb 31
+  s_2a21db3d662acf::t_2bdf29a081f356 38
+docs/agents/architecture.md
+  s_2a21db3d662acf::t_a750792c523098 54-65
+src/ts/settings/settings.ts
+  s_2a21db3d662acf::t_c6089ddf82bd9c 44-45
+  s_2a21db3d662acf::t_5c79c9016be4d2 723-740
+  s_2a21db3d662acf::t_817bf1126f41cb 3702-3707,3709-3711
+  s_2a21db3d662acf::t_646b6758969610 78-80
+  s_2a21db3d662acf::t_a23e8174219d99 3708
+  s_2a21db3d662acf::t_3461dce36f18db 3057-3059
+  s_2a21db3d662acf::t_3b9afa066cebf4 70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "67442355c8865d1d460039710417ff81fd3ebb3f",
+  "prompts": {},
+  "sessions": {
+    "s_2a21db3d662acf": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed0975ad8ffearzKh1YYPN4FSP",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

@@ -38,6 +38,7 @@ function buildPane(
     binder: createBinder(config),
     panes: {inputs: pane},
     options: options,
+    isVisible: function () { return true; },
     focusControl: function () {},
     focusNow: focusNow,
     focusGallery: function () {},

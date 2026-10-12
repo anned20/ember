@@ -40,6 +40,7 @@ function buildPane(): {pane: HTMLElement; config: Config; ctx: SettingsContext} 
     binder: createBinder(config),
     panes: {weather: pane},
     options: {},
+    isVisible: function () { return true; },
     focusControl: function () {},
     focusNow: function () { return true; },
     focusGallery: function () {},

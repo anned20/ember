@@ -15,10 +15,9 @@ import {
   jpegForTv
 } from '@background/backgrounds.js';
 import {AERIAL_BACKGROUNDS} from '@background/aerials.js';
-import {loadBuiltinMusicManifest, normalizeMusicConfig} from '@music/builtin-music.js';
 import {applyActiveProfile, getProfileOverrides, PROFILE_OPTIONS} from '@config/profiles.js';
 import {indexInRow} from '@focus/focus-row.js';
-import {findLoungeRoots, joinPath, discoverMusicTracks} from '@lib/usb.js';
+import {findLoungeRoots} from '@lib/usb.js';
 import {
   disableVoice, enableVoice, execRoot, isVoiceRunning, listLaunchPoints, readSettingsBackups,
   runTvCheck, whoAmI, writeAutoBackup, writeSettingsBackup
@@ -42,11 +41,11 @@ import {
 import {qrSvgMarkup} from '@lib/qr-svg.js';
 import {createWeatherPane} from './panes/weather.js';
 import {createInputsPane} from './panes/inputs.js';
+import {createMusicPane} from './panes/music.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from './pane.js';
 export type {SettingsPanelOptions} from './pane.js';
 import {
   labeledControl,
-  labeledBlock,
   createHint,
   createSection,
   createToggle,
@@ -65,10 +64,8 @@ import type {
   AppCatalog,
   AppRecord,
   BuiltinBackground,
-  BuiltinMusicEntry,
   AerialBackground,
-  RemoteBackground,
-  UsbTrack
+  RemoteBackground
 } from '@lib/types.js';
 
 // The focus manager reads the text-field keyboard gate through the panel module.
@@ -708,6 +705,7 @@ export function createSettingsPanel(
       binder: binder,
       panes: panes,
       options: options,
+      isVisible: function () { return visible; },
       focusControl: focusSettingsControl,
       focusNow: focusSettingsControlNow,
       focusGallery: focusPhotoGallery,
@@ -2239,330 +2237,9 @@ export function createSettingsPanel(
     panel.innerHTML = '';
     panel.appendChild(next);
 
-    const music = normalizeMusicConfig(config.music);
-    const builtinTracks: BuiltinMusicEntry[] =
-      (await withDeadline(loadBuiltinMusicManifest(), 4000)) || [];
-
-    if (gen !== renderGen || !visible) return;
-
-    const musicSection = createSection('Music');
-
-    const musicEnabledField = createToggle({
-      label: 'Ambient music',
-      focusIndex: '940',
-      path: 'music.enabled'
-    });
-    binder.bind(musicEnabledField.field!);
-    musicSection.appendChild(musicEnabledField.row);
-
-    const showMusicBarField = createToggle({
-      label: 'Show music bar',
-      focusIndex: '9405',
-      path: 'music.showBar'
-    });
-    binder.bind(showMusicBarField.field!);
-    musicSection.appendChild(showMusicBarField.row);
-
-    musicSection.appendChild(createHint(
-      'When on, shows the track name next to the volume control. Off by default (volume only).'
-    ));
-
-    const musicSourceSelect = createOptionStepper({
-      focusIndex: 941,
-      choices: [
-        {value: 'builtin', label: 'Built-in ambient (6 tracks)'},
-        {value: 'usb', label: 'My tracks (USB)'}
-      ],
-      onChange: function () {
-        syncMusicFields();
-      }
-    });
-    binder.bind(stepperField(musicSourceSelect, 'music.source'));
-    const musicSourceRow = labeledControl('Source', musicSourceSelect);
-    musicSection.appendChild(musicSourceRow);
-
-    // --- Built-in: multi-select which of the 8 packaged tracks to rotate ---
-    const savedBuiltinPlaylist = Array.isArray(music.builtinPlaylist)
-      ? music.builtinPlaylist.slice()
-      : [];
-    // Empty playlist in config means “all packaged tracks”.
-    const builtinSelected: Record<string, boolean> = {};
-    builtinTracks.forEach(function (entry) {
-      builtinSelected[entry.id] = !savedBuiltinPlaylist.length
-        || savedBuiltinPlaylist.indexOf(entry.id) >= 0;
-    });
-
-    const builtinPlaylistList = document.createElement('div');
-    builtinPlaylistList.className = 'settings-track-list';
-    const builtinPlaylistBlock = labeledBlock('Built-in tracks (tick to include)', builtinPlaylistList);
-
-    builtinTracks.forEach(function (entry, index) {
-      const row = document.createElement('div');
-      row.className = 'settings-track-row';
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.className = 'focusable';
-      checkbox.dataset.focusIndex = String(942 + index);
-      checkbox.checked = !!builtinSelected[entry.id];
-      checkbox.addEventListener('change', function () {
-        builtinSelected[entry.id] = checkbox.checked;
-        // Keep “Start with” options in sync with enabled set.
-        refreshBuiltinStartOptions();
-      });
-
-      const title = document.createElement('span');
-      title.className = 'settings-track-title';
-      const detail = entry.description ? ' — ' + entry.description : '';
-      title.textContent = (entry.title || entry.id) + detail;
-
-      row.appendChild(checkbox);
-      row.appendChild(title);
-      builtinPlaylistList.appendChild(row);
-    });
-    musicSection.appendChild(builtinPlaylistBlock);
-
-    function enabledBuiltinIds(): string[] {
-      return builtinTracks
-        .map(function (entry) { return entry.id; })
-        .filter(function (id) { return builtinSelected[id]; });
-    }
-
-    function builtinStartOptions(): StepperOption[] {
-      const enabled = enabledBuiltinIds();
-      const source = enabled.length
-        ? builtinTracks.filter(function (e) { return enabled.indexOf(e.id) >= 0; })
-        : builtinTracks;
-      return source.map(function (entry) {
-        return {value: entry.id, label: entry.title || entry.id};
-      });
-    }
-
-    const builtinTrackSelect = createOptionStepper({
-      focusIndex: 950,
-      choices: builtinStartOptions()
-    });
-    binder.bind(stepperField(builtinTrackSelect, 'music.builtin'));
-    const builtinTrackRow = labeledControl('Start with', builtinTrackSelect);
-    musicSection.appendChild(builtinTrackRow);
-
-    function refreshBuiltinStartOptions(): void {
-      const opts = builtinStartOptions();
-      let cur = builtinTrackSelect.value;
-      const still = opts.some(function (o) { return o.value === cur; });
-      if (!still && opts.length) cur = opts[0].value;
-      builtinTrackSelect.setOptions(opts, cur || '');
-    }
-
-    // --- USB: folder + multi-select discovered tracks ---
-    const musicFolderPicker = createOptionStepper({
-      focusIndex: 951,
-      choices: [
-        {value: '', label: 'Custom path (type below)…'}
-      ],
-      value: '',
-      onChange: function (value) {
-        if (value) {
-          musicPathInput.value = value;
-          scanUsbTracks(value);
-        }
-      }
-    });
-    const musicFolderRow = labeledControl('Browse folders', musicFolderPicker);
-    musicSection.appendChild(musicFolderRow);
-
-    findLoungeRoots().then(function (roots) {
-      const opts = [{value: '', label: 'Custom path (type below)…'}];
-      roots.forEach(function (root) {
-        opts.push({value: joinPath(root, 'music'), label: joinPath(root, 'music')});
-        opts.push({value: joinPath(root, 'music'), label: joinPath(root, 'music')});
-        opts.push({value: joinPath(root, 'music'), label: joinPath(root, 'music')});
-      });
-
-      if (opts.length === 1) {
-        opts[0].label = 'No USB drives detected — type a path below';
-      }
-      musicFolderPicker.setOptions(opts, config.music.path || '');
-    }).catch(function () {
-      musicFolderPicker.setOptions(
-        [{value: '', label: 'Could not scan USB drives — type a path below'}], '');
-    });
-
-    const musicPathField = createTextField({
-      label: 'Music folder',
-      focusIndex: '952',
-      placeholder: 'e.g. /media/usb1/lounge/music',
-      path: 'music.path',
-      trim: true
-    });
-    const musicPathInput = musicPathField.input;
-    const musicPathRow = musicPathField.row;
-    binder.bind(musicPathField.field!);
-    musicSection.appendChild(musicPathRow);
-
-    musicPathInput.addEventListener('change', function () {
-      musicFolderPicker.setValue(musicPathInput.value);
-      scanUsbTracks(musicPathInput.value.trim());
-    });
-    musicPathInput.addEventListener('blur', function () {
-      scanUsbTracks(musicPathInput.value.trim());
-    });
-
-    const usbPlaylistList = document.createElement('div');
-    usbPlaylistList.className = 'settings-track-list';
-    const usbPlaylistBlock = labeledBlock('USB tracks (tick to include)', usbPlaylistList);
-
-    const usbScanStatus = createHint('Set a folder with playlist.m3u or tracks.json, then scan.');
-    usbPlaylistBlock.insertBefore(usbScanStatus, usbPlaylistList);
-    musicSection.appendChild(usbPlaylistBlock);
-
-    // url -> checked
-    const usbSelected: Record<string, boolean> = {};
-    const savedUsb = Array.isArray(music.usbPlaylist) ? music.usbPlaylist : [];
-    let usbTrackEntries: UsbTrack[] = [];
-
-    function renderUsbTrackList(entries: UsbTrack[]): void {
-      usbTrackEntries = entries || [];
-      usbPlaylistList.innerHTML = '';
-      if (!usbTrackEntries.length) {
-        usbScanStatus.textContent = musicPathInput.value.trim()
-          ? 'No tracks found. Add playlist.m3u or tracks.json in that folder.'
-          : 'Set a USB music folder to load your tracks.';
-        return;
-      }
-      usbScanStatus.textContent = usbTrackEntries.length + ' track(s) found — tick the ones to play.';
-      const hadSaved = savedUsb.length > 0;
-      usbTrackEntries.forEach(function (entry, index) {
-        const url = entry.url || '';
-        if (usbSelected[url] === undefined) {
-          usbSelected[url] = !hadSaved || savedUsb.indexOf(url) >= 0;
-        }
-        const row = document.createElement('div');
-        row.className = 'settings-track-row';
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'focusable';
-        checkbox.dataset.focusIndex = String(960 + index);
-        checkbox.checked = !!usbSelected[url];
-        checkbox.addEventListener('change', function () {
-          usbSelected[url] = checkbox.checked;
-        });
-
-        const title = document.createElement('span');
-        title.className = 'settings-track-title';
-        if (entry.artist && entry.title) {
-          title.textContent = entry.artist + ' — ' + entry.title;
-        } else if (entry.title) {
-          title.textContent = entry.title;
-        } else {
-          const parts = String(url).split('/');
-          title.textContent = (parts[parts.length - 1] || url).replace(/\.[^.]+$/, '');
-        }
-
-        row.appendChild(checkbox);
-        row.appendChild(title);
-        usbPlaylistList.appendChild(row);
-      });
-      if (options.onRendered) options.onRendered();
-    }
-
-    let usbScanGen = 0;
-    function scanUsbTracks(folder: string): void {
-      const gen = (usbScanGen += 1);
-      if (!folder) {
-        renderUsbTrackList([]);
-        return;
-      }
-      usbScanStatus.textContent = 'Scanning USB music…';
-      withDeadline(discoverMusicTracks(folder), 5000).then(function (list) {
-        if (gen !== usbScanGen || !visible) return;
-        renderUsbTrackList((list || []) as UsbTrack[]);
-      });
-    }
-
-    if (music.path) {
-      scanUsbTracks(music.path);
-    }
-
-    const shuffleField = createToggle({
-      label: 'Shuffle',
-      focusIndex: '990',
-      path: 'music.shuffle'
-    });
-    const shuffleRow = shuffleField.row;
-    binder.bind(shuffleField.field!);
-    musicSection.appendChild(shuffleRow);
-
-    const repeatSelect = createOptionStepper({
-      focusIndex: 991,
-      choices: [
-        {value: 'all', label: 'Repeat all'},
-        {value: 'one', label: 'Repeat one'},
-        {value: 'off', label: 'Play once'}
-      ]
-    });
-    binder.bind(stepperField(repeatSelect, 'music.repeat'));
-    const repeatRow = labeledControl('Repeat', repeatSelect);
-    musicSection.appendChild(repeatRow);
-
-    const musicVolumeField = createTextField({
-      label: 'Ambient volume',
-      focusIndex: '992',
-      type: 'range',
-      className: 'focusable',
-      min: '0',
-      max: '50',
-      path: 'music.volume',
-      parse: function (raw) { return Number(raw) / 100; },
-      format: function (value) { return String(Math.round(Number(value || 0.15) * 100)); }
-    });
-    binder.bind(musicVolumeField.field!);
-    musicSection.appendChild(musicVolumeField.row);
-
-    musicSection.appendChild(createHint(
-      'Six built-in tracks ship in the app (48 kbps ambient, CC0 / CC BY). If music is silent at launch, press any remote key once (autoplay unlock). Red = pause, Green = skip. USB: Source → My tracks for more.'
-    ));
-
-    function syncMusicFields(): void {
-      const isBuiltin = musicSourceSelect.value === 'builtin';
-      builtinPlaylistBlock.hidden = !isBuiltin;
-      builtinTrackRow.hidden = !isBuiltin;
-      musicFolderRow.hidden = isBuiltin;
-      musicPathRow.hidden = isBuiltin;
-      usbPlaylistBlock.hidden = isBuiltin;
-      // Shuffle/repeat apply to multi-track playlists (built-in or USB).
-      shuffleRow.hidden = false;
-      repeatRow.hidden = false;
-    }
-
-    syncMusicFields();
-    // The playlists come from the tick boxes, not a plain control.
-    binder.hook(function (cfg) {
-      // Empty array = all built-ins; otherwise only ticked ids.
-      let pickedBuiltin = enabledBuiltinIds();
-      if (!pickedBuiltin.length && builtinTracks.length) {
-        // Don't allow empty playlist — keep the start track (or first).
-        pickedBuiltin = [builtinTrackSelect.value || builtinTracks[0].id];
-      }
-      cfg.music.builtinPlaylist =
-        pickedBuiltin.length === builtinTracks.length ? [] : pickedBuiltin;
-
-      // Empty = all USB tracks found; otherwise only ticked urls.
-      let pickedUsb: string[] = [];
-      usbTrackEntries.forEach(function (entry) {
-        const url = entry && entry.url;
-        if (url && usbSelected[url]) pickedUsb.push(url);
-      });
-      if (!pickedUsb.length && usbTrackEntries.length) {
-        pickedUsb = [usbTrackEntries[0].url];
-      }
-      cfg.music.usbPlaylist =
-        usbTrackEntries.length && pickedUsb.length === usbTrackEntries.length
-          ? []
-          : pickedUsb;
-    });
-    panes.music.appendChild(musicSection);
+    const musicPane = createMusicPane();
+    paneHandles.music = musicPane;
+    musicPane.build(context);
 
     // The old Launcher section, now three: System (volume levels, then
     // Performance mode, Home button, boot), Screensaver, and Clock & icons in

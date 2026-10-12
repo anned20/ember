@@ -37,6 +37,8 @@ export interface SettingsContext {
   readonly panes: Record<string, HTMLDivElement>;
   /** The host hooks the panel was created with. */
   readonly options: SettingsPanelOptions;
+  /** Whether the panel is open; an async fill drops its result once it isn't. */
+  isVisible(): boolean;
   /** Put focus (and the row highlight) on a control. */
   focusControl(el: Element): void;
   /** Focus a control immediately, without the deferral. */

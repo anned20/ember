@@ -10,6 +10,8 @@ import {
   jpegForTv,
   parseUrlList
 } from '@background/backgrounds.js';
+import {PRESET_OPTIONS, probeImage} from '@background/media.js';
+import {SOURCE_OPTIONS} from '@background/background-sources.js';
 import {getProfileOverrides, PROFILE_OPTIONS} from '@config/profiles.js';
 import {indexInRow} from '@focus/focus-row.js';
 import {
@@ -168,14 +170,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
 
       const sourceSelect = createOptionStepper({
         focusIndex: 902,
-        choices: [
-          {value: 'preset', label: 'Gradient'},
-          {value: 'animated-gradient', label: 'Animated Gradient'},
-          {value: 'builtin', label: 'Built-in photos'},
-          {value: 'usb', label: 'USB folder'},
-          {value: 'url', label: 'Online URL (nature + anime)'},
-          {value: 'aerial', label: 'Aerial videos (Apple)'}
-        ],
+        choices: SOURCE_OPTIONS,
         path: 'background.source',
         binder: ctx.binder,
         onChange: function (value) {
@@ -195,12 +190,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
 
       const presetSelect = createOptionStepper({
         focusIndex: 903,
-        choices: [
-          {value: 'warm-gradient', label: 'Warm gradient'},
-          {value: 'cool-gradient', label: 'Cool gradient'},
-          {value: 'midnight', label: 'Midnight'},
-          {value: 'ember', label: 'Ember'}
-        ],
+        choices: PRESET_OPTIONS,
         path: 'background.preset',
         binder: ctx.binder
       });
@@ -399,24 +389,17 @@ export function createBackgroundPane(): BackgroundPaneHandle {
           return;
         }
         showUrlStatus('Checking the link\u2026', '');
-        const img = new Image();
-        let settled = false;
-        function done(ok: boolean) {
-          if (settled || gen !== urlCheckGen) return;
-          settled = true;
-          if (ok) {
-            showUrlStatus('The link loads as an image (' + img.naturalWidth + ' \u00d7 ' +
-              img.naturalHeight + '). Press Save to use it.', 'ok');
+        probeImage(jpegForTv(url)).then(function (res) {
+          if (gen !== urlCheckGen) return;
+          if (res.ok) {
+            showUrlStatus('The link loads as an image (' + res.width + ' \u00d7 ' +
+              res.height + '). Press Save to use it.', 'ok');
           } else {
             showUrlStatus('That link didn\u2019t load as an image. Use the direct image link: it ' +
               'usually ends in .jpg or .png (on an image host, \u201cCopy image address\u201d or ' +
               '\u201cDirect link\u201d). A link to a web page about the photo won\u2019t work.', 'error');
           }
-        }
-        img.onload = function () { done(true); };
-        img.onerror = function () { done(false); };
-        setTimeout(function () { done(false); }, 20000);
-        img.src = jpegForTv(url);
+        });
       }
       urlInput.addEventListener('input', function () {
         const match = findRemoteBackgroundByUrl(urlInput.value.trim());

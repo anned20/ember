@@ -8,10 +8,19 @@
  * Runs only inside this app — does not replace the system-wide LG saver when
  * other apps are open. When active, motion (slideshow + slow Ken Burns) helps
  * OLED burn-in protection and makes the system saver less likely to steal focus.
+ *
+ * It is a thin host over the media-playback engine (the same video state
+ * machine the wallpaper uses); its own policy is the crossfade pair, the clock,
+ * the idle timer and the dismiss gestures.
  */
 
 import {setClockTime} from '@lib/clock-format.js';
-import {MEDIA_VIDEO, normalizeBackgroundConfig, resolveBackgroundMedia} from './backgrounds.js';
+import {normalizeBackgroundConfig} from './backgrounds.js';
+import {resolveBackgroundCatalog, resolveBackgroundMedia} from './background-sources.js';
+import {MEDIA_VIDEO, presetGradient, probeImage} from './media.js';
+import type {MediaDescriptor, ProbeResult} from './media.js';
+import {createMediaPlayback} from './media-playback.js';
+import type {MediaPlayback} from './media-playback.js';
 import {resolveLoungePaths} from '@lib/usb.js';
 import type {BackgroundConfig, Config, LauncherConfig} from '@lib/types.js';
 
@@ -40,33 +49,12 @@ interface ImageItem {
   kind?: string;
 }
 
-interface VideoClip {
-  url: string;
-  kind?: string;
-  id?: string;
-  title?: string;
-}
-
-interface VideoContent {
-  kind: 'video';
-  clips: VideoClip[];
-  slideshow?: boolean;
-  shuffle?: boolean;
-}
-
 interface ImageContent {
   kind: 'images';
   items: ImageItem[];
 }
 
-type ScreensaverContent = VideoContent | ImageContent;
-
-const PRESETS: Record<string, string> = {
-  'warm-gradient': 'linear-gradient(135deg, #1a1028 0%, #3d1f2e 40%, #7a3b2e 100%)',
-  'cool-gradient': 'linear-gradient(145deg, #0b1220 0%, #162447 50%, #1f4068 100%)',
-  'midnight': 'linear-gradient(180deg, #050508 0%, #12121a 60%, #1c1c28 100%)',
-  'ember': 'radial-gradient(ellipse at 30% 20%, #4a1942 0%, #1a0a14 50%, #080408 100%)'
-};
+type ScreensaverContent = {kind: 'video'} | ImageContent;
 
 function formatDate(date: Date, timezone: string): string {
   const options: Intl.DateTimeFormatOptions = {weekday: 'long', day: 'numeric', month: 'long'};
@@ -77,18 +65,6 @@ function formatDate(date: Date, timezone: string): string {
     delete options.timeZone;
     return new Intl.DateTimeFormat('en-GB', options).format(date);
   }
-}
-
-/** Fisher–Yates copy (aerial Slideshow order, like the home wallpaper). */
-function shuffled<T>(items: T[]): T[] {
-  const arr = items.slice();
-  for (let i = arr.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const tmp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = tmp;
-  }
-  return arr;
 }
 
 export function createCustomScreensaver(options: CustomScreensaverOptions): CustomScreensaver {
@@ -130,20 +106,9 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
   let slideGen = 0;
   let decodingPhoto: HTMLImageElement | null = null;
   let usbBackgroundPath = '';
-
-  // Aerial clip: one <video> over the photo layers while the source is "aerial".
-  // Single loops the chosen clip (retrying once, like the home wallpaper) and
-  // Slideshow rides "ended" onto the next. The two ids guard against an error
-  // event and a rejected play() for the same load being handled twice; the
-  // failure count drops to a gradient only after every attempt has failed.
-  let videoEl: HTMLVideoElement | null = null;
-  let videoClips: VideoClip[] = [];
-  let videoSlideshow = false;
-  let videoIndex = 0;
-  let videoAttempt = 0;
-  let videoHandledAttempt = 0;
-  let videoErrorListener: (() => void) | null = null;
-  let videoFailures = 0;
+  // The shared video state machine (aerial clips). Created on first use and
+  // destroyed with the module; `stop`/`hide` release the decoder via it.
+  let media: MediaPlayback | null = null;
 
   // app-inactive is a class flip (main.js) with no event of its own; a body
   // observer catches it the same way the home wallpaper's does.
@@ -208,6 +173,43 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     }
   }
 
+  // Whether the clip should be decoding right now. Not while our surface is
+  // backgrounded to another app (document.hidden) or while an overlay such as
+  // LG Settings holds the remote (body.app-inactive) — the same two states the
+  // home wallpaper uses.
+  function saverShouldPlay() {
+    if (document.hidden) return false;
+    if (document.body && document.body.classList.contains('app-inactive')) return false;
+    return true;
+  }
+
+  function mediaEngine(): MediaPlayback {
+    if (!media) {
+      media = createMediaPlayback({
+        mount: rootEl,
+        getConfig: getConfig,
+        shouldAnimate: function () { return active && saverShouldPlay(); },
+        videoClassName: 'custom-screensaver-video',
+        // Reveal now rather than waiting on a "playing" event: the element's own
+        // background (dark, like the saver) covers the first-frame gap, and a
+        // clip that never reports "playing" still shows.
+        onClipStart: function (gradient, el) {
+          el.classList.add('is-visible');
+        },
+        onFallback: function () {
+          showVideoFallback();
+        }
+      });
+    }
+    return media;
+  }
+
+  // Pause on hidden/inactive and resume the same stream (play(), never a src
+  // change), delegated to the engine.
+  function syncVideo() {
+    if (media) media.sync();
+  }
+
   function applyLayer(el: HTMLElement | null, urlOrGradient: string, isGradient: boolean) {
     if (!el) return;
     if (isGradient) {
@@ -220,41 +222,19 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     }
   }
 
-  /**
-   * Resolve once a photo is downloaded and decoded (or after a timeout), so
-   * the crossfade never starts on a photo that is still decoding.
-   * The element is kept until the next slide so the decoded copy stays warm.
-   */
-  function decodePhoto(url: string): Promise<void> {
-    return new Promise<void>(function (resolve) {
-      const img = new Image();
-      let settled = false;
-      function done() {
-        if (settled) return;
-        settled = true;
-        resolve();
-      }
-      img.onload = function () {
-        if (typeof img.decode === 'function') {
-          img.decode().then(done, done);
-        } else {
-          done();
-        }
-      };
-      img.onerror = done;
-      setTimeout(done, 6000);
-      decodingPhoto = img;
-      img.src = url;
-    });
-  }
-
   function showSlide(index: number) {
     if (!images.length) return;
     const item = images[index % images.length];
     const gen = ++slideGen;
-    const ready = item.gradient ? Promise.resolve() : decodePhoto(item.url);
-    ready.then(function () {
+    // Resolve once the photo is downloaded and decoded (or after a timeout), so
+    // the crossfade never starts on a photo that is still decoding. The element
+    // is kept until the next slide so the decoded copy stays warm.
+    const ready: Promise<ProbeResult | null> = item.gradient
+      ? Promise.resolve(null)
+      : probeImage(item.url);
+    ready.then(function (res) {
       if (gen !== slideGen || !active) return;
+      if (res && res.image) decodingPhoto = res.image;
       const front = useA ? bgA : bgB;
       const back = useA ? bgB : bgA;
       applyLayer(back, item.url, item.gradient);
@@ -273,9 +253,8 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
 
   /**
    * Resolve what to show while the saver is up: aerial clips (video) when the
-   * source is aerial, otherwise the photo list (with the motion-friendly
-   * multi-image probe). Returns {kind:'video', clips, slideshow, shuffle} or
-   * {kind:'images', items}.
+   * source is aerial, otherwise the whole photo set (motion-friendly). Returns
+   * {kind:'video'} or {kind:'images', items}.
    */
   async function loadContent(): Promise<ScreensaverContent | null> {
     const gen = ++loadGen;
@@ -283,35 +262,15 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     const bg: BackgroundConfig = normalizeBackgroundConfig(config.background);
 
     if (bg.source === 'aerial') {
-      // The clips are CDN-only; offline, don't stall on a black screen waiting
-      // for Apple — an empty clip list falls back to the gradient below.
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        return {kind: 'video', clips: []};
-      }
-      let list: VideoClip[] = [];
-      try {
-        list = await resolveBackgroundMedia(config, '');
-      } catch (err) {
-        list = [];
-      }
-      if (gen !== loadGen) return null;
-      const clips = list.filter(function (item) {
-        return item && item.kind === MEDIA_VIDEO && item.url;
-      });
-      // Single/Slideshow/Shuffle are honoured exactly as the home wallpaper does.
-      return {
-        kind: 'video',
-        clips: clips,
-        slideshow: bg.mode === 'slideshow' && clips.length > 1,
-        shuffle: !!bg.shuffle
-      };
+      // The media engine resolves the clips and falls back to the gradient when
+      // they will not play (offline included), so no resolution here.
+      return {kind: 'video'};
     }
 
     const out: ImageItem[] = [];
 
     if (bg.source === 'preset' || bg.source === 'animated-gradient') {
-      const grad = PRESETS[bg.preset] || PRESETS['warm-gradient'];
-      out.push({url: grad, gradient: true});
+      out.push({url: presetGradient(bg.preset), gradient: true});
       return {kind: 'images', items: out};
     }
 
@@ -325,17 +284,11 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
       }
     }
 
-    // Prefer a multi-image set for motion (OLED-friendly). Temporarily force
-    // slideshow mode when resolving so builtin/url catalogs return the full list.
-    const probe = JSON.parse(JSON.stringify(config));
-    if (!probe.background) probe.background = {};
-    if (probe.background.source === 'builtin' || probe.background.source === 'url') {
-      probe.background.mode = 'slideshow';
-    }
-
-    let list: Array<{kind?: string; url?: string}> = [];
+    // Prefer a multi-image set for motion (OLED-friendly) — the catalog asks the
+    // source for the whole set rather than forcing mode = 'slideshow'.
+    let list: MediaDescriptor[] = [];
     try {
-      list = await resolveBackgroundMedia(probe, usbBackgroundPath);
+      list = await resolveBackgroundCatalog(config, usbBackgroundPath);
     } catch (err) {
       list = [];
     }
@@ -362,7 +315,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     }
 
     if (!out.length) {
-      out.push({url: PRESETS.midnight, gradient: true});
+      out.push({url: presetGradient('midnight'), gradient: true});
     }
     return {kind: 'images', items: out};
   }
@@ -393,6 +346,18 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     }
   }
 
+  // Release the decoder (leaving the saver, or the surface backgrounding).
+  function teardownVideo() {
+    if (media) media.stop();
+  }
+
+  function showVideoFallback() {
+    teardownVideo();
+    clearSlideTimer();
+    images = [{url: presetGradient('midnight'), gradient: true}];
+    showImageFrame(presetGradient('midnight'), true);
+  }
+
   function startImageContent(list: ImageItem[]) {
     // Coming from aerials: drop the clip so it does not play over the photos.
     teardownVideo();
@@ -404,175 +369,10 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     startSlideshow();
   }
 
-  function ensureVideo() {
-    if (videoEl) return videoEl;
-    const v = document.createElement('video');
-    v.className = 'custom-screensaver-video';
-    v.muted = true;
-    v.defaultMuted = true;
-    v.playsInline = true;
-    v.setAttribute('playsinline', '');
-    v.setAttribute('webkit-playsinline', '');
-    v.setAttribute('aria-hidden', 'true');
-    v.autoplay = true;
-    v.preload = 'auto';
-    v.loop = true;
-    v.addEventListener('playing', onVideoPlaying);
-    v.addEventListener('ended', onVideoEnded);
-    rootEl.appendChild(v);
-    videoEl = v;
-    return v;
-  }
-
-  // Release the decoder and the network request (leaving the saver, or the
-  // surface backgrounding — main.js hides the saver when document.hidden).
-  function teardownVideo() {
-    videoAttempt += 1; // drop any play()/error still in flight
-    videoFailures = 0;
-    videoClips = [];
-    videoSlideshow = false;
-    videoIndex = 0;
-    if (!videoEl) return;
-    const v = videoEl;
-    videoEl = null;
-    if (videoErrorListener) v.removeEventListener('error', videoErrorListener);
-    videoErrorListener = null;
-    v.removeEventListener('playing', onVideoPlaying);
-    v.removeEventListener('ended', onVideoEnded);
-    try { v.pause(); } catch (err) { /* ignore */ }
-    v.removeAttribute('src');
-    try { v.load(); } catch (err) { /* ignore */ }
-    if (v.parentNode) v.parentNode.removeChild(v);
-  }
-
-  // A clip started: a run of failures is over.
-  function onVideoPlaying() {
-    videoFailures = 0;
-  }
-
-  function onVideoEnded() {
-    if (!videoSlideshow || videoClips.length <= 1) return;
-    videoIndex = (videoIndex + 1) % videoClips.length;
-    playVideo();
-  }
-
-  function playVideo() {
-    if (!videoEl || !videoClips.length) return;
-    const attempt = ++videoAttempt;
-    const clip = videoClips[videoIndex % videoClips.length];
-    videoEl.loop = !videoSlideshow;
-    // Bind "error" to this load; detach the previous so a late error from a
-    // clip we already left is not counted again.
-    if (videoErrorListener) videoEl.removeEventListener('error', videoErrorListener);
-    videoErrorListener = function () {
-      handleVideoFailure(attempt);
-    };
-    videoEl.addEventListener('error', videoErrorListener);
-    if (videoEl.getAttribute('src') !== clip.url) {
-      videoEl.setAttribute('src', clip.url);
-    }
-    // Reveal now rather than waiting on a "playing" event: the element's own
-    // background (dark, like the saver) covers the first-frame gap, and a clip
-    // that never reports "playing" still shows.
-    videoEl.classList.add('is-visible');
-    let p: Promise<void> | null = null;
-    try {
-      p = videoEl.play();
-    } catch (err) {
-      handleVideoFailure(attempt);
-      return;
-    }
-    if (p && p.catch) p.catch(function (err: any) {
-      // Aborted by a pause (the saver closed mid-start) is not a decode failure.
-      if (err && err.name === 'AbortError') return;
-      handleVideoFailure(attempt);
-    });
-  }
-
-  // Whether the clip should be decoding right now. Not while our surface is
-  // backgrounded to another app (document.hidden) or while an overlay such as
-  // LG Settings holds the remote (body.app-inactive) — the same two states the
-  // home wallpaper uses.
-  function saverShouldPlay() {
-    if (document.hidden) return false;
-    if (document.body && document.body.classList.contains('app-inactive')) return false;
-    return true;
-  }
-
-  // Pause on hidden/inactive and resume the same stream (play(), never a src
-  // change, so returning neither restarts the clip nor re-fetches it).
-  function syncVideo() {
-    if (!active || !videoEl || !videoClips.length) return;
-    if (!saverShouldPlay()) {
-      if (!videoEl.paused) {
-        try { videoEl.pause(); } catch (err) { /* ignore */ }
-      }
-      return;
-    }
-    if (!videoEl.paused) return;
-    if (videoEl.error) {
-      playVideo();
-      return;
-    }
-    try {
-      const p = videoEl.play();
-      if (p && p.catch) p.catch(function () { /* resumed elsewhere */ });
-    } catch (err) { /* ignore */ }
-  }
-
-  // Single gets one retry; Slideshow gets a single pass over the list.
-  function maxVideoFailures() {
-    return videoSlideshow ? videoClips.length - 1 : 1;
-  }
-
-  // A clip that will not play: Slideshow skips to the next one, Single retries
-  // the same clip once, and only once every attempt has failed does the saver
-  // drop to the gradient (never blank). The element's error event and a rejected
-  // play() report the same attempt, so it is handled once.
-  function handleVideoFailure(attemptId: number) {
-    // Backgrounded/inactive: defer, and let syncVideo retry on the way back.
-    if (!active || !saverShouldPlay()) return;
-    if (attemptId !== videoAttempt || attemptId === videoHandledAttempt) return;
-    videoHandledAttempt = attemptId;
-    videoFailures += 1;
-    if (videoFailures > maxVideoFailures()) {
-      showVideoFallback();
-      return;
-    }
-    if (videoSlideshow) {
-      // Skip the broken clip and take the next one round the list.
-      videoIndex = (videoIndex + 1) % videoClips.length;
-    } else if (videoEl) {
-      // Single: retry the same clip. Drop the failed source so playVideo re-sets
-      // it and the TV makes a fresh request.
-      videoEl.removeAttribute('src');
-      try { videoEl.load(); } catch (err) { /* ignore */ }
-    }
-    playVideo();
-  }
-
-  function showVideoFallback() {
-    teardownVideo();
-    clearSlideTimer();
-    images = [{url: PRESETS.midnight, gradient: true}];
-    showImageFrame(PRESETS.midnight, true);
-  }
-
-  function startVideoContent(content: VideoContent) {
+  function startVideoContent() {
     images = [];
     clearSlideTimer();
-    if (!content.clips.length) {
-      showVideoFallback();
-      return;
-    }
-    videoSlideshow = !!content.slideshow;
-    videoClips = videoSlideshow && content.shuffle ? shuffled(content.clips) : content.clips;
-    videoIndex = 0;
-    videoAttempt = 0;
-    videoHandledAttempt = 0;
-    videoFailures = 0;
-    ensureVideo();
-    playVideo();
+    mediaEngine().play();
   }
 
   // Load and start whatever the current settings call for; used on show and when
@@ -580,7 +380,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
   async function beginContent(): Promise<void> {
     const content = await loadContent();
     if (!active || !content) return;
-    if (content.kind === 'video') startVideoContent(content);
+    if (content.kind === 'video') startVideoContent();
     else startImageContent(content.items);
   }
 
@@ -734,6 +534,10 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     clearIdleTimer();
     hide();
     detachListeners();
+    if (media) {
+      media.destroy();
+      media = null;
+    }
   }
 
   function applyConfig() {

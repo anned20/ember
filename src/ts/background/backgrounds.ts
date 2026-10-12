@@ -1,17 +1,11 @@
-import {discoverBackgroundImages, fetchJson, joinPath} from '@lib/usb.js';
+import {fetchJson, joinPath} from '@lib/usb.js';
 import {resolveAppUrl, withAssetVersion} from '@lib/compat.js';
 import {APP_VERSION} from '@lib/version.js';
 import {AERIAL_BACKGROUNDS} from './aerials.js';
-import type {AerialBackground, BackgroundConfig, BuiltinBackground, Config, RemoteBackground} from '@lib/types.js';
+import type {BackgroundConfig, BuiltinBackground, RemoteBackground} from '@lib/types.js';
 
 const BUILTIN_MANIFEST = 'assets/backgrounds/manifest.json';
 const BUILTIN_BASE = 'assets/backgrounds/';
-
-/** A resolved wallpaper entry: an image URL or an aerial video URL. */
-export interface MediaDescriptor {
-  kind: string;
-  url: string;
-}
 
 /**
  * Hard-coded list matching assets/backgrounds/manifest.json.
@@ -31,80 +25,11 @@ const BUILTIN_BACKGROUNDS_FALLBACK: BuiltinBackground[] = [
  * See docs/background-sources.md.
  */
 // 3840px + high quality for sharp 4K TVs (still CDN-only, not packaged).
-const UNSPLASH_PARAMS_4K = '?w=3840&q=92&auto=format&fit=crop';
-const UNSPLASH_PARAMS_LITE = '?w=1920&q=85&auto=format&fit=crop';
+export const UNSPLASH_PARAMS_4K = '?w=3840&q=92&auto=format&fit=crop';
+export const UNSPLASH_PARAMS_LITE = '?w=1920&q=85&auto=format&fit=crop';
 
 function u(photoId: string): string {
   return 'https://images.unsplash.com/photo-' + photoId + UNSPLASH_PARAMS_4K;
-}
-
-// Performance mode: 1920px wallpapers (~¼ of the pixels to decode and hold in
-// memory on slower TVs); otherwise the 4K originals. Applied when an image is
-// picked for display, so saved choices never change.
-//
-// The IPK only packages the 4K built-ins. Their 1920px copies are downloaded
-// from this repo (assets/backgrounds/1920/, excluded from the package) via
-// jsDelivr, pinned to the tag that added them so the URLs never change; the
-// CDN marks them immutable, so the TV caches each one after the first view.
-// Offline or unreachable → the packaged 4K is used instead.
-const LITE_WALLPAPER_BASE =
-  'https://cdn.jsdelivr.net/gh/gprot42/webos-launch-home@v0.0.104/assets/backgrounds/1920/';
-const LITE_RETRY_MS = 10 * 60 * 1000;
-
-let liteImages = false;
-let liteProbe: {ok: boolean; at: number} | null = null; // can the CDN copies load?
-
-export function setLiteImages(on: unknown): void {
-  liteImages = !!on;
-}
-
-/** Downloadable 1920px copy of a packaged built-in, from any of its URL forms. */
-function liteBuiltinUrl(url: string): string {
-  const m = /(?:^|\/)assets\/backgrounds\/([^/?#]+\.jpg)(?:[?#]|$)/.exec(String(url || ''));
-  return m ? LITE_WALLPAPER_BASE + m[1] : '';
-}
-
-function imageLoads(url: string, timeoutMs: number): Promise<boolean> {
-  return new Promise(function (resolve) {
-    const img = new Image();
-    let settled = false;
-    function done(ok: boolean): void {
-      if (settled) return;
-      settled = true;
-      resolve(ok);
-    }
-    img.onload = function () { done(true); };
-    img.onerror = function () { done(false); };
-    setTimeout(function () { done(false); }, timeoutMs);
-    img.src = url;
-  });
-}
-
-/** One reachability check per session (re-tried every 10 min after a miss). */
-function liteCopiesReachable(sampleUrl: string): Promise<boolean> {
-  const now = Date.now();
-  if (liteProbe && (liteProbe.ok || now - liteProbe.at < LITE_RETRY_MS)) {
-    return Promise.resolve(liteProbe.ok);
-  }
-  return imageLoads(sampleUrl, 6000).then(function (ok) {
-    liteProbe = {ok: ok, at: Date.now()};
-    return ok;
-  });
-}
-
-/**
- * Performance mode for built-ins. A single photo gets the 1920px download
- * first and its packaged 4K forms as fallbacks (the background controller
- * tries them in order). A photo list (slideshow, screensaver) has no per-image
- * fallback, so it switches to the downloads only once they're known to load.
- */
-function liteBuiltinImages(images: string[], mode: string): Promise<string[]> {
-  const lite = images.map(liteBuiltinUrl);
-  if (!lite[0]) return Promise.resolve(images);
-  if (mode !== 'slideshow') return Promise.resolve([lite[0]].concat(images));
-  return liteCopiesReachable(lite[0]).then(function (ok) {
-    return ok ? images.map(function (url, i) { return lite[i] || url; }) : images;
-  });
 }
 
 /**
@@ -128,17 +53,6 @@ export function jpegForTv(url: string): string {
   }).filter(Boolean);
   params.push('fm=jpg');
   return s.slice(0, q) + '?' + params.join('&');
-}
-
-function sizeForDisplay(url: string): string {
-  const s = String(url || '');
-  if (liteImages && /^https:\/\/pbs\.twimg\.com\/media\//.test(s)) {
-    return s.replace(/([?&])name=[a-z0-9]+/i, '$1name=large');
-  }
-  return liteImages && /^https:\/\/images\.unsplash\.com\/photo-/.test(s) &&
-    s.indexOf(UNSPLASH_PARAMS_4K) > 0
-    ? s.replace(UNSPLASH_PARAMS_4K, UNSPLASH_PARAMS_LITE)
-    : s;
 }
 
 /** An image posted on X, full size from its image CDN (pbs.twimg.com). */
@@ -375,120 +289,3 @@ export function isImageUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
 
-export const MEDIA_IMAGE = 'image';
-export const MEDIA_VIDEO = 'video';
-
-function mediaDescriptors(urls: string[], kind: string): MediaDescriptor[] {
-  return urls.map(function (url) {
-    return {kind: kind, url: url};
-  });
-}
-
-/** The Apple aerial clip with this id, or null. */
-function findAerialBackgroundById(id: string): AerialBackground | null {
-  if (!id) return null;
-  for (let i = 0; i < AERIAL_BACKGROUNDS.length; i += 1) {
-    if (AERIAL_BACKGROUNDS[i].id === id) return AERIAL_BACKGROUNDS[i];
-  }
-  return null;
-}
-
-/**
- * The aerial clips to play. Single = the chosen clip; Slideshow = the whole
- * catalog, in catalog order (the controller shuffles when the config asks).
- */
-function aerialMedia(bg: BackgroundConfig): MediaDescriptor[] {
-  if (bg.mode === 'slideshow') {
-    return mediaDescriptors(AERIAL_BACKGROUNDS.map(function (clip) {
-      return clip.url;
-    }), MEDIA_VIDEO);
-  }
-  const clip = findAerialBackgroundById(bg.aerial) || AERIAL_BACKGROUNDS[0];
-  if (!clip || !clip.url) return [];
-  return [{kind: MEDIA_VIDEO, url: clip.url}];
-}
-
-export async function resolveBackgroundMedia(config: Config, usbPath: string): Promise<MediaDescriptor[]> {
-  const bg = normalizeBackgroundConfig(config.background);
-  if (bg.source === 'aerial') return aerialMedia(bg);
-
-  const urls = await resolveImagesAtSourceSize(config, usbPath);
-  if (!liteImages) return mediaDescriptors(urls.map(jpegForTv), MEDIA_IMAGE);
-  if (bg.source === 'builtin') {
-    return mediaDescriptors(await liteBuiltinImages(urls, bg.mode), MEDIA_IMAGE);
-  }
-  return mediaDescriptors(urls.map(sizeForDisplay).map(jpegForTv), MEDIA_IMAGE);
-}
-
-async function resolveImagesAtSourceSize(config: Config, usbPath: string): Promise<string[]> {
-  const bg = normalizeBackgroundConfig(config.background);
-  const images: string[] = [];
-
-  if (bg.source === 'preset' || bg.source === 'animated-gradient') {
-    return images;
-  }
-
-  if (bg.source === 'builtin') {
-    const manifest = await loadBuiltinManifest();
-
-    if (bg.mode === 'slideshow') {
-      // One preferred URL per photo (absolute file:// when possible).
-      manifest.forEach(function (entry) {
-        const url = builtinImageUrl(entry.file);
-        if (url) images.push(url);
-      });
-    } else {
-      // Multiple path forms for the selected photo so the controller can try
-      // absolute file://, relative, then versioned relative on webOS 4.x.
-      const list = manifest || [];
-      const entry = list.find(function (item) {
-        return item.id === bg.builtin;
-      }) || list[0];
-      if (entry) {
-        builtinImageCandidates(entry.file).forEach(function (url) {
-          images.push(url);
-        });
-      }
-    }
-
-    return images;
-  }
-
-  if (bg.source === 'url') {
-    if (bg.mode === 'slideshow') {
-      // Explicit list first; otherwise cycle the curated remote catalog.
-      if (bg.urls.length) {
-        return bg.urls.filter(isImageUrl);
-      }
-      return getRemoteBackgroundUrls();
-    }
-
-    if (bg.url && isImageUrl(bg.url)) {
-      images.push(bg.url);
-      return images;
-    }
-
-    // Optional curated pick by id (no bytes in the package).
-    const remote = findRemoteBackgroundById(bg.remote);
-    if (remote && isImageUrl(remote.url)) {
-      images.push(remote.url);
-    }
-
-    return images;
-  }
-
-  if (bg.source === 'usb') {
-    if (bg.file) {
-      const fileUrl = bg.file.indexOf('/') === 0 ? bg.file : joinPath(bg.path || usbPath || '', bg.file);
-      images.push(fileUrl);
-      return images;
-    }
-
-    const folder = bg.path || usbPath || '';
-    if (folder) {
-      return discoverBackgroundImages(folder);
-    }
-  }
-
-  return images;
-}

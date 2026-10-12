@@ -44,7 +44,7 @@ import {
 import {isHomeApp} from '@lib/remote.js';
 import {isTerminalAppId, getAppIdCandidates} from '@apps/app-icons.js';
 import {setPreferBundledIcons} from '@apps/app-catalog.js';
-import {setLiteImages} from '@background/backgrounds.js';
+import {setLiteImages} from '@background/background-sources.js';
 import {addVoiceListener, setVoiceWsEnabled, stopVoiceWs} from '@voice/voice-ws.js';
 import {resolveVoiceLaunch} from '@voice/voice-launch.js';
 import {activity, noteForeground} from '@lib/activity.js';

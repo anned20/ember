@@ -45,4 +45,28 @@ describe('createGallery', () => {
     img.dispatchEvent(new Event('error'));
     expect(img.closest('.photo-picker-tile')!.classList.contains('photo-picker-thumb-failed')).toBe(true);
   });
+
+  it('replaces the tiles with setEntries once a manifest arrives', () => {
+    const onSelect = vi.fn();
+    const gallery = createGallery({
+      heading: 'Choose a built-in photo',
+      focusIndex: 905,
+      entries: [],
+      onSelect
+    });
+    expect(gallery.grid.querySelectorAll('.photo-picker-tile').length).toBe(0);
+
+    gallery.setEntries([
+      {id: 'alpha', title: 'Alpha', sources: ['alpha.jpg']},
+      {id: 'beta', title: 'Beta', sources: ['beta.jpg']}
+    ], 'beta');
+
+    const tiles = gallery.grid.querySelectorAll('.photo-picker-tile');
+    expect(tiles.length).toBe(2);
+    expect((tiles[0] as HTMLElement).dataset.galleryId).toBe('alpha');
+    expect((tiles[1] as HTMLElement).classList.contains('is-selected')).toBe(true);
+
+    (tiles[0] as HTMLElement).click();
+    expect(onSelect).toHaveBeenCalledWith('alpha');
+  });
 });

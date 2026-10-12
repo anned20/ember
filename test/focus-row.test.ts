@@ -6,12 +6,87 @@ import {
   rowById,
   rowOf
 } from '@focus/focus-row.js';
+import type {RowId} from '@focus/focus-row.js';
 
 function button(): HTMLButtonElement {
   const el = document.createElement('button');
   el.className = 'focusable';
   return el;
 }
+
+// Every row definition, keyed by id. Locking each row's base, neighbours,
+// entry and classify flag is what stops a refactor drifting the model.
+const EXPECTED_MODEL = [
+  {
+    id: 'inputs',
+    containerSelector: '#input-row',
+    indexBase: 100,
+    neighbours: {up: ['channels'], down: ['apps']},
+    entry: 'column'
+  },
+  {
+    id: 'channels',
+    containerSelector: '#channel-strip',
+    indexBase: 150,
+    neighbours: {down: ['inputs', 'apps']},
+    entry: 'column'
+  },
+  {
+    id: 'apps',
+    containerSelector: '#app-grid',
+    indexBase: 0,
+    neighbours: {up: ['inputs', 'channels']},
+    entry: 'top-row'
+  },
+  {id: 'music', containerSelector: '#music-bar', indexBase: 800},
+  {id: 'settings', containerSelector: '#settings-panel'},
+  {id: 'all-apps', containerSelector: '.all-apps', indexBase: 5000},
+  {
+    id: 'settings-tabs',
+    containerSelector: '',
+    indexBase: 890,
+    classify: false
+  },
+  {
+    id: 'settings-header',
+    containerSelector: '',
+    indexBase: 899,
+    classify: false
+  },
+  {
+    id: 'settings-photo',
+    containerSelector: '',
+    indexBase: 905,
+    classify: false
+  }
+];
+
+describe('focus row model', () => {
+  it('locks every row definition', () => {
+    const ids: RowId[] = [
+      'inputs',
+      'channels',
+      'apps',
+      'music',
+      'settings',
+      'all-apps',
+      'settings-tabs',
+      'settings-header',
+      'settings-photo'
+    ];
+    expect(ids.map((id) => rowById(id))).toEqual(EXPECTED_MODEL);
+  });
+
+  it('falls back for unknown rows and missing neighbours', () => {
+    expect(rowById('nope')).toBeUndefined();
+    expect(rowById('other')).toBeUndefined();
+    expect(indexInRow('nope', 5)).toBe(5);
+    expect(indexInRow('settings', 2)).toBe(2);
+    expect(neighbourRows('nope', 'up')).toEqual([]);
+    expect(neighbourRows('music', 'left')).toEqual([]);
+    expect(neighbourRows('apps', 'down')).toEqual([]);
+  });
+});
 
 describe('index allocation', () => {
   it('declares each row index base once', () => {
@@ -57,6 +132,52 @@ describe('row classification', () => {
     document.body.appendChild(panel);
 
     expect(rowOf(tab)).toBe('settings');
+  });
+
+  it('prefers the settings panel over the all-apps overlay', () => {
+    const panel = document.createElement('div');
+    panel.id = 'settings-panel';
+    const overlay = document.createElement('div');
+    overlay.className = 'all-apps';
+    const tile = document.createElement('button');
+    overlay.appendChild(tile);
+    panel.appendChild(overlay);
+    document.body.appendChild(panel);
+
+    expect(rowOf(tile)).toBe('settings');
+  });
+
+  it('classifies in the declared row order', () => {
+    const order: Array<[RowId, string]> = [
+      ['inputs', '#input-row'],
+      ['channels', '#channel-strip'],
+      ['apps', '#app-grid'],
+      ['music', '#music-bar'],
+      ['settings', '#settings-panel'],
+      ['all-apps', '.all-apps']
+    ];
+    // Nest every container so the leaf matches them all; `rowOf` returns the
+    // first match in declaration order, then the next as each is unhooked.
+    const wrappers = order.map(([, selector]) => {
+      const el = document.createElement('div');
+      if (selector.charAt(0) === '#') el.id = selector.slice(1);
+      else el.className = selector.slice(1);
+      return el;
+    });
+    wrappers.forEach((el, i) => {
+      (i === 0 ? document.body : wrappers[i - 1]).appendChild(el);
+    });
+    const leaf = document.createElement('button');
+    wrappers[wrappers.length - 1].appendChild(leaf);
+
+    order.forEach(([row], i) => {
+      expect(rowOf(leaf)).toBe(row);
+      if (i + 1 < order.length) document.body.appendChild(wrappers[i + 1]);
+    });
+  });
+
+  it('treats a detached element as other', () => {
+    expect(rowOf(document.createElement('button'))).toBe('other');
   });
 });
 
@@ -118,5 +239,33 @@ describe('createRow', () => {
     const row = createRow(rowById('channels')!, () => []);
     expect(row.indexFor(0)).toBe(150);
     expect(row.indexFor(3)).toBe(153);
+  });
+
+  it('reports null edges for an empty row', () => {
+    const row = createRow<HTMLButtonElement>(rowById('apps')!, () => []);
+    expect(row.first()).toBeNull();
+    expect(row.last()).toBeNull();
+    expect(row.current()).toBeNull();
+    expect(row.moveWithin(button(), 1, () => true)).toBeNull();
+  });
+
+  it('returns null when moving from an element outside the row', () => {
+    const tiles = [button(), button()];
+    const row = createRow(rowById('apps')!, () => tiles);
+    expect(row.moveWithin(button(), 1, () => true)).toBeNull();
+  });
+
+  it('reports no current tile when focus is in another row', () => {
+    const inRow = button();
+    const other = button();
+    document.body.appendChild(inRow);
+    document.body.appendChild(other);
+    const row = createRow(rowById('apps')!, () => [inRow]);
+
+    expect(row.current()).toBeNull();
+    other.focus();
+    expect(row.current()).toBeNull();
+    inRow.focus();
+    expect(row.current()).toBe(inRow);
   });
 });

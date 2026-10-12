@@ -10,6 +10,11 @@ import type {Config} from '@lib/types.js';
  * it, so a pane declares each binding once instead of hand-writing a save line
  * (and often a sync handler) per control.
  *
+ * A control-kit factory takes the binder in its options and registers its own
+ * field through {@link registerField} (read-back by default, or add-without-
+ * read-back for a hand-initialised control), so a pane states the config path
+ * only once.
+ *
  * Derived or asynchronous fields (URL checks, the weather place, the USB scan,
  * the AI keys) stay out of the table and register an explicit {@link ConfigHook}
  * instead.
@@ -109,6 +114,21 @@ export function field(
   io: {read(): FieldValue; write(value: unknown): void}
 ): ConfigField {
   return {path: path, read: io.read, write: io.write};
+}
+
+/**
+ * Register a control's own field with the binder: read-back by default, or
+ * {@link SettingsBinder.add} (no read-back) for a control initialised by hand.
+ * The control kits call this so a pane states the config path only once.
+ */
+export function registerField(
+  binder: SettingsBinder,
+  field: ConfigField,
+  readBack?: boolean
+): ConfigField {
+  if (readBack === false) binder.add(field);
+  else binder.bind(field);
+  return field;
 }
 
 /** A checkbox bound to a boolean config path. */

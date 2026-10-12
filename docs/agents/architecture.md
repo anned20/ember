@@ -51,6 +51,21 @@ Cross-cutting callbacks are passed in, such as `onToast`, `focusControl` and
 `onBeforeLaunch`. If a module needs to do something the host owns, add a
 callback to its options instead of importing the host.
 
+### The Settings pane seam
+
+`settings.ts` is the Settings composition root. It owns the panel state, the
+category nav, the header, Save and the focus helpers. Each category pane is a
+module under `settings/panes/` that returns a `PaneHandle` (`build`, an optional
+`load`, an optional `onSave`), built with a `SettingsContext`
+(`settings/pane.ts`) carrying the config, the host options, whether the panel is
+open, the binder, the pane containers and the root's focus helpers. The root
+builds the moved panes in category order and drives each pane's `load` under a
+deadline; a pane's own async work (the USB scan) checks `isVisible` before it
+writes. Panes never import each other or reach into the root's state; a coupling
+between two panes goes through a handle method (the Profile → Background note is
+one: the Background pane extends `PaneHandle` with `setProfile`, and whoever
+builds the profile picker calls it).
+
 ## Focus
 
 `createFocusManager` in `focus.ts` is the single key router. Rows are declared

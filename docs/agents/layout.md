@@ -28,13 +28,14 @@ grouped by domain:
 | `background/` | `@background` | Background sources (built-in, USB, online), aerial clips, the in-app screensaver. |
 | `music/` | `@music` | The ambient music player and its built-in track manifest. |
 | `voice/` | `@voice` | Voice-assistant websocket client, launch resolution and the mic indicator. |
-| `settings/` | `@settings` | The Settings panel, backup/restore, and the field bindings. UI components live in `settings/components/`. |
+| `settings/` | `@settings` | The Settings panel (the composition root in `settings.ts`), backup/restore, field bindings, and the pane seam (`pane.ts`). UI components live in `settings/components/`, category panes in `settings/panes/`. |
 | `focus/` | `@focus` | Focus manager and the row model it moves over. |
 | `home/` | `@home` | Home-screen rows and panels: TV inputs, channels, weather. |
 | `config/` | `@config` | The config tree: load, save, normalize, and profiles. |
 | `luna/` | `@luna` | The webOS Luna service transport and platform/device helpers. |
 | `lib/` | `@lib` | Shared vocabulary and utilities: `types.ts`, `compat.ts`, `version.ts`, `usb.ts`, `remote.ts`, and other cross-cutting helpers. |
 | `settings/components/` | | Small settings UI building blocks (`toggle`, `text-field`, `gallery`, and so on), imported by `@settings/settings.js` via `./components`. Same-directory imports stay relative. |
+| `settings/panes/` | | Category panes (`weather`, and the rest as they move), each a `PaneHandle` built by the composition root through a `SettingsContext` (`@settings/pane.js`). Same-directory imports stay relative. |
 
 ### Import aliases
 

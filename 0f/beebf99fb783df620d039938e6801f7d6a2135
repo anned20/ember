@@ -1,0 +1,39 @@
+src/ts/lib/foreground-watcher.ts
+  s_e3eeee4f39bea1::t_badc001fcce093 115,120,122-124,128
+  s_e3eeee4f39bea1::t_7dbc7594f5cc9f 1-114,116-119,121,125-127,129-269
+test/foreground-watcher.test.ts
+  s_e3eeee4f39bea1::t_dc599792beea4a 1-226
+CONTEXT.md
+  s_e3eeee4f39bea1::t_e031e85210af10 50-52
+scripts/home-watcher.sh
+  s_e3eeee4f39bea1::t_faeb43175c97e7 38-40
+src/ts/main.ts
+  s_e3eeee4f39bea1::t_fb647bdf200685 393
+  s_e3eeee4f39bea1::t_cf9ccfcfc8b37a 449
+  s_e3eeee4f39bea1::t_bd26f4feafd0f3 44-45
+  s_e3eeee4f39bea1::t_67aa40d4f9b630 281
+  s_e3eeee4f39bea1::t_c6eaaea9b44d06 1293
+  s_e3eeee4f39bea1::t_41e42c931895b2 1037
+  s_e3eeee4f39bea1::t_05eddcd8f4565d 1340
+  s_e3eeee4f39bea1::t_cde859e4f1cd40 1001
+  s_e3eeee4f39bea1::t_67c7692718758c 1046-1057,1059,1062-1069,1071
+docs/agents/architecture.md
+  s_e3eeee4f39bea1::t_08a808271f5e0e 93
+  s_e3eeee4f39bea1::t_7d8148fab88d68 109,116,120-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0fbeebf99fb783df620d039938e6801f7d6a2135",
+  "prompts": {},
+  "sessions": {
+    "s_e3eeee4f39bea1": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ece550aafffeqHzZMgCIr9neuY",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

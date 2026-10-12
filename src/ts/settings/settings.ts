@@ -18,7 +18,6 @@ import {AERIAL_BACKGROUNDS} from '@background/aerials.js';
 import {loadBuiltinMusicManifest, normalizeMusicConfig} from '@music/builtin-music.js';
 import {applyActiveProfile, getProfileOverrides, PROFILE_OPTIONS} from '@config/profiles.js';
 import {indexInRow} from '@focus/focus-row.js';
-import {fetchInputDevices, inputFromId, isTvInputId} from '@home/inputs.js';
 import {findLoungeRoots, joinPath, discoverMusicTracks} from '@lib/usb.js';
 import {
   disableVoice, enableVoice, execRoot, isVoiceRunning, listLaunchPoints, readSettingsBackups,
@@ -42,7 +41,9 @@ import {
 } from '@voice/voice-config.js';
 import {qrSvgMarkup} from '@lib/qr-svg.js';
 import {createWeatherPane} from './panes/weather.js';
-import type {PaneHandle, SettingsContext} from './pane.js';
+import {createInputsPane} from './panes/inputs.js';
+import type {PaneHandle, SettingsContext, SettingsPanelOptions} from './pane.js';
+export type {SettingsPanelOptions} from './pane.js';
 import {
   labeledControl,
   labeledBlock,
@@ -73,23 +74,8 @@ import type {
 // The focus manager reads the text-field keyboard gate through the panel module.
 export {isSettingsTextField, isEditingSettingsText, beginSettingsTextEdit, endSettingsTextEdit} from './text-gate.js';
 
-const DEFAULT_INPUTS = ['HDMI_1', 'HDMI_2', 'HDMI_3', 'TV'];
-
 // How long a pane's asynchronous fill may take before it is abandoned.
 const PANE_LOAD_MS = 8000;
-
-/** Hooks the launcher passes into createSettingsPanel. */
-export interface SettingsPanelOptions {
-  onClose?: () => void;
-  onOpen?: () => void;
-  onRendered?: () => void;
-  onSave?: (config: Config) => void;
-  onToast?: (message: string) => void;
-  onVoiceEnabledChange?: (on: boolean) => void;
-  onPreviewScreensaver?: () => void;
-  hasTvChannels?: () => boolean;
-  focusControl?: (el: Element) => boolean;
-}
 
 /** The handle createSettingsPanel returns. */
 export interface SettingsPanelHandle {
@@ -126,13 +112,6 @@ interface KeyRow {
   row: HTMLDivElement;
   input: HTMLInputElement;
   showBtn: HTMLButtonElement;
-}
-
-/** A TV input as listed by inputs.js. */
-interface InputDevice {
-  id: string;
-  label?: string;
-  appId?: string;
 }
 
 /** A Launch Home backup file as parsed by settings-backup.js. */
@@ -728,6 +707,7 @@ export function createSettingsPanel(
       rawConfig: config,
       binder: binder,
       panes: panes,
+      options: options,
       focusControl: focusSettingsControl,
       focusNow: focusSettingsControlNow,
       focusGallery: focusPhotoGallery,
@@ -3058,33 +3038,10 @@ export function createSettingsPanel(
     paneHandles.weather = weatherPane;
     weatherPane.build(context);
 
-    const inputsSection = createSection('Inputs');
-    inputsSection.appendChild(createHint('Choose which inputs appear and set custom labels. Uncheck all to hide the input row entirely. One missing? Add it at the end of the list.'));
-
-    const inputsList = document.createElement('div');
-    inputsList.className = 'settings-inputs';
-    inputsSection.appendChild(inputsList);
-    // Channels chip on the home screen (channels.js): LG's favourite channels
-    // (every channel if there are none), all channels, or none.
-    const channelsSelect = createOptionStepper({
-      focusIndex: 1095,
-      choices: [
-        {value: 'favourites', label: 'Favourites (or all)'},
-        {value: 'all', label: 'All channels'},
-        {value: 'off', label: 'Off'}
-      ]
-    });
-    binder.bind(stepperField(channelsSelect, 'launcher.channels'));
-    inputsSection.appendChild(labeledControl('TV channels', channelsSelect));
-    inputsSection.appendChild(createHint(
-      'Adds a Channels button after the inputs when the TV has Live TV ' +
-      'channels tuned: pick one to watch it, or see what\u2019s on now.'
-    ));
-    // The inputs grid (tick / label / added) is built from the device list.
-    binder.hook(function (cfg) {
-      saveInputSettings(inputsList, cfg);
-    });
-    panes.inputs.appendChild(inputsSection);
+    // ── Inputs & channels ───────────────────────────────────────────────
+    const inputsPane = createInputsPane();
+    paneHandles.inputs = inputsPane;
+    inputsPane.build(context);
 
     const appsSection = createSection('Pinned apps');
     appsSection.appendChild(createHint('Reorder or remove apps pinned to the home row.'));
@@ -3709,135 +3666,11 @@ export function createSettingsPanel(
       if (gen !== renderGen || !visible) return;
     }
 
-    await withDeadline(loadInputSettings(inputsList, config), 6000);
-    if (gen !== renderGen || !visible) return;
     await withDeadline(loadAppsLists(pinnedList, addAppsList, config), 8000);
     if (gen !== renderGen || !visible) return;
     attachInputScrollHelpers(body);
     // Load AI tab in background so Home settings stay snappy.
     loadAiTab();
-  }
-
-  function inputSettingsRow(
-    device: InputDevice,
-    index: number,
-    checked: boolean,
-    label: string | undefined,
-    added: boolean
-  ): HTMLDivElement {
-    const row = document.createElement('div');
-    row.className = 'settings-input-row';
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'focusable';
-    checkbox.dataset.focusIndex = String(1100 + index * 2);
-    checkbox.dataset.inputId = device.id;
-    if (added) checkbox.dataset.added = '1';
-    checkbox.checked = checked;
-
-    const labelInput = document.createElement('input');
-    labelInput.type = 'text';
-    labelInput.className = 'settings-text focusable';
-    labelInput.dataset.focusIndex = String(1101 + index * 2);
-    labelInput.dataset.inputId = device.id;
-    labelInput.placeholder = device.label || device.id.replace(/_/g, ' ');
-    labelInput.value = label || '';
-
-    const name = document.createElement('span');
-    name.className = 'settings-input-name';
-    name.textContent = device.label || device.id;
-
-    row.appendChild(checkbox);
-    row.appendChild(name);
-    row.appendChild(labelInput);
-    return row;
-  }
-
-  // Inputs the TV didn't list that can be added by hand: HDMI ports up to 4
-  // (or the highest it listed) and Live TV.
-  function addableInputs(devices: InputDevice[]): InputDevice[] {
-    const listed: Record<string, boolean> = {};
-    let maxHdmi = 4;
-    devices.forEach(function (d) {
-      listed[d.id] = true;
-      const m = /^HDMI_(\d+)$/.exec(d.id || '');
-      if (m) maxHdmi = Math.max(maxHdmi, Number(m[1]));
-    });
-    const out: InputDevice[] = [];
-    for (let n = 1; n <= maxHdmi; n += 1) {
-      if (!listed['HDMI_' + n]) out.push(inputFromId('HDMI_' + n) as InputDevice);
-    }
-    if (!devices.some(function (d) { return isTvInputId(d.id); })) {
-      out.push(inputFromId('TV') as InputDevice);
-    }
-    return out;
-  }
-
-  async function loadInputSettings(container: HTMLElement, config: Config): Promise<void> {
-    const added: string[] = config.launcher.addedInputs || [];
-    const devices: InputDevice[] = await fetchInputDevices(
-      !!(options.hasTvChannels && options.hasTvChannels()), added);
-    const allowed = config.launcher.inputs || DEFAULT_INPUTS.slice();
-    const labels = config.launcher.inputLabels || {};
-
-    devices.forEach(function (device, index) {
-      container.appendChild(inputSettingsRow(device, index, allowed.indexOf(device.id) >= 0,
-        labels[device.id], added.indexOf(device.id) >= 0));
-    });
-
-    // Some TVs list fewer HDMI ports to an app than they have, and without
-    // root (Homebrew Channel) Live TV may not be offered: add one by hand.
-    const addable = addableInputs(devices);
-    if (!addable.length) return;
-    const addRow = document.createElement('div');
-    addRow.className = 'settings-input-add';
-    const addName = document.createElement('span');
-    addName.className = 'settings-input-name';
-    addName.textContent = 'Add an input';
-    addRow.appendChild(addName);
-    addable.forEach(function (device, i) {
-      const btn = createMiniButton({
-        label: '+ ' + device.label,
-        focusIndex: 1190 + i,
-        onClick: function () {
-          const rows = container.querySelectorAll('.settings-input-row').length;
-          const row = inputSettingsRow(device, rows, true, '', true);
-          container.insertBefore(row, addRow);
-          if (btn.parentNode) btn.parentNode.removeChild(btn);
-          if (!addRow.querySelector('button') && addRow.parentNode) {
-            addRow.parentNode.removeChild(addRow);
-          }
-          // The pressed button is gone: go to the new input's tick.
-          focusSettingsControlNow(row.querySelector('input[type=checkbox]'));
-        }
-      });
-      addRow.appendChild(btn);
-    });
-    container.appendChild(addRow);
-  }
-
-  function saveInputSettings(container: HTMLElement, config: Config): void {
-    const allowed: string[] = [];
-    const labels: Record<string, string> = {};
-    const added: string[] = [];
-
-    container.querySelectorAll('.settings-input-row').forEach(function (row) {
-      const checkbox = row.querySelector('input[type=checkbox]') as HTMLInputElement | null;
-      const labelInput = row.querySelector('input[type=text]') as HTMLInputElement | null;
-      if (!checkbox || !labelInput) return;
-      const inputId = checkbox.dataset.inputId || '';
-
-      if (checkbox.checked) allowed.push(inputId);
-      // An added input stays listed while ticked; untick it to take it away.
-      if (checkbox.checked && checkbox.dataset.added === '1') added.push(inputId);
-      if (labelInput.value.trim()) labels[inputId] = labelInput.value.trim();
-    });
-
-    // Empty array is intentional ("show no inputs"). Do not fall back to defaults.
-    config.launcher.inputs = allowed;
-    config.launcher.inputLabels = labels;
-    config.launcher.addedInputs = added;
   }
 
   async function loadAppsLists(

@@ -10,6 +10,22 @@ import type {SettingsBinder} from './settings-binding.js';
  * one explicit argument instead of closing over panel-local state.
  */
 
+/**
+ * Hooks the launcher passes into createSettingsPanel. They live on the seam
+ * (rather than the root) because the context hands them to the panes too.
+ */
+export interface SettingsPanelOptions {
+  onClose?: () => void;
+  onOpen?: () => void;
+  onRendered?: () => void;
+  onSave?: (config: Config) => void;
+  onToast?: (message: string) => void;
+  onVoiceEnabledChange?: (on: boolean) => void;
+  onPreviewScreensaver?: () => void;
+  hasTvChannels?: () => boolean;
+  focusControl?: (el: Element) => boolean;
+}
+
 /** What the composition root hands each category pane. */
 export interface SettingsContext {
   /** The effective config (the active profile applied). */
@@ -19,6 +35,8 @@ export interface SettingsContext {
   readonly binder: SettingsBinder;
   /** The pane containers, keyed by category id. */
   readonly panes: Record<string, HTMLDivElement>;
+  /** The host hooks the panel was created with. */
+  readonly options: SettingsPanelOptions;
   /** Put focus (and the row highlight) on a control. */
   focusControl(el: Element): void;
   /** Focus a control immediately, without the deferral. */

@@ -57,11 +57,11 @@ callback to its options instead of importing the host.
 category nav, the header, Save and the focus helpers. Each category pane is a
 module under `settings/panes/` that returns a `PaneHandle` (`build`, an optional
 `load`, an optional `onSave`), built with a `SettingsContext`
-(`settings/pane.ts`) carrying the config, the binder, the pane containers and
-the root's focus helpers. The root builds the moved panes in category order and
-drives each pane's `load` under a deadline. Panes never import each other or
-reach into the root's state; a coupling between two panes goes through a handle
-method (the Profile → Background note is one).
+(`settings/pane.ts`) carrying the config, the host options, the binder, the pane
+containers and the root's focus helpers. The root builds the moved panes in
+category order and drives each pane's `load` under a deadline. Panes never
+import each other or reach into the root's state; a coupling between two panes
+goes through a handle method (the Profile → Background note is one).
 
 ## Focus
 

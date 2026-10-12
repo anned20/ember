@@ -39,6 +39,7 @@ function buildPane(): {pane: HTMLElement; config: Config; ctx: SettingsContext} 
     rawConfig: config,
     binder: createBinder(config),
     panes: {weather: pane},
+    options: {},
     focusControl: function () {},
     focusNow: function () { return true; },
     focusGallery: function () {},

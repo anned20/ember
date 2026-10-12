@@ -41,7 +41,8 @@ import {
   importSuperGrokAuth
 } from '@voice/voice-config.js';
 import {qrSvgMarkup} from '@lib/qr-svg.js';
-import {foldPlaceText, normalizeWeatherConfig, searchPlaces} from '@home/weather.js';
+import {createWeatherPane} from './panes/weather.js';
+import type {PaneHandle, SettingsContext} from './pane.js';
 import {
   labeledControl,
   labeledBlock,
@@ -66,14 +67,16 @@ import type {
   BuiltinMusicEntry,
   AerialBackground,
   RemoteBackground,
-  UsbTrack,
-  WeatherLocation
+  UsbTrack
 } from '@lib/types.js';
 
 // The focus manager reads the text-field keyboard gate through the panel module.
 export {isSettingsTextField, isEditingSettingsText, beginSettingsTextEdit, endSettingsTextEdit} from './text-gate.js';
 
 const DEFAULT_INPUTS = ['HDMI_1', 'HDMI_2', 'HDMI_3', 'TV'];
+
+// How long a pane's asynchronous fill may take before it is abandoned.
+const PANE_LOAD_MS = 8000;
 
 /** Hooks the launcher passes into createSettingsPanel. */
 export interface SettingsPanelOptions {
@@ -716,6 +719,24 @@ export function createSettingsPanel(
     body.appendChild(panesWrap);
     // Sections built below go to these (the AI Voice ones keep aiPane).
     const aiPane = panes.ai;
+
+    // The one seam between this composition root and the category panes. The
+    // root keeps panel state, the nav, the header and Save; a pane is built
+    // with the context and gets its dependencies from that one argument.
+    const context: SettingsContext = {
+      config: effective,
+      rawConfig: config,
+      binder: binder,
+      panes: panes,
+      focusControl: focusSettingsControl,
+      focusNow: focusSettingsControlNow,
+      focusGallery: focusPhotoGallery,
+      refocusListButton: refocusListButton,
+      withDeadline: withDeadline,
+      redraw: redrawAfterRestore
+    };
+    // Panes moved behind the seam, keyed by category id.
+    const paneHandles: Record<string, PaneHandle> = {};
 
     // Declared before setSettingsTab so the early Home default cannot hit a TDZ.
     let saveBtn!: HTMLButtonElement;
@@ -3033,153 +3054,9 @@ export function createSettingsPanel(
     panes.system.appendChild(systemSection);
 
     // ── Weather (today + 4 days on the home screen) ─────────────────────
-    const weatherSection = createSection('Weather');
-
-    const weatherCfg = normalizeWeatherConfig(config.weather);
-    let weatherPlace: WeatherLocation = Object.assign({}, weatherCfg.location);
-
-    const weatherField = createToggle({
-      label: 'Show weather',
-      focusIndex: '1020',
-      path: 'weather.enabled'
-    });
-    binder.bind(weatherField.field!);
-    weatherSection.appendChild(weatherField.row);
-
-    const weatherUnitsSelect = createOptionStepper({
-      focusIndex: 1021,
-      choices: [
-        {value: 'c', label: '°C'},
-        {value: 'f', label: '°F'}
-      ]
-    });
-    binder.bind(stepperField(weatherUnitsSelect, 'weather.units', {
-      parse: function (raw) { return raw === 'f' ? 'f' : 'c'; }
-    }));
-    weatherSection.appendChild(labeledControl('Temperature', weatherUnitsSelect));
-
-    const weatherPlaceHint = createHint('');
-    function paintWeatherPlace(pending: boolean): void {
-      weatherPlaceHint.textContent = 'Location: ' + weatherPlace.name +
-        (pending ? ' — press Save to use it' : '');
-    }
-    paintWeatherPlace(false);
-    weatherSection.appendChild(weatherPlaceHint);
-
-    const weatherSearchField = createTextField({
-      label: 'Change location',
-      focusIndex: '1022',
-      placeholder: 'Start typing a place, e.g. tok',
-      autocomplete: 'off'
-    });
-    const weatherSearchInput = weatherSearchField.input;
-    weatherSection.appendChild(weatherSearchField.row);
-
-    // Type-ahead: matches appear under the field as you type ("tok" →
-    // Tokyo, Japan). Close the keyboard, press Down, then OK to pick one.
-    const weatherSuggestions = document.createElement('div');
-    weatherSuggestions.className = 'settings-suggestions';
-    weatherSuggestions.setAttribute('role', 'listbox');
-    weatherSuggestions.hidden = true;
-    weatherSection.appendChild(weatherSuggestions);
-
-    const WEATHER_IDLE_HINT = 'Start typing a town or city — matching places appear as you type. ' +
-      'Forecast from Open-Meteo (no account needed); needs the TV to be online. ' +
-      'Untick Show weather to hide it — nothing is downloaded while it’s off.';
-    const weatherStatus = createHint(WEATHER_IDLE_HINT);
-    weatherSection.appendChild(weatherStatus);
-
-    function clearWeatherSuggestions(): void {
-      weatherSuggestions.innerHTML = '';
-      weatherSuggestions.hidden = true;
-    }
-
-    // Bold the part of the place name that matches what was typed.
-    function appendMatchHighlight(el: HTMLElement, label: string, typed: string): void {
-      const foldedLabel = foldPlaceText(label);
-      const foldedTyped = foldPlaceText(typed);
-      if (foldedTyped && foldedLabel.length === label.length &&
-          foldedLabel.indexOf(foldedTyped) === 0) {
-        const strong = document.createElement('strong');
-        strong.textContent = label.slice(0, foldedTyped.length);
-        el.appendChild(strong);
-        el.appendChild(document.createTextNode(label.slice(foldedTyped.length)));
-      } else {
-        el.textContent = label;
-      }
-    }
-
-    let weatherTyped = '';
-    function pickWeatherPlace(place: WeatherLocation): void {
-      if (weatherLookupTimer !== null) clearTimeout(weatherLookupTimer);
-      weatherLookupSeq += 1; // drop any lookup still in flight
-      weatherPlace = place;
-      weatherTyped = place.name;
-      weatherSearchInput.value = place.name;
-      clearWeatherSuggestions();
-      paintWeatherPlace(true);
-      weatherStatus.textContent = 'Press Save to show the weather for ' + place.name + '.';
-      focusSettingsControl(weatherSearchInput);
-    }
-
-    function renderWeatherSuggestions(places: WeatherLocation[], typed: string): void {
-      weatherSuggestions.innerHTML = '';
-      places.forEach(function (place) {
-        const option = document.createElement('button');
-        option.type = 'button';
-        option.className = 'settings-suggestion focusable';
-        option.dataset.focusIndex = '1023';
-        option.setAttribute('role', 'option');
-        appendMatchHighlight(option, place.name, typed);
-        option.addEventListener('click', function () {
-          pickWeatherPlace(place);
-        });
-        weatherSuggestions.appendChild(option);
-      });
-      weatherSuggestions.hidden = !places.length;
-    }
-
-    let weatherLookupSeq = 0;
-    let weatherLookupTimer: ReturnType<typeof setTimeout> | null = null;
-    function lookUpWeatherPlaces(typed: string): void {
-      if (weatherLookupTimer !== null) clearTimeout(weatherLookupTimer);
-      const seq = ++weatherLookupSeq;
-      if (typed.length < 2) {
-        clearWeatherSuggestions();
-        weatherStatus.textContent = WEATHER_IDLE_HINT;
-        return;
-      }
-      // Short pause so each keystroke doesn't fire a request.
-      weatherLookupTimer = setTimeout(function () {
-        weatherStatus.textContent = 'Looking up “' + typed + '”…';
-        searchPlaces(typed, 6).then(function (places) {
-          if (seq !== weatherLookupSeq) return; // a newer keystroke won
-          renderWeatherSuggestions(places, typed);
-          weatherStatus.textContent = places.length
-            ? 'Close the keyboard, then press ↓ and OK to pick a place (or point and click).'
-            : 'No places match “' + typed + '” — check the spelling.';
-        }).catch(function () {
-          if (seq !== weatherLookupSeq) return;
-          weatherStatus.textContent = 'Could not look up places — check the TV is online.';
-        });
-      }, 300);
-    }
-
-    // The TV keyboard doesn't always send `input`; watch every edit signal
-    // and only react when the text actually changed.
-    ['input', 'keyup', 'change', 'compositionend'].forEach(function (type) {
-      weatherSearchInput.addEventListener(type, function () {
-        const typed = weatherSearchInput.value.trim();
-        if (typed === weatherTyped) return;
-        weatherTyped = typed;
-        lookUpWeatherPlaces(typed);
-      });
-    });
-    // The place comes from the async place lookup, not a plain control.
-    binder.hook(function (cfg) {
-      cfg.weather.location = Object.assign({}, weatherPlace);
-    });
-    panes.weather.appendChild(weatherSection);
+    const weatherPane = createWeatherPane();
+    paneHandles.weather = weatherPane;
+    weatherPane.build(context);
 
     const inputsSection = createSection('Inputs');
     inputsSection.appendChild(createHint('Choose which inputs appear and set custom labels. Uncheck all to hide the input row entirely. One missing? Add it at the end of the list.'));
@@ -3821,6 +3698,16 @@ export function createSettingsPanel(
       hide();
     });
     headerActions.insertBefore(saveBtn, closeBtn);
+
+    // Drive the panes moved behind the seam, in the category order the nav
+    // declares. Each pane's asynchronous fill runs under a deadline so a slow
+    // TV cannot leave the panel half-built.
+    for (let i = 0; i < CATEGORIES.length; i += 1) {
+      const pane = paneHandles[CATEGORIES[i].id];
+      if (!pane || !pane.load) continue;
+      await withDeadline(pane.load(context), PANE_LOAD_MS);
+      if (gen !== renderGen || !visible) return;
+    }
 
     await withDeadline(loadInputSettings(inputsList, config), 6000);
     if (gen !== renderGen || !visible) return;

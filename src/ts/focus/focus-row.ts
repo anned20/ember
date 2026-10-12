@@ -130,23 +130,18 @@ export function rowOf(el: Element | null): RowId {
   return 'other';
 }
 
-/** A handle the focus manager (or a test) can query a row through. */
+/**
+ * A handle over a row's live tiles: just what callers use. The index base and
+ * neighbour edges are free functions (`indexInRow`, `neighbourRows`) because no
+ * production code queries them through the handle.
+ */
 export interface RowHandle<T extends HTMLElement = HTMLElement> {
-  readonly id: RowId;
-  readonly indexBase: number;
-  /** focusIndex for the tile at `offset` in this row. */
-  indexFor(offset: number): number;
   tiles(): T[];
-  first(): T | null;
-  last(): T | null;
-  current(): T | null;
   /**
    * The next tile `delta` away in DOM order, skipping any tile `canFocus`
    * rejects, or null at the row edge. No layout geometry is involved.
    */
   moveWithin(from: T, delta: number, canFocus: (el: T) => boolean): T | null;
-  /** Named rows a directional move hands off to, nearest first. */
-  handoff(dir: Direction): RowId[];
 }
 
 /**
@@ -154,28 +149,10 @@ export interface RowHandle<T extends HTMLElement = HTMLElement> {
  * call so a row that redraws keeps working.
  */
 export function createRow<T extends HTMLElement>(
-  def: RowDef,
   tiles: () => T[]
 ): RowHandle<T> {
   return {
-    id: def.id,
-    indexBase: def.indexBase === undefined ? 0 : def.indexBase,
-    indexFor: function (offset: number) {
-      return indexInRow(def.id, offset);
-    },
     tiles: tiles,
-    first: function () {
-      const list = tiles();
-      return list.length ? list[0] : null;
-    },
-    last: function () {
-      const list = tiles();
-      return list.length ? list[list.length - 1] : null;
-    },
-    current: function () {
-      const active = document.activeElement as T | null;
-      return active && tiles().indexOf(active) >= 0 ? active : null;
-    },
     moveWithin: function (from: T, delta: number, canFocus: (el: T) => boolean) {
       const list = tiles();
       const idx = list.indexOf(from);
@@ -184,9 +161,6 @@ export function createRow<T extends HTMLElement>(
         if (canFocus(list[i])) return list[i];
       }
       return null;
-    },
-    handoff: function (dir: Direction) {
-      return neighbourRows(def.id, dir);
     }
   };
 }

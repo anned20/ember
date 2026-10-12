@@ -20,9 +20,6 @@ import {createHint} from './components/index.js';
 import {createBinder} from './settings-binding.js';
 import type {Config} from '@lib/types.js';
 
-// The focus manager reads the text-field keyboard gate through the panel module.
-export {isSettingsTextField, isEditingSettingsText, beginSettingsTextEdit, endSettingsTextEdit} from './text-gate.js';
-
 // How long a pane's asynchronous fill may take before it is abandoned.
 const PANE_LOAD_MS = 8000;
 
@@ -198,69 +195,33 @@ export function createSettingsPanel(
     });
   }
 
-  function focusPhotoGallery(galleryEl: HTMLElement): void {
+  function focusGallery(galleryEl: HTMLElement): void {
     if (!galleryEl || galleryEl.hidden) return;
     window.setTimeout(function () {
-      try {
-        galleryEl.scrollIntoView({block: 'nearest', behavior: 'smooth'});
-      } catch (err) {
-        try { galleryEl.scrollIntoView(true); } catch (err2) { /* ignore */ }
-      }
       const firstTile = galleryEl.querySelector('.photo-picker-tile.focusable') as HTMLElement | null;
-      if (firstTile && typeof firstTile.focus === 'function') {
-        // preventScroll: a plain focus() would re-centre mid smooth scroll.
-        try { firstTile.focus({preventScroll: true}); } catch (err3) { /* ignore */ }
-        firstTile.classList.add('focused');
-        const siblings = galleryEl.ownerDocument.querySelectorAll(
-          '#settings-panel .focusable.focused'
-        );
-        for (let i = 0; i < siblings.length; i += 1) {
-          if (siblings[i] !== firstTile) siblings[i].classList.remove('focused');
-        }
-      }
+      if (firstTile) focusNow(firstTile);
     }, 80);
   }
 
   /**
    * Put focus (and the row highlight) on a Settings control, e.g. back on
    * the field the user was editing. Picking used to jump to Save, so the next
-   * Down restarted from the top of the panel.
+   * Down restarted from the top of the panel. Deferred so a list that is still
+   * redrawing can settle first.
    */
-  function focusSettingsControl(el: Element): void {
+  function focusControl(el: Element | null): void {
     window.setTimeout(function () {
-      focusSettingsControlNow(el);
+      focusNow(el);
     }, 60);
   }
 
-  function focusSettingsControlNow(el: Element | null): boolean {
+  /**
+   * Focus a control through the router, which owns focus painting (chrome, the
+   * row highlight and the keep-in-view scroll) so the panel does not re-draw it.
+   */
+  function focusNow(el: Element | null): boolean {
     if (!el || !panel.contains(el)) return false;
-    // Same path as D-pad navigation: focus, row highlight, minimal scroll.
-    if (options.focusControl) return !!options.focusControl(el);
-
-    const target = el as HTMLElement;
-    if (!target.getClientRects || !target.getClientRects().length) return false;
-    try {
-      target.scrollIntoView({block: 'nearest'});
-    } catch (err) { /* ignore */ }
-    try {
-      if (typeof target.tabIndex === 'number' && target.tabIndex < 0) target.tabIndex = 0;
-    } catch (err3) { /* ignore */ }
-    try { target.focus({preventScroll: true}); } catch (err4) { /* ignore */ }
-
-    const focused = panel.querySelectorAll('.focusable.focused');
-    for (let i = 0; i < focused.length; i += 1) {
-      if (focused[i] !== el) focused[i].classList.remove('focused');
-    }
-    target.classList.add('focused');
-
-    // Match focus manager row highlight for consistency.
-    const highlights = panel.querySelectorAll('.settings-row-highlight');
-    for (let j = 0; j < highlights.length; j += 1) {
-      highlights[j].classList.remove('settings-row-highlight');
-    }
-    const row = target.closest && target.closest('.settings-row');
-    (row || target).classList.add('settings-row-highlight');
-    return true;
+    return !!(options.focusControl && options.focusControl(el));
   }
 
   /**
@@ -278,7 +239,7 @@ export function createSettingsPanel(
         .querySelectorAll('.settings-mini-btn');
       for (let i = 0; i < buttonOrder.length; i += 1) {
         const btn = buttons[buttonOrder[i]] as HTMLButtonElement | undefined;
-        if (btn && !btn.disabled && focusSettingsControlNow(btn)) return;
+        if (btn && !btn.disabled && focusNow(btn)) return;
       }
     }
     const all: Element[] = Array.prototype.slice.call(panel.querySelectorAll('.focusable'))
@@ -289,7 +250,7 @@ export function createSettingsPanel(
     const before = all.filter(function (el) { return after.indexOf(el) < 0; }).reverse();
     const nearest = after.concat(before);
     for (let j = 0; j < nearest.length; j += 1) {
-      if (focusSettingsControlNow(nearest[j])) return;
+      if (focusNow(nearest[j])) return;
     }
   }
 
@@ -300,7 +261,7 @@ export function createSettingsPanel(
     Promise.resolve(render(gen)).then(function () {
       if (!visible || gen !== renderGen) return;
       const btn = panel.querySelector('[data-backup-action="restore"]');
-      if (btn) focusSettingsControlNow(btn);
+      if (btn) focusNow(btn);
     }).catch(function (err) {
       console.error(err);
     });
@@ -473,10 +434,10 @@ export function createSettingsPanel(
       options: options,
       apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
       isVisible: function () { return visible; },
-      focusControl: focusSettingsControl,
-      focusNow: focusSettingsControlNow,
+      focusControl: focusControl,
+      focusNow: focusNow,
       focusInPanel: function () { return panel.contains(document.activeElement); },
-      focusGallery: focusPhotoGallery,
+      focusGallery: focusGallery,
       refocusListButton: refocusListButton,
       withDeadline: withDeadline,
       redraw: redrawAfterRestore
@@ -653,7 +614,7 @@ export function createSettingsPanel(
       if (active && active.closest && active.closest('.settings-tab-pane')) {
         const tab = panel.querySelector('.settings-tab.active');
         if (tab) {
-          focusSettingsControlNow(tab);
+          focusNow(tab);
           return true;
         }
       }

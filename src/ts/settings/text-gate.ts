@@ -6,8 +6,9 @@
  * the user presses OK/Select (or clicks), then unlock for editing. On blur,
  * re-lock so the next focus via arrows won't pop the keyboard again.
  *
- * The focus manager reads the gate state through these helpers, so they stay
- * re-exported from the Settings panel module (see settings.ts).
+ * The focus router (`focus/focus.ts`) and the Settings navigation module read
+ * the gate state through these helpers; they are imported directly from here, so
+ * importing the router does not pull in the Settings panel and its panes.
  */
 
 const KEYBOARD_SCROLL_RESERVE = 420;

@@ -200,7 +200,7 @@ describe('neighbour edges', () => {
 describe('createRow', () => {
   it('moves within the row in DOM order', () => {
     const tiles = [button(), button(), button()];
-    const row = createRow(rowById('apps')!, () => tiles);
+    const row = createRow(() => tiles);
 
     expect(row.moveWithin(tiles[1], 1, () => true)).toBe(tiles[2]);
     expect(row.moveWithin(tiles[1], -1, () => true)).toBe(tiles[0]);
@@ -208,7 +208,7 @@ describe('createRow', () => {
 
   it('skips tiles that refuse focus and stops at the row edge', () => {
     const tiles = [button(), button(), button()];
-    const row = createRow(rowById('apps')!, () => tiles);
+    const row = createRow(() => tiles);
     const canFocus = (el: HTMLButtonElement) => el !== tiles[1];
 
     expect(row.moveWithin(tiles[0], 1, canFocus)).toBe(tiles[2]);
@@ -216,56 +216,23 @@ describe('createRow', () => {
     expect(row.moveWithin(tiles[2], 1, canFocus)).toBeNull();
   });
 
-  it('reports first, last and the current tile', () => {
-    const tiles = [button(), button()];
-    document.body.appendChild(tiles[0]);
-    document.body.appendChild(tiles[1]);
-    const row = createRow(rowById('inputs')!, () => tiles);
-
-    expect(row.first()).toBe(tiles[0]);
-    expect(row.last()).toBe(tiles[1]);
-    expect(row.current()).toBeNull();
-    tiles[1].focus();
-    expect(row.current()).toBe(tiles[1]);
-  });
-
-  it('hands off to a named neighbour row', () => {
-    const row = createRow(rowById('inputs')!, () => []);
-    expect(row.handoff('up')).toEqual(['channels']);
-    expect(row.handoff('down')).toEqual(['apps']);
-  });
-
-  it('allocates focusIndex from the declared base', () => {
-    const row = createRow(rowById('channels')!, () => []);
-    expect(row.indexFor(0)).toBe(150);
-    expect(row.indexFor(3)).toBe(153);
+  it('reads its live tiles on each call', () => {
+    let tiles = [button(), button()];
+    const row = createRow(() => tiles);
+    expect(row.tiles()).toBe(tiles);
+    tiles = [button()];
+    expect(row.tiles()).toBe(tiles);
   });
 
   it('reports null edges for an empty row', () => {
-    const row = createRow<HTMLButtonElement>(rowById('apps')!, () => []);
-    expect(row.first()).toBeNull();
-    expect(row.last()).toBeNull();
-    expect(row.current()).toBeNull();
+    const row = createRow<HTMLButtonElement>(() => []);
+    expect(row.tiles()).toEqual([]);
     expect(row.moveWithin(button(), 1, () => true)).toBeNull();
   });
 
   it('returns null when moving from an element outside the row', () => {
     const tiles = [button(), button()];
-    const row = createRow(rowById('apps')!, () => tiles);
+    const row = createRow(() => tiles);
     expect(row.moveWithin(button(), 1, () => true)).toBeNull();
-  });
-
-  it('reports no current tile when focus is in another row', () => {
-    const inRow = button();
-    const other = button();
-    document.body.appendChild(inRow);
-    document.body.appendChild(other);
-    const row = createRow(rowById('apps')!, () => [inRow]);
-
-    expect(row.current()).toBeNull();
-    other.focus();
-    expect(row.current()).toBeNull();
-    inRow.focus();
-    expect(row.current()).toBe(inRow);
   });
 });

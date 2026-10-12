@@ -1,4 +1,4 @@
-import {afterAll, afterEach, beforeAll, describe, expect, it, vi} from 'vitest';
+import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from 'vitest';
 import {createFocusManager} from '@focus/focus.js';
 
 const onNumber = vi.fn();
@@ -125,5 +125,72 @@ describe('blue-key routing', () => {
     press(404);
     press(405);
     expect(onBlue).not.toHaveBeenCalled();
+  });
+});
+
+describe('settings delegation', () => {
+  // Settings owns its navigation; the router only routes home keys itself and
+  // hands the Settings surface a move/delegate handle.
+  let appRoot: HTMLElement;
+  let tab: HTMLElement;
+  let settingsNavigation: {
+    move: ReturnType<typeof vi.fn>;
+    recover: ReturnType<typeof vi.fn>;
+    wheel: ReturnType<typeof vi.fn>;
+    activate: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(() => {
+    appRoot = document.createElement('div');
+    appRoot.id = 'app-2';
+    const panel = document.createElement('div');
+    panel.id = 'settings-panel';
+    tab = document.createElement('button');
+    tab.className = 'settings-tab focusable active';
+    tab.textContent = 'Home';
+    panel.appendChild(tab);
+    appRoot.appendChild(panel);
+    document.body.appendChild(appRoot);
+
+    settingsNavigation = {
+      move: vi.fn(function () { return true; }),
+      recover: vi.fn(function () { return true; }),
+      wheel: vi.fn(),
+      activate: vi.fn(function () { return true; })
+    };
+    createFocusManager(appRoot, {}, {settingsNavigation});
+    document.body.classList.add('settings-open');
+  });
+
+  afterEach(() => {
+    appRoot.remove();
+  });
+
+  it('asks the settings navigation module for direction keys', () => {
+    tab.focus();
+    press(39, 'ArrowRight');
+    expect(settingsNavigation.move).toHaveBeenCalledWith(39);
+  });
+
+  it('asks it to recover when focus was lost in the panel', () => {
+    tab.blur();
+    press(40, 'ArrowDown');
+    expect(settingsNavigation.recover).toHaveBeenCalledWith(false);
+  });
+
+  it('asks it to handle the wheel inside the panel', () => {
+    tab.focus();
+    document.dispatchEvent(new WheelEvent('wheel', {deltaY: 120, bubbles: true, cancelable: true}));
+    expect(settingsNavigation.wheel).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks it to activate a photo tile on Select', () => {
+    const tile = document.createElement('div');
+    tile.className = 'photo-picker-tile focusable';
+    tile.tabIndex = 0;
+    tab.parentElement!.appendChild(tile);
+    tile.focus();
+    press(13, 'Enter');
+    expect(settingsNavigation.activate).toHaveBeenCalledWith(tile);
   });
 });

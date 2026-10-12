@@ -68,10 +68,18 @@ builds the profile picker calls it).
 
 ## Focus
 
-`createFocusManager` in `focus.ts` is the single key router. Rows are declared
-in `focus-row.ts` (`RowId`, `ROW_DEFS`). Each row knows its index scheme and
-which row a directional move hands off to, so the focus manager routes a key to
-a row instead of naming each tile.
+`createFocusManager` in `focus.ts` is the key router for the home surface. Rows
+are declared in `focus-row.ts` (`RowId`, `ROW_DEFS`). Each row knows its index
+scheme and which row a directional move hands off to, so the focus manager
+routes a key to a row instead of naming each tile.
+
+When the Settings panel is the active surface, the router delegates direction
+keys, the wheel and photo-tile Select to `settings/navigation.ts`
+(`createSettingsNavigation`). The panel owns its tab bar, header actions,
+sequential/row movement, the photo picker and value adjustment; the router lends
+it `focusItem`/`isFocusable`/`noteRemoteNav` as a host, so focus painting keeps
+one owner. The router imports the standalone `settings/text-gate.ts`, not the
+panel, so importing it no longer loads the panel and its ten panes.
 
 For key handling, `focus.ts` calls the callbacks `main.ts` passes: `onNumber`,
 `onBack`, `onRed`/`onGreen`/`onBlue`, `onVolume*` and `onChannel*`. Those

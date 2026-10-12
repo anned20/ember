@@ -1,0 +1,29 @@
+src/ts/settings/settings.ts
+  s_2a21db3d662acf::t_77e51f866820d6 1
+  s_2a21db3d662acf::t_e816b0af3f15ef 38
+  s_2a21db3d662acf::t_12ce2bf8e99f4b 119-121
+  s_2a21db3d662acf::t_f080756e8eda9d 3011-3012
+  s_2a21db3d662acf::t_b3ba7d472eaebe 21
+src/ts/settings/panes/tools.ts
+  s_2a21db3d662acf::t_ca9448b3b0f420 1-272
+test/settings/panes/tools.test.ts
+  s_2a21db3d662acf::t_7bbfa40a2325a0 1-57,59-91,93,96-190
+  s_2a21db3d662acf::t_a413edb11345d5 58
+  s_2a21db3d662acf::t_3ca211783aa847 92,94-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "53dda4a25808df1fea5e1742a34905eacfe6c0c4",
+  "prompts": {},
+  "sessions": {
+    "s_2a21db3d662acf": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed0975ad8ffearzKh1YYPN4FSP",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

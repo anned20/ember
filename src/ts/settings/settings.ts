@@ -1,4 +1,4 @@
-import {loadConfig, saveConfig, TIMEZONE_OPTIONS, coerceScreensaverMinutes} from '@config/config.js';
+import {loadConfig, saveConfig, TIMEZONE_OPTIONS} from '@config/config.js';
 import {listInstalledApps} from '@apps/apps.js';
 import {lgHomeAppsToAdd} from '@apps/lg-home.js';
 import {isAppInstalled, loadAppCatalog, rememberApps, resolvePinnedApp, setIconSrc, lazyLoadIcon} from '@apps/app-catalog.js';
@@ -25,6 +25,8 @@ import {createInputsPane} from './panes/inputs.js';
 import {createMusicPane} from './panes/music.js';
 import {createToolsPane} from './panes/tools.js';
 import {createBackgroundPane} from './panes/background.js';
+import {createScreensaverPane} from './panes/screensaver.js';
+import {createSystemPane} from './panes/system.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from './pane.js';
 export type {SettingsPanelOptions} from './pane.js';
 import {
@@ -39,7 +41,7 @@ import {
   createProviderPicker
 } from './components/index.js';
 import type {OptionStepperElement, ProviderPickerElement, StepperOption} from './components/index.js';
-import {createBinder, stepperField, textField, toggleField} from './settings-binding.js';
+import {createBinder, stepperField, textField} from './settings-binding.js';
 import type {
   Config,
   CustomApp,
@@ -1757,193 +1759,26 @@ export function createSettingsPanel(
     paneHandles.music = musicPane;
     musicPane.build(context);
 
-    // The old Launcher section, now three: System (volume levels, then
-    // Performance mode, Home button, boot), Screensaver, and Clock & icons in
-    // Look. `launcherSection` is pointed at each in turn as controls are built.
-    const systemSection = createSection('System');
-    const screensaverSection = createSection('Screensaver');
+    // The old Launcher section, now three: System, Screensaver, and Clock &
+    // icons in Look. System and Screensaver are behind the seam; the Clock &
+    // icons section still builds here (it belongs to the Look pane).
+    const systemPane = createSystemPane();
+    paneHandles.system = systemPane;
+    systemPane.build(context);
+
+    const screensaverPane = createScreensaverPane();
+    paneHandles.screensaver = screensaverPane;
+    screensaverPane.build(context);
+
     const clockSection = createSection('Clock & icons');
-    let launcherSection = systemSection;
 
-    // TV system volume levels (0–100), separate from ambient music slider.
-    // '' = "Don't change": leave whatever the remote set (stored as null).
-    function volumeLevelValue(level: number | null): string {
-      return typeof level === 'number' ? String(level) : '';
-    }
-
-    function volumeLevelParse(raw: string): number | null {
-      const level = parseInt(raw, 10);
-      return isNaN(level) ? null : level;
-    }
-
-    function volumeLevelOptions(selected: string): StepperOption[] {
-      const opts: StepperOption[] = [{value: '', label: 'Don’t change'}];
-      for (let v = 0; v <= 30; v += 1) {
-        opts.push({value: String(v), label: String(v)});
-      }
-      // Also offer a few higher steps for loud setups.
-      [35, 40, 45, 50, 60, 70, 80, 90, 100].forEach(function (v) {
-        opts.push({value: String(v), label: String(v)});
-      });
-      if (!opts.some(function (o) { return o.value === selected; })) {
-        opts.splice(1, 0, {value: selected, label: selected});
-      }
-      return opts;
-    }
-
-    const volumeAtHomeValue = volumeLevelValue(config.launcher.volumeAtHome);
-    const volumeAtHomeSelect = createOptionStepper({
-      focusIndex: 993,
-      choices: volumeLevelOptions(volumeAtHomeValue)
-    });
-    binder.bind(stepperField(volumeAtHomeSelect, 'launcher.volumeAtHome', {
-      parse: volumeLevelParse
-    }));
-    launcherSection.appendChild(labeledControl('Volume in Launch Home', volumeAtHomeSelect));
-
-    const volumeOnAppValue = volumeLevelValue(config.launcher.volumeOnAppLaunch);
-    const volumeOnAppSelect = createOptionStepper({
-      focusIndex: 994,
-      choices: volumeLevelOptions(volumeOnAppValue)
-    });
-    binder.bind(stepperField(volumeOnAppSelect, 'launcher.volumeOnAppLaunch', {
-      parse: volumeLevelParse
-    }));
-    launcherSection.appendChild(labeledControl('Volume when apps launch', volumeOnAppSelect));
-
-    launcherSection.appendChild(createHint(
-      'TV system volume (0–100). “Don’t change” keeps whatever you set with the remote. Otherwise Launch Home switches to the first level when you return home, and the second when Netflix / HDMI / other apps launch.'
-    ));
-
-    // ── Launch Home (in-app) screensaver ──────────────────────────────
-    launcherSection = screensaverSection;
-    const customSsField = createToggle({
-      label: 'Launch Home screensaver',
-      focusIndex: '990',
-      path: 'launcher.customScreensaver'
-    });
-    binder.bind(customSsField.field!);
-    launcherSection.appendChild(customSsField.row);
-
-    const customSsIdle = createOptionStepper({
-      focusIndex: 991,
-      choices: [
-        {value: '2', label: '2 minutes'},
-        {value: '5', label: '5 minutes'},
-        {value: '10', label: '10 minutes'},
-        {value: '15', label: '15 minutes'},
-        {value: '20', label: '20 minutes'},
-        {value: '30', label: '30 minutes'},
-        {value: '45', label: '45 minutes'},
-        {value: '60', label: '60 minutes'}
-      ]
-    });
-    binder.bind(stepperField(customSsIdle, 'launcher.customScreensaverMinutes', {
-      parse: function (raw) {
-        const n = parseInt(raw, 10);
-        return isNaN(n) || n < 1 ? 5 : n;
-      }
-    }));
-    launcherSection.appendChild(labeledControl('Start after (idle)', customSsIdle));
-
-    const customSsSlide = createOptionStepper({
-      focusIndex: 992,
-      choices: [
-        {value: '12', label: '12 seconds'},
-        {value: '20', label: '20 seconds'},
-        {value: '30', label: '30 seconds'},
-        {value: '45', label: '45 seconds'},
-        {value: '60', label: '1 minute'},
-        {value: '120', label: '2 minutes'}
-      ]
-    });
-    binder.bind(stepperField(customSsSlide, 'launcher.customScreensaverSlideSec', {
-      parse: function (raw) {
-        const n = parseInt(raw, 10);
-        return isNaN(n) || n < 8 ? 20 : n;
-      }
-    }));
-    launcherSection.appendChild(labeledControl('Photo change every', customSsSlide));
-
-    const customSsClockField = createToggle({
-      label: 'Screensaver clock',
-      focusIndex: '993',
-      path: 'launcher.customScreensaverShowClock'
-    });
-    binder.bind(customSsClockField.field!);
-    launcherSection.appendChild(customSsClockField.row);
-
-    const customSsDateField = createToggle({
-      label: 'Screensaver date',
-      focusIndex: '994',
-      path: 'launcher.customScreensaverShowDate'
-    });
-    binder.bind(customSsDateField.field!);
-    launcherSection.appendChild(customSsDateField.row);
-
-    launcherSection.appendChild(createHint(
-      'Full-screen photo slideshow from your Launch Home wallpapers while this app is open. Any remote button wakes. Uses Ken Burns motion for OLED care.'
-    ));
-
-    // Preview over the open panel. Closing Settings first threw away any
-    // unsaved changes; the saver sits above it and hands focus back here.
-    launcherSection.appendChild(createMiniButton({
-      label: 'Preview screensaver now',
-      focusIndex: '996',
-      className: 'settings-preview-ss-btn',
-      onClick: function () {
-        if (options.onPreviewScreensaver) {
-          options.onPreviewScreensaver();
-        } else if (options.onToast) {
-          options.onToast('Save & reopen Launch Home to preview');
-        }
-      }
-    }));
-
-    // System LG gallery saver (rooted write). Pushed to 30 min when custom is on.
-    const ssMins = coerceScreensaverMinutes(
-      typeof config.launcher.screensaverMinutes === 'number'
-        ? config.launcher.screensaverMinutes
-        : 30
-    );
-    const screensaverSelect = createOptionStepper({
-      focusIndex: 995,
-      choices: [
-        {value: '0', label: 'Off (never)'},
-        {value: '3', label: '3 minutes'},
-        {value: '10', label: '10 minutes'},
-        {value: '20', label: '20 minutes'},
-        {value: '30', label: '30 minutes'}
-      ],
-      value: String(ssMins)
-    });
-    // The TV enum is coerced, and the value is raised past the in-app saver.
-    binder.add(stepperField(screensaverSelect, 'launcher.screensaverMinutes', {
-      parse: function (raw) { return parseInt(raw, 10); }
-    }));
-    binder.hook(function (cfg) {
-      cfg.launcher.screensaverMinutes = coerceScreensaverMinutes(cfg.launcher.screensaverMinutes);
-      // Keep system saver from firing before the in-app one.
-      if (cfg.launcher.customScreensaver &&
-          cfg.launcher.screensaverMinutes > 0 &&
-          cfg.launcher.screensaverMinutes < 30) {
-        cfg.launcher.screensaverMinutes = 30;
-      }
-    });
-    launcherSection.appendChild(labeledControl('TV system screensaver', screensaverSelect));
-
-    launcherSection.appendChild(createHint(
-      'LG system gallery timeout (3/10/20/30 min only). When Launch Home screensaver is on, leave this at 30 so the TV does not interrupt first. Requires rooted TV.'
-    ));
-
-    launcherSection = clockSection;
     const showClockField = createToggle({
       label: 'Show clock',
       focusIndex: '1000',
       path: 'launcher.showClock'
     });
     binder.bind(showClockField.field!);
-    launcherSection.appendChild(showClockField.row);
+    clockSection.appendChild(showClockField.row);
 
     const clockFormatSelect = createOptionStepper({
       focusIndex: 1090,
@@ -1955,7 +1790,7 @@ export function createSettingsPanel(
     binder.bind(stepperField(clockFormatSelect, 'launcher.clockFormat', {
       parse: function (raw) { return raw === '12' ? '12' : '24'; }
     }));
-    launcherSection.appendChild(labeledControl('Clock format', clockFormatSelect));
+    clockSection.appendChild(labeledControl('Clock format', clockFormatSelect));
 
     const showDateField = createToggle({
       label: 'Show date',
@@ -1963,7 +1798,7 @@ export function createSettingsPanel(
       path: 'launcher.showDate'
     });
     binder.bind(showDateField.field!);
-    launcherSection.appendChild(showDateField.row);
+    clockSection.appendChild(showDateField.row);
 
     const clockAlignSelect = createOptionStepper({
       focusIndex: 1002,
@@ -1980,7 +1815,7 @@ export function createSettingsPanel(
         return ['left', 'center', 'center-middle', 'right'].indexOf(raw) < 0 ? 'center' : raw;
       }
     }));
-    launcherSection.appendChild(labeledControl('Clock position', clockAlignSelect));
+    clockSection.appendChild(labeledControl('Clock position', clockAlignSelect));
 
     const clockSizeSelect = createOptionStepper({
       focusIndex: 1003,
@@ -1995,7 +1830,7 @@ export function createSettingsPanel(
     binder.bind(stepperField(clockSizeSelect, 'launcher.clockSize', {
       parse: function (raw) { return raw || 'large'; }
     }));
-    launcherSection.appendChild(labeledControl('Clock size', clockSizeSelect));
+    clockSection.appendChild(labeledControl('Clock size', clockSizeSelect));
 
     const timezoneSelect = createOptionStepper({
       focusIndex: 1004,
@@ -2004,7 +1839,7 @@ export function createSettingsPanel(
       })
     });
     binder.bind(stepperField(timezoneSelect, 'launcher.timezone'));
-    launcherSection.appendChild(labeledControl('Timezone', timezoneSelect));
+    clockSection.appendChild(labeledControl('Timezone', timezoneSelect));
 
     const iconSizeSelect = createOptionStepper({
       focusIndex: 1005,
@@ -2015,7 +1850,7 @@ export function createSettingsPanel(
       ]
     });
     binder.bind(stepperField(iconSizeSelect, 'launcher.iconSize'));
-    launcherSection.appendChild(labeledControl('Icon size', iconSizeSelect));
+    clockSection.appendChild(labeledControl('Icon size', iconSizeSelect));
 
     const iconAlignSelect = createOptionStepper({
       focusIndex: 1006,
@@ -2026,7 +1861,7 @@ export function createSettingsPanel(
       ]
     });
     binder.bind(stepperField(iconAlignSelect, 'launcher.iconAlign'));
-    launcherSection.appendChild(labeledControl('Icon alignment', iconAlignSelect));
+    clockSection.appendChild(labeledControl('Icon alignment', iconAlignSelect));
 
     const iconLayoutSelect = createOptionStepper({
       focusIndex: 1007,
@@ -2036,7 +1871,7 @@ export function createSettingsPanel(
       ]
     });
     binder.bind(stepperField(iconLayoutSelect, 'launcher.iconLayout'));
-    launcherSection.appendChild(labeledControl('Icon layout', iconLayoutSelect));
+    clockSection.appendChild(labeledControl('Icon layout', iconLayoutSelect));
 
     const iconsPerRowSelect = createOptionStepper({
       focusIndex: 1008,
@@ -2049,7 +1884,7 @@ export function createSettingsPanel(
     binder.bind(stepperField(iconsPerRowSelect, 'launcher.iconsPerRow', {
       parse: function (raw) { return parseInt(raw, 10) || 7; }
     }));
-    launcherSection.appendChild(labeledControl('Icons per row (scroll mode)', iconsPerRowSelect));
+    clockSection.appendChild(labeledControl('Icons per row (scroll mode)', iconsPerRowSelect));
 
     const bundledIconsField = createToggle({
       label: 'Use Launch Home app icons',
@@ -2057,56 +1892,12 @@ export function createSettingsPanel(
       path: 'launcher.bundledIcons'
     });
     binder.bind(bundledIconsField.field!);
-    launcherSection.appendChild(bundledIconsField.row);
+    clockSection.appendChild(bundledIconsField.row);
 
-    launcherSection.appendChild(createHint(
+    clockSection.appendChild(createHint(
       'Off = each app’s own icon from the TV (Netflix, YouTube, TV Settings, …). Reading the TV’s icons needs root; apps without one keep the Launch Home icon.'
     ));
 
-    launcherSection = systemSection;
-    const perfModeField = createToggle({
-      label: 'Performance mode (low-spec TVs)',
-      focusIndex: '1009',
-      path: 'launcher.perfMode'
-    });
-    binder.bind(perfModeField.field!);
-    launcherSection.appendChild(perfModeField.row);
-    launcherSection.appendChild(createHint(
-      'Turns off the frosted glass and uses 1920px wallpapers. ' +
-      'With Slow zoom on (Look), the glass is already off while the wallpaper moves.'
-    ));
-
-    // Off by default: when enabled, stock Home coming to the foreground
-    // (Home button press after another app, or an app exiting to home)
-    // relaunches Launch Home.
-    const launchOnHomeField = createToggle({
-      label: 'Launch on Home button',
-      focusIndex: '1010',
-      checked: !!(config.launcher.launchOnHome || config.launcher.returnOnAppExit)
-    });
-    const launchOnHomeToggle = launchOnHomeField.input;
-    launcherSection.appendChild(launchOnHomeField.row);
-    // The legacy key stays in sync so older builds / USB config still work.
-    binder.add(toggleField(launchOnHomeToggle, 'launcher.launchOnHome'));
-    binder.hook(function (cfg) {
-      cfg.launcher.returnOnAppExit = cfg.launcher.launchOnHome;
-    });
-
-    launcherSection.appendChild(createHint(
-      'When enabled, a root service opens Launch Home whenever stock Home appears. A brief flash of the LG home screen is normal (the TV opens Home first; we cannot block the key without a separate input-hook app). Requires rooted TV + Homebrew Channel. Toggle off/on and Save after updates if it stops working.'
-    ));
-
-    const bootField = createToggle({
-      label: 'Boot on TV start',
-      focusIndex: '1011',
-      path: 'launcher.bootOnStart'
-    });
-    binder.bind(bootField.field!);
-    launcherSection.appendChild(bootField.row);
-
-    launcherSection.appendChild(createHint(
-      'When enabled, a root init.d script launches Launch Home after the TV powers on. Requires rooted TV + Homebrew Channel (same as Home button). A short delay on boot is normal while webOS starts. With Quick Start+ on, the TV only wakes from standby and this doesn’t run; turn it off under General → Devices → TV Management.'
-    ));
     // ── Glass: the see-through tiles and buttons on the home screen ──────
     const glassSection = createSection('Glass');
     glassSection.appendChild(createHint('How the see-through app tiles, input buttons and Settings button ' +
@@ -2223,8 +2014,6 @@ export function createSettingsPanel(
     panes.look.appendChild(glassSection);
 
     panes.look.appendChild(clockSection);
-    panes.screensaver.appendChild(screensaverSection);
-    panes.system.appendChild(systemSection);
 
     // ── Weather (today + 4 days on the home screen) ─────────────────────
     const weatherPane = createWeatherPane();

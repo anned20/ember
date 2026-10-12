@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from 'vitest';
 import {createOptionStepper} from '@settings/components/option-stepper.js';
 
-const options = [
+const choices = [
   {value: 'a', label: 'Alpha'},
   {value: 'b', label: 'Beta'},
   {value: 'c', label: 'Gamma'}
@@ -9,7 +9,7 @@ const options = [
 
 describe('createOptionStepper', () => {
   it('builds the arrows, label and focus index', () => {
-    const stepper = createOptionStepper('', 904, options, 'b');
+    const stepper = createOptionStepper({focusIndex: 904, choices, value: 'b'});
     expect(stepper.className).toBe('option-stepper focusable');
     expect(stepper.dataset.focusIndex).toBe('904');
     expect(stepper.tabIndex).toBe(0);
@@ -21,7 +21,7 @@ describe('createOptionStepper', () => {
 
   it('steps within bounds and reports changes', () => {
     const onChange = vi.fn();
-    const stepper = createOptionStepper('', 904, options, 'a', onChange);
+    const stepper = createOptionStepper({focusIndex: 904, choices, value: 'a', onChange});
 
     stepper.__step(-1);
     expect(stepper.value).toBe('a');
@@ -38,7 +38,7 @@ describe('createOptionStepper', () => {
   });
 
   it('sets options and value', () => {
-    const stepper = createOptionStepper('', 904, options, 'a');
+    const stepper = createOptionStepper({focusIndex: 904, choices, value: 'a'});
     stepper.setOptions([{value: 'x', label: 'X'}, {value: 'y', label: 'Y'}], 'y');
     expect(stepper.value).toBe('y');
 
@@ -48,7 +48,7 @@ describe('createOptionStepper', () => {
   });
 
   it('steps on arrow and body clicks', () => {
-    const stepper = createOptionStepper('', 904, options, 'a');
+    const stepper = createOptionStepper({focusIndex: 904, choices, value: 'a'});
     const arrows = stepper.querySelectorAll<HTMLElement>('.stepper-arrow');
 
     arrows[1].click();

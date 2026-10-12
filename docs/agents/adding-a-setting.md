@@ -42,10 +42,13 @@ binder.bind(showClockField.field!);
 launcherSection.appendChild(showClockField.row);
 
 // An option stepper (enum). The codec maps the control's string to the value.
-const clockFormatSelect = createOptionStepper('', 1090, [
-  {value: '24', label: '24-hour (18:30)'},
-  {value: '12', label: '12-hour (6:30 PM)'}
-], undefined);
+const clockFormatSelect = createOptionStepper({
+  focusIndex: 1090,
+  choices: [
+    {value: '24', label: '24-hour (18:30)'},
+    {value: '12', label: '12-hour (6:30 PM)'}
+  ]
+});
 binder.bind(stepperField(clockFormatSelect, 'launcher.clockFormat', {
   parse: function (raw) { return raw === '12' ? '12' : '24'; }
 }));

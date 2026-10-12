@@ -12,17 +12,24 @@ export interface OptionStepperElement extends HTMLDivElement {
   __step(dir: number): void;
 }
 
+/** The arguments for createOptionStepper. */
+export interface OptionStepperOptions {
+  /** The choices to step through. */
+  choices: StepperOption[];
+  focusIndex: number | string;
+  /** The initially selected value; falls back to the first choice. */
+  value?: string;
+  /** Extra class on the control, after the default `focusable`. */
+  className?: string;
+  onChange?: (value: string) => void;
+}
+
 /** A `‹ label ›` picker: arrows step through options, clicking the body advances. */
-export function createOptionStepper(
-  className: string,
-  focusIndex: number,
-  optionList: StepperOption[],
-  currentValue?: string,
-  onChange?: (value: string) => void
-): OptionStepperElement {
+export function createOptionStepper(options: OptionStepperOptions): OptionStepperElement {
+  const className = options.className || '';
   const el = document.createElement('div') as OptionStepperElement;
   el.className = 'option-stepper focusable' + (className ? ' ' + className : '');
-  el.dataset.focusIndex = String(focusIndex);
+  el.dataset.focusIndex = String(options.focusIndex);
   el.tabIndex = 0;
 
   const prev = document.createElement('span');
@@ -40,39 +47,39 @@ export function createOptionStepper(
   el.appendChild(labelEl);
   el.appendChild(next);
 
-  let options = optionList.slice();
+  let choices = options.choices.slice();
   let index = 0;
 
   function indexOfValue(value: string | undefined): number {
-    for (let i = 0; i < options.length; i += 1) {
-      if (options[i].value === value) return i;
+    for (let i = 0; i < choices.length; i += 1) {
+      if (choices[i].value === value) return i;
     }
     return -1;
   }
 
   function render() {
-    const opt = options[index] || {value: '', label: ''};
+    const opt = choices[index] || {value: '', label: ''};
     labelEl.textContent = opt.label;
     el.value = opt.value;
     el.dataset.value = opt.value;
     prev.classList.toggle('is-disabled', index <= 0);
-    next.classList.toggle('is-disabled', index >= options.length - 1);
+    next.classList.toggle('is-disabled', index >= choices.length - 1);
   }
 
   el.__step = function (dir: number) {
-    if (!options.length) return;
+    if (!choices.length) return;
     let n = index + dir;
     if (n < 0) n = 0;
-    if (n > options.length - 1) n = options.length - 1;
+    if (n > choices.length - 1) n = choices.length - 1;
     if (n !== index) {
       index = n;
       render();
-      if (onChange) onChange(el.value);
+      if (options.onChange) options.onChange(el.value);
     }
   };
 
   el.setOptions = function (newOptions: StepperOption[], newValue?: string) {
-    options = (newOptions || []).slice();
+    choices = (newOptions || []).slice();
     const found = indexOfValue(newValue);
     index = found >= 0 ? found : 0;
     render();
@@ -101,7 +108,7 @@ export function createOptionStepper(
     el.__step(1);
   });
 
-  const start = indexOfValue(currentValue);
+  const start = indexOfValue(options.value);
   index = start >= 0 ? start : 0;
   render();
   return el;

@@ -848,12 +848,17 @@ export function createSettingsPanel(
     }
 
     const aiKeySection = createSection('API keys');
-    aiAuthModeSelect = createOptionStepper('', 1990, [
-      {value: 'API_KEY', label: 'Grok API key'},
-      {value: 'SUPERGROK_OAUTH', label: 'SuperGrok sign-in'}
-    ], 'API_KEY', function () {
-      syncAuthModeUi();
-      if (isSuperGrokMode()) paintOauthFromStatus({}, aiLoadedConfig);
+    aiAuthModeSelect = createOptionStepper({
+      focusIndex: 1990,
+      choices: [
+        {value: 'API_KEY', label: 'Grok API key'},
+        {value: 'SUPERGROK_OAUTH', label: 'SuperGrok sign-in'}
+      ],
+      value: 'API_KEY',
+      onChange: function () {
+        syncAuthModeUi();
+        if (isSuperGrokMode()) paintOauthFromStatus({}, aiLoadedConfig);
+      }
     });
     const authRow = labeledControl('Grok account', aiAuthModeSelect);
     aiKeySection.appendChild(authRow);
@@ -1380,34 +1385,66 @@ export function createSettingsPanel(
     aiProviderSection.appendChild(providerHint);
 
     const aiVoiceSection = createSection('Voice & chat');
-    aiSttSelect = createOptionStepper('', 1973, [], '');
+    aiSttSelect = createOptionStepper({
+      focusIndex: 1973,
+      choices: [],
+      value: ''
+    });
     aiVoiceSection.appendChild(labeledControl('Speech language', aiSttSelect));
-    aiVoiceModelSelect = createOptionStepper('', 1974, [], '');
+    aiVoiceModelSelect = createOptionStepper({
+      focusIndex: 1974,
+      choices: [],
+      value: ''
+    });
     const aiVoiceModelRow = labeledControl('Voice model', aiVoiceModelSelect);
     aiVoiceSection.appendChild(aiVoiceModelRow);
-    aiChatSelect = createOptionStepper('', 1975, [], '');
+    aiChatSelect = createOptionStepper({
+      focusIndex: 1975,
+      choices: [],
+      value: ''
+    });
     const aiChatModelRow = labeledControl('Chat model', aiChatSelect);
     aiVoiceSection.appendChild(aiChatModelRow);
-    aiGeminiSttSelect = createOptionStepper('', 1976, [], '');
+    aiGeminiSttSelect = createOptionStepper({
+      focusIndex: 1976,
+      choices: [],
+      value: ''
+    });
     const aiGeminiSttRow = labeledControl('Listen model', aiGeminiSttSelect);
     aiVoiceSection.appendChild(aiGeminiSttRow);
-    aiGeminiModelSelect = createOptionStepper('', 1977, [], '');
+    aiGeminiModelSelect = createOptionStepper({
+      focusIndex: 1977,
+      choices: [],
+      value: ''
+    });
     const aiGeminiModelRow = labeledControl('Answer model', aiGeminiModelSelect);
     aiVoiceSection.appendChild(aiGeminiModelRow);
-    aiOpenRouterSttSelect = createOptionStepper('', 1977, [], '');
+    aiOpenRouterSttSelect = createOptionStepper({
+      focusIndex: 1977,
+      choices: [],
+      value: ''
+    });
     const aiOpenRouterSttRow = labeledControl('Listen model', aiOpenRouterSttSelect);
     aiVoiceSection.appendChild(aiOpenRouterSttRow);
-    aiOpenRouterModelSelect = createOptionStepper('', 1978, [], '');
+    aiOpenRouterModelSelect = createOptionStepper({
+      focusIndex: 1978,
+      choices: [],
+      value: ''
+    });
     const aiOpenRouterModelRow = labeledControl('Answer model', aiOpenRouterModelSelect);
     aiVoiceSection.appendChild(aiOpenRouterModelRow);
-    aiDismissSelect = createOptionStepper('', 1979, [
-      {value: '6', label: '6 seconds'},
-      {value: '8', label: '8 seconds'},
-      {value: '10', label: '10 seconds'},
-      {value: '12', label: '12 seconds'},
-      {value: '20', label: '20 seconds'},
-      {value: '30', label: '30 seconds'}
-    ], '8');
+    aiDismissSelect = createOptionStepper({
+      focusIndex: 1979,
+      choices: [
+        {value: '6', label: '6 seconds'},
+        {value: '8', label: '8 seconds'},
+        {value: '10', label: '10 seconds'},
+        {value: '12', label: '12 seconds'},
+        {value: '20', label: '20 seconds'},
+        {value: '30', label: '30 seconds'}
+      ],
+      value: '8'
+    });
     aiVoiceSection.appendChild(labeledControl('Answer card auto-dismiss', aiDismissSelect));
     aiVoiceSection.appendChild(createHint(
       'Press Save after changes. Switching assistant or keys restarts the voice daemon.'
@@ -1788,12 +1825,13 @@ export function createSettingsPanel(
 
     const profileSection = createSection('Profile');
 
-    const profileSelect = createOptionStepper('', 901,
-      PROFILE_OPTIONS.map(function (entry) {
+    const profileSelect = createOptionStepper({
+      focusIndex: 901,
+      choices: PROFILE_OPTIONS.map(function (entry) {
         return {value: entry.id, label: entry.label};
       }),
-      undefined,
-      function (value) { syncProfileBackgroundNote(value); });
+      onChange: function (value) { syncProfileBackgroundNote(value); }
+    });
     binder.bind(stepperField(profileSelect, 'profile'));
     profileSection.appendChild(labeledControl('Active profile', profileSelect));
 
@@ -1804,17 +1842,21 @@ export function createSettingsPanel(
 
     const section = createSection('Background');
 
-    const sourceSelect = createOptionStepper('', 902, [
-      {value: 'preset', label: 'Gradient'},
-      {value: 'animated-gradient', label: 'Animated Gradient'},
-      {value: 'builtin', label: 'Built-in photos'},
-      {value: 'usb', label: 'USB folder'},
-      {value: 'url', label: 'Online URL (nature + anime)'},
-      {value: 'aerial', label: 'Aerial videos (Apple)'}
-    ], undefined, function (value) {
-      syncFields({
-        revealGallery: value === 'url' || value === 'builtin' || value === 'aerial'
-      });
+    const sourceSelect = createOptionStepper({
+      focusIndex: 902,
+      choices: [
+        {value: 'preset', label: 'Gradient'},
+        {value: 'animated-gradient', label: 'Animated Gradient'},
+        {value: 'builtin', label: 'Built-in photos'},
+        {value: 'usb', label: 'USB folder'},
+        {value: 'url', label: 'Online URL (nature + anime)'},
+        {value: 'aerial', label: 'Aerial videos (Apple)'}
+      ],
+      onChange: function (value) {
+        syncFields({
+          revealGallery: value === 'url' || value === 'builtin' || value === 'aerial'
+        });
+      }
     });
     binder.bind(stepperField(sourceSelect, 'background.source'));
     section.appendChild(labeledControl('Source', sourceSelect));
@@ -1836,22 +1878,29 @@ export function createSettingsPanel(
     }
     syncProfileBackgroundNote(config.profile || 'default');
 
-    const presetSelect = createOptionStepper('', 903, [
-      {value: 'warm-gradient', label: 'Warm gradient'},
-      {value: 'cool-gradient', label: 'Cool gradient'},
-      {value: 'midnight', label: 'Midnight'},
-      {value: 'ember', label: 'Ember'}
-    ], undefined);
+    const presetSelect = createOptionStepper({
+      focusIndex: 903,
+      choices: [
+        {value: 'warm-gradient', label: 'Warm gradient'},
+        {value: 'cool-gradient', label: 'Cool gradient'},
+        {value: 'midnight', label: 'Midnight'},
+        {value: 'ember', label: 'Ember'}
+      ]
+    });
     binder.bind(stepperField(presetSelect, 'background.preset'));
     // Only shown when Source is Gradient / Animated Gradient (not when Photo is set).
     const presetRow = labeledControl('Gradient style', presetSelect);
     section.appendChild(presetRow);
 
-    const displaySelect = createOptionStepper('', 904, [
-      {value: 'static', label: 'Single image'},
-      {value: 'slideshow', label: 'Slideshow'}
-    ], undefined, function () {
-      syncFields();
+    const displaySelect = createOptionStepper({
+      focusIndex: 904,
+      choices: [
+        {value: 'static', label: 'Single image'},
+        {value: 'slideshow', label: 'Slideshow'}
+      ],
+      onChange: function () {
+        syncFields();
+      }
     });
     binder.bind(stepperField(displaySelect, 'background.mode'));
     const displayRow = labeledControl('Display', displaySelect);
@@ -2217,11 +2266,15 @@ export function createSettingsPanel(
       'When on, shows the track name next to the volume control. Off by default (volume only).'
     ));
 
-    const musicSourceSelect = createOptionStepper('', 941, [
-      {value: 'builtin', label: 'Built-in ambient (6 tracks)'},
-      {value: 'usb', label: 'My tracks (USB)'}
-    ], undefined, function () {
-      syncMusicFields();
+    const musicSourceSelect = createOptionStepper({
+      focusIndex: 941,
+      choices: [
+        {value: 'builtin', label: 'Built-in ambient (6 tracks)'},
+        {value: 'usb', label: 'My tracks (USB)'}
+      ],
+      onChange: function () {
+        syncMusicFields();
+      }
     });
     binder.bind(stepperField(musicSourceSelect, 'music.source'));
     const musicSourceRow = labeledControl('Source', musicSourceSelect);
@@ -2284,9 +2337,10 @@ export function createSettingsPanel(
       });
     }
 
-    const builtinTrackSelect = createOptionStepper('', 950,
-      builtinStartOptions(),
-      undefined);
+    const builtinTrackSelect = createOptionStepper({
+      focusIndex: 950,
+      choices: builtinStartOptions()
+    });
     binder.bind(stepperField(builtinTrackSelect, 'music.builtin'));
     const builtinTrackRow = labeledControl('Start with', builtinTrackSelect);
     musicSection.appendChild(builtinTrackRow);
@@ -2300,12 +2354,17 @@ export function createSettingsPanel(
     }
 
     // --- USB: folder + multi-select discovered tracks ---
-    const musicFolderPicker = createOptionStepper('', 951, [
-      {value: '', label: 'Custom path (type below)…'}
-    ], '', function (value) {
-      if (value) {
-        musicPathInput.value = value;
-        scanUsbTracks(value);
+    const musicFolderPicker = createOptionStepper({
+      focusIndex: 951,
+      choices: [
+        {value: '', label: 'Custom path (type below)…'}
+      ],
+      value: '',
+      onChange: function (value) {
+        if (value) {
+          musicPathInput.value = value;
+          scanUsbTracks(value);
+        }
       }
     });
     const musicFolderRow = labeledControl('Browse folders', musicFolderPicker);
@@ -2434,11 +2493,14 @@ export function createSettingsPanel(
     binder.bind(shuffleField.field!);
     musicSection.appendChild(shuffleRow);
 
-    const repeatSelect = createOptionStepper('', 991, [
-      {value: 'all', label: 'Repeat all'},
-      {value: 'one', label: 'Repeat one'},
-      {value: 'off', label: 'Play once'}
-    ], undefined);
+    const repeatSelect = createOptionStepper({
+      focusIndex: 991,
+      choices: [
+        {value: 'all', label: 'Repeat all'},
+        {value: 'one', label: 'Repeat one'},
+        {value: 'off', label: 'Play once'}
+      ]
+    });
     binder.bind(stepperField(repeatSelect, 'music.repeat'));
     const repeatRow = labeledControl('Repeat', repeatSelect);
     musicSection.appendChild(repeatRow);
@@ -2536,24 +2598,20 @@ export function createSettingsPanel(
     }
 
     const volumeAtHomeValue = volumeLevelValue(config.launcher.volumeAtHome);
-    const volumeAtHomeSelect = createOptionStepper(
-      '',
-      993,
-      volumeLevelOptions(volumeAtHomeValue),
-      undefined
-    );
+    const volumeAtHomeSelect = createOptionStepper({
+      focusIndex: 993,
+      choices: volumeLevelOptions(volumeAtHomeValue)
+    });
     binder.bind(stepperField(volumeAtHomeSelect, 'launcher.volumeAtHome', {
       parse: volumeLevelParse
     }));
     launcherSection.appendChild(labeledControl('Volume in Launch Home', volumeAtHomeSelect));
 
     const volumeOnAppValue = volumeLevelValue(config.launcher.volumeOnAppLaunch);
-    const volumeOnAppSelect = createOptionStepper(
-      '',
-      994,
-      volumeLevelOptions(volumeOnAppValue),
-      undefined
-    );
+    const volumeOnAppSelect = createOptionStepper({
+      focusIndex: 994,
+      choices: volumeLevelOptions(volumeOnAppValue)
+    });
     binder.bind(stepperField(volumeOnAppSelect, 'launcher.volumeOnAppLaunch', {
       parse: volumeLevelParse
     }));
@@ -2573,16 +2631,19 @@ export function createSettingsPanel(
     binder.bind(customSsField.field!);
     launcherSection.appendChild(customSsField.row);
 
-    const customSsIdle = createOptionStepper('', 991, [
-      {value: '2', label: '2 minutes'},
-      {value: '5', label: '5 minutes'},
-      {value: '10', label: '10 minutes'},
-      {value: '15', label: '15 minutes'},
-      {value: '20', label: '20 minutes'},
-      {value: '30', label: '30 minutes'},
-      {value: '45', label: '45 minutes'},
-      {value: '60', label: '60 minutes'}
-    ], undefined);
+    const customSsIdle = createOptionStepper({
+      focusIndex: 991,
+      choices: [
+        {value: '2', label: '2 minutes'},
+        {value: '5', label: '5 minutes'},
+        {value: '10', label: '10 minutes'},
+        {value: '15', label: '15 minutes'},
+        {value: '20', label: '20 minutes'},
+        {value: '30', label: '30 minutes'},
+        {value: '45', label: '45 minutes'},
+        {value: '60', label: '60 minutes'}
+      ]
+    });
     binder.bind(stepperField(customSsIdle, 'launcher.customScreensaverMinutes', {
       parse: function (raw) {
         const n = parseInt(raw, 10);
@@ -2591,14 +2652,17 @@ export function createSettingsPanel(
     }));
     launcherSection.appendChild(labeledControl('Start after (idle)', customSsIdle));
 
-    const customSsSlide = createOptionStepper('', 992, [
-      {value: '12', label: '12 seconds'},
-      {value: '20', label: '20 seconds'},
-      {value: '30', label: '30 seconds'},
-      {value: '45', label: '45 seconds'},
-      {value: '60', label: '1 minute'},
-      {value: '120', label: '2 minutes'}
-    ], undefined);
+    const customSsSlide = createOptionStepper({
+      focusIndex: 992,
+      choices: [
+        {value: '12', label: '12 seconds'},
+        {value: '20', label: '20 seconds'},
+        {value: '30', label: '30 seconds'},
+        {value: '45', label: '45 seconds'},
+        {value: '60', label: '1 minute'},
+        {value: '120', label: '2 minutes'}
+      ]
+    });
     binder.bind(stepperField(customSsSlide, 'launcher.customScreensaverSlideSec', {
       parse: function (raw) {
         const n = parseInt(raw, 10);
@@ -2648,13 +2712,17 @@ export function createSettingsPanel(
         ? config.launcher.screensaverMinutes
         : 30
     );
-    const screensaverSelect = createOptionStepper('', 995, [
-      {value: '0', label: 'Off (never)'},
-      {value: '3', label: '3 minutes'},
-      {value: '10', label: '10 minutes'},
-      {value: '20', label: '20 minutes'},
-      {value: '30', label: '30 minutes'}
-    ], String(ssMins));
+    const screensaverSelect = createOptionStepper({
+      focusIndex: 995,
+      choices: [
+        {value: '0', label: 'Off (never)'},
+        {value: '3', label: '3 minutes'},
+        {value: '10', label: '10 minutes'},
+        {value: '20', label: '20 minutes'},
+        {value: '30', label: '30 minutes'}
+      ],
+      value: String(ssMins)
+    });
     // The TV enum is coerced, and the value is raised past the in-app saver.
     binder.add(stepperField(screensaverSelect, 'launcher.screensaverMinutes', {
       parse: function (raw) { return parseInt(raw, 10); }
@@ -2683,10 +2751,13 @@ export function createSettingsPanel(
     binder.bind(showClockField.field!);
     launcherSection.appendChild(showClockField.row);
 
-    const clockFormatSelect = createOptionStepper('', 1090, [
-      {value: '24', label: '24-hour (18:30)'},
-      {value: '12', label: '12-hour (6:30 PM)'}
-    ], undefined);
+    const clockFormatSelect = createOptionStepper({
+      focusIndex: 1090,
+      choices: [
+        {value: '24', label: '24-hour (18:30)'},
+        {value: '12', label: '12-hour (6:30 PM)'}
+      ]
+    });
     binder.bind(stepperField(clockFormatSelect, 'launcher.clockFormat', {
       parse: function (raw) { return raw === '12' ? '12' : '24'; }
     }));
@@ -2700,12 +2771,15 @@ export function createSettingsPanel(
     binder.bind(showDateField.field!);
     launcherSection.appendChild(showDateField.row);
 
-    const clockAlignSelect = createOptionStepper('', 1002, [
-      {value: 'left', label: 'Top left'},
-      {value: 'center', label: 'Centre top'},
-      {value: 'center-middle', label: 'Centre middle'},
-      {value: 'right', label: 'Top right'}
-    ], undefined);
+    const clockAlignSelect = createOptionStepper({
+      focusIndex: 1002,
+      choices: [
+        {value: 'left', label: 'Top left'},
+        {value: 'center', label: 'Centre top'},
+        {value: 'center-middle', label: 'Centre middle'},
+        {value: 'right', label: 'Top right'}
+      ]
+    });
     binder.bind(stepperField(clockAlignSelect, 'launcher.clockAlign', {
       // Normalise unknown legacy values to centre top.
       parse: function (raw) {
@@ -2714,54 +2788,70 @@ export function createSettingsPanel(
     }));
     launcherSection.appendChild(labeledControl('Clock position', clockAlignSelect));
 
-    const clockSizeSelect = createOptionStepper('', 1003, [
-      {value: 'small', label: 'Small'},
-      {value: 'medium', label: 'Medium'},
-      {value: 'large', label: 'Large'},
-      {value: 'x-large', label: 'X-Large'},
-      {value: 'xx-large', label: 'XX-Large'}
-    ], undefined);
+    const clockSizeSelect = createOptionStepper({
+      focusIndex: 1003,
+      choices: [
+        {value: 'small', label: 'Small'},
+        {value: 'medium', label: 'Medium'},
+        {value: 'large', label: 'Large'},
+        {value: 'x-large', label: 'X-Large'},
+        {value: 'xx-large', label: 'XX-Large'}
+      ]
+    });
     binder.bind(stepperField(clockSizeSelect, 'launcher.clockSize', {
       parse: function (raw) { return raw || 'large'; }
     }));
     launcherSection.appendChild(labeledControl('Clock size', clockSizeSelect));
 
-    const timezoneSelect = createOptionStepper('', 1004,
-      TIMEZONE_OPTIONS.map(function (option) {
+    const timezoneSelect = createOptionStepper({
+      focusIndex: 1004,
+      choices: TIMEZONE_OPTIONS.map(function (option) {
         return {value: option.value, label: option.label};
-      }),
-      undefined);
+      })
+    });
     binder.bind(stepperField(timezoneSelect, 'launcher.timezone'));
     launcherSection.appendChild(labeledControl('Timezone', timezoneSelect));
 
-    const iconSizeSelect = createOptionStepper('', 1005, [
-      {value: 'small', label: 'Small'},
-      {value: 'medium', label: 'Medium'},
-      {value: 'large', label: 'Large'}
-    ], undefined);
+    const iconSizeSelect = createOptionStepper({
+      focusIndex: 1005,
+      choices: [
+        {value: 'small', label: 'Small'},
+        {value: 'medium', label: 'Medium'},
+        {value: 'large', label: 'Large'}
+      ]
+    });
     binder.bind(stepperField(iconSizeSelect, 'launcher.iconSize'));
     launcherSection.appendChild(labeledControl('Icon size', iconSizeSelect));
 
-    const iconAlignSelect = createOptionStepper('', 1006, [
-      {value: 'left', label: 'Left'},
-      {value: 'center', label: 'Centre'},
-      {value: 'right', label: 'Right'}
-    ], undefined);
+    const iconAlignSelect = createOptionStepper({
+      focusIndex: 1006,
+      choices: [
+        {value: 'left', label: 'Left'},
+        {value: 'center', label: 'Centre'},
+        {value: 'right', label: 'Right'}
+      ]
+    });
     binder.bind(stepperField(iconAlignSelect, 'launcher.iconAlign'));
     launcherSection.appendChild(labeledControl('Icon alignment', iconAlignSelect));
 
-    const iconLayoutSelect = createOptionStepper('', 1007, [
-      {value: 'scroll', label: 'Scroll one row'},
-      {value: 'wrap', label: 'Stacked rows'}
-    ], undefined);
+    const iconLayoutSelect = createOptionStepper({
+      focusIndex: 1007,
+      choices: [
+        {value: 'scroll', label: 'Scroll one row'},
+        {value: 'wrap', label: 'Stacked rows'}
+      ]
+    });
     binder.bind(stepperField(iconLayoutSelect, 'launcher.iconLayout'));
     launcherSection.appendChild(labeledControl('Icon layout', iconLayoutSelect));
 
-    const iconsPerRowSelect = createOptionStepper('', 1008, [
-      {value: '4', label: '4'}, {value: '5', label: '5'}, {value: '6', label: '6'},
-      {value: '7', label: '7'}, {value: '8', label: '8'}, {value: '9', label: '9'},
-      {value: '10', label: '10'}, {value: '11', label: '11'}, {value: '12', label: '12'}
-    ], undefined);
+    const iconsPerRowSelect = createOptionStepper({
+      focusIndex: 1008,
+      choices: [
+        {value: '4', label: '4'}, {value: '5', label: '5'}, {value: '6', label: '6'},
+        {value: '7', label: '7'}, {value: '8', label: '8'}, {value: '9', label: '9'},
+        {value: '10', label: '10'}, {value: '11', label: '11'}, {value: '12', label: '12'}
+      ]
+    });
     binder.bind(stepperField(iconsPerRowSelect, 'launcher.iconsPerRow', {
       parse: function (raw) { return parseInt(raw, 10) || 7; }
     }));
@@ -2875,15 +2965,19 @@ export function createSettingsPanel(
         (highlight && highlight !== 'warm' ? ' focus-' + highlight : '');
     }
 
-    const glassSelect = createOptionStepper('', 1091, [
-      {value: 'light', label: 'Light (original)'},
-      {value: 'dark', label: 'Dark'},
-      {value: 'black', label: 'Black'},
-      {value: 'blue', label: 'Blue'},
-      {value: 'purple', label: 'Purple'},
-      {value: 'green', label: 'Green'},
-      {value: 'warm', label: 'Warm'}
-    ], undefined, paintGlassPreview);
+    const glassSelect = createOptionStepper({
+      focusIndex: 1091,
+      choices: [
+        {value: 'light', label: 'Light (original)'},
+        {value: 'dark', label: 'Dark'},
+        {value: 'black', label: 'Black'},
+        {value: 'blue', label: 'Blue'},
+        {value: 'purple', label: 'Purple'},
+        {value: 'green', label: 'Green'},
+        {value: 'warm', label: 'Warm'}
+      ],
+      onChange: paintGlassPreview
+    });
     binder.bind(stepperField(glassSelect, 'launcher.glassTint', {
       parse: function (raw) { return raw || 'light'; }
     }));
@@ -2891,32 +2985,40 @@ export function createSettingsPanel(
     glassSection.appendChild(createHint('Inside the app tiles, input buttons and Settings button. ' +
       'Dark or Black suit dark wallpapers.'));
 
-    const glassBorderSelect = createOptionStepper('', 1092, [
-      {value: 'white', label: 'White (original)'},
-      {value: 'glass', label: 'Same as tile colour'},
-      {value: 'none', label: 'None'},
-      {value: 'black', label: 'Black'},
-      {value: 'blue', label: 'Blue'},
-      {value: 'purple', label: 'Purple'},
-      {value: 'green', label: 'Green'},
-      {value: 'warm', label: 'Warm'},
-      {value: 'gold', label: 'Gold'}
-    ], undefined, paintGlassPreview);
+    const glassBorderSelect = createOptionStepper({
+      focusIndex: 1092,
+      choices: [
+        {value: 'white', label: 'White (original)'},
+        {value: 'glass', label: 'Same as tile colour'},
+        {value: 'none', label: 'None'},
+        {value: 'black', label: 'Black'},
+        {value: 'blue', label: 'Blue'},
+        {value: 'purple', label: 'Purple'},
+        {value: 'green', label: 'Green'},
+        {value: 'warm', label: 'Warm'},
+        {value: 'gold', label: 'Gold'}
+      ],
+      onChange: paintGlassPreview
+    });
     binder.bind(stepperField(glassBorderSelect, 'launcher.glassBorder', {
       parse: function (raw) { return raw || 'white'; }
     }));
     glassSection.appendChild(labeledControl('Tile outline', glassBorderSelect));
     glassSection.appendChild(createHint('The thin line around each tile and button.'));
 
-    const focusColourSelect = createOptionStepper('', 1093, [
-      {value: 'warm', label: 'Warm (original)'},
-      {value: 'white', label: 'White'},
-      {value: 'border', label: 'Same as tile outline'},
-      {value: 'blue', label: 'Blue'},
-      {value: 'purple', label: 'Purple'},
-      {value: 'green', label: 'Green'},
-      {value: 'gold', label: 'Gold'}
-    ], undefined, paintGlassPreview);
+    const focusColourSelect = createOptionStepper({
+      focusIndex: 1093,
+      choices: [
+        {value: 'warm', label: 'Warm (original)'},
+        {value: 'white', label: 'White'},
+        {value: 'border', label: 'Same as tile outline'},
+        {value: 'blue', label: 'Blue'},
+        {value: 'purple', label: 'Purple'},
+        {value: 'green', label: 'Green'},
+        {value: 'gold', label: 'Gold'}
+      ],
+      onChange: paintGlassPreview
+    });
     binder.bind(stepperField(focusColourSelect, 'launcher.focusColour', {
       parse: function (raw) { return raw || 'warm'; }
     }));
@@ -2944,10 +3046,13 @@ export function createSettingsPanel(
     binder.bind(weatherField.field!);
     weatherSection.appendChild(weatherField.row);
 
-    const weatherUnitsSelect = createOptionStepper('', 1021, [
-      {value: 'c', label: '°C'},
-      {value: 'f', label: '°F'}
-    ], undefined);
+    const weatherUnitsSelect = createOptionStepper({
+      focusIndex: 1021,
+      choices: [
+        {value: 'c', label: '°C'},
+        {value: 'f', label: '°F'}
+      ]
+    });
     binder.bind(stepperField(weatherUnitsSelect, 'weather.units', {
       parse: function (raw) { return raw === 'f' ? 'f' : 'c'; }
     }));
@@ -3084,11 +3189,14 @@ export function createSettingsPanel(
     inputsSection.appendChild(inputsList);
     // Channels chip on the home screen (channels.js): LG's favourite channels
     // (every channel if there are none), all channels, or none.
-    const channelsSelect = createOptionStepper('', 1095, [
-      {value: 'favourites', label: 'Favourites (or all)'},
-      {value: 'all', label: 'All channels'},
-      {value: 'off', label: 'Off'}
-    ], undefined);
+    const channelsSelect = createOptionStepper({
+      focusIndex: 1095,
+      choices: [
+        {value: 'favourites', label: 'Favourites (or all)'},
+        {value: 'all', label: 'All channels'},
+        {value: 'off', label: 'Off'}
+      ]
+    });
     binder.bind(stepperField(channelsSelect, 'launcher.channels'));
     inputsSection.appendChild(labeledControl('TV channels', channelsSelect));
     inputsSection.appendChild(createHint(
@@ -3260,8 +3368,13 @@ export function createSettingsPanel(
     iconPreview.alt = '';
     iconPreview.src = BUILTIN_ICON_CHOICES[0].value;
 
-    const iconSelect = createOptionStepper('', 1402, BUILTIN_ICON_CHOICES, BUILTIN_ICON_CHOICES[0].value, function (value) {
-      iconPreview.src = value;
+    const iconSelect = createOptionStepper({
+      focusIndex: 1402,
+      choices: BUILTIN_ICON_CHOICES,
+      value: BUILTIN_ICON_CHOICES[0].value,
+      onChange: function (value) {
+        iconPreview.src = value;
+      }
     });
 
     const iconRow = labeledControl('Icon', iconSelect);
@@ -3304,13 +3417,11 @@ export function createSettingsPanel(
     });
     discoverSection.appendChild(scanBtn);
 
-    const discoverIconSelect = createOptionStepper(
-      '',
-      1501,
-      [{value: '', label: 'Use native icon'}].concat(BUILTIN_ICON_CHOICES),
-      '',
-      undefined
-    );
+    const discoverIconSelect = createOptionStepper({
+      focusIndex: 1501,
+      choices: [{value: '', label: 'Use native icon'}].concat(BUILTIN_ICON_CHOICES),
+      value: ''
+    });
     discoverSection.appendChild(labeledControl('Icon override', discoverIconSelect));
 
     const discoverStatus = createHint('');
@@ -3429,8 +3540,13 @@ export function createSettingsPanel(
     backupSection.appendChild(backupActions);
     // Which backup to restore: shown once Restore has found them.
     let backupsFound: BackupRecord[] = [];
-    const backupPicker = createOptionStepper('', 1592, [], '', function () {
-      showChosenBackup();
+    const backupPicker = createOptionStepper({
+      focusIndex: 1592,
+      choices: [],
+      value: '',
+      onChange: function () {
+        showChosenBackup();
+      }
     });
     const backupPickRow = labeledControl('Backup to restore', backupPicker);
     backupPickRow.hidden = true;

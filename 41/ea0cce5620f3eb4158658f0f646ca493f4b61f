@@ -1,0 +1,28 @@
+src/ts/settings/tv-check.ts
+  s_2a21db3d662acf::t_6dbbf6e7912154 1-82
+test/settings/text-gate.test.ts
+  s_2a21db3d662acf::t_d1dd47d1f85e1e 1-99
+test/settings/tv-check.test.ts
+  s_2a21db3d662acf::t_e6b70dbf12fb26 1-48
+src/ts/settings/settings.ts
+  s_2a21db3d662acf::t_e3681b81461bd0 31-32
+  s_2a21db3d662acf::t_19b12ab342525c 71-73
+src/ts/settings/text-gate.ts
+  s_2a21db3d662acf::t_bba8de5999d126 1-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "41ea0cce5620f3eb4158658f0f646ca493f4b61f",
+  "prompts": {},
+  "sessions": {
+    "s_2a21db3d662acf": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ed0975ad8ffearzKh1YYPN4FSP",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

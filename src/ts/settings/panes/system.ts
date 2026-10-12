@@ -5,7 +5,6 @@ import {
   createToggle,
   labeledControl
 } from '@settings/components/index.js';
-import {stepperField, toggleField} from '@settings/settings-binding.js';
 import type {StepperOption} from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 
@@ -47,21 +46,21 @@ export function createSystemPane(): PaneHandle {
       const volumeAtHomeValue = volumeLevelValue(ctx.rawConfig.launcher.volumeAtHome);
       const volumeAtHomeSelect = createOptionStepper({
         focusIndex: 993,
-        choices: volumeLevelOptions(volumeAtHomeValue)
+        choices: volumeLevelOptions(volumeAtHomeValue),
+        path: 'launcher.volumeAtHome',
+        parse: volumeLevelParse,
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(volumeAtHomeSelect, 'launcher.volumeAtHome', {
-        parse: volumeLevelParse
-      }));
       section.appendChild(labeledControl('Volume in Launch Home', volumeAtHomeSelect));
 
       const volumeOnAppValue = volumeLevelValue(ctx.rawConfig.launcher.volumeOnAppLaunch);
       const volumeOnAppSelect = createOptionStepper({
         focusIndex: 994,
-        choices: volumeLevelOptions(volumeOnAppValue)
+        choices: volumeLevelOptions(volumeOnAppValue),
+        path: 'launcher.volumeOnAppLaunch',
+        parse: volumeLevelParse,
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(volumeOnAppSelect, 'launcher.volumeOnAppLaunch', {
-        parse: volumeLevelParse
-      }));
       section.appendChild(labeledControl('Volume when apps launch', volumeOnAppSelect));
 
       section.appendChild(createHint(
@@ -71,9 +70,9 @@ export function createSystemPane(): PaneHandle {
       const perfModeField = createToggle({
         label: 'Performance mode (low-spec TVs)',
         focusIndex: '1009',
-        path: 'launcher.perfMode'
+        path: 'launcher.perfMode',
+        binder: ctx.binder
       });
-      ctx.binder.bind(perfModeField.field!);
       section.appendChild(perfModeField.row);
       section.appendChild(createHint(
         'Turns off the frosted glass and uses 1920px wallpapers. ' +
@@ -86,12 +85,13 @@ export function createSystemPane(): PaneHandle {
       const launchOnHomeField = createToggle({
         label: 'Launch on Home button',
         focusIndex: '1010',
-        checked: !!(ctx.rawConfig.launcher.launchOnHome || ctx.rawConfig.launcher.returnOnAppExit)
+        checked: !!(ctx.rawConfig.launcher.launchOnHome || ctx.rawConfig.launcher.returnOnAppExit),
+        path: 'launcher.launchOnHome',
+        readBack: false,
+        binder: ctx.binder
       });
-      const launchOnHomeToggle = launchOnHomeField.input;
       section.appendChild(launchOnHomeField.row);
       // The legacy key stays in sync so older builds / USB config still work.
-      ctx.binder.add(toggleField(launchOnHomeToggle, 'launcher.launchOnHome'));
       ctx.binder.hook(function (cfg) {
         cfg.launcher.returnOnAppExit = cfg.launcher.launchOnHome;
       });
@@ -103,9 +103,9 @@ export function createSystemPane(): PaneHandle {
       const bootField = createToggle({
         label: 'Boot on TV start',
         focusIndex: '1011',
-        path: 'launcher.bootOnStart'
+        path: 'launcher.bootOnStart',
+        binder: ctx.binder
       });
-      ctx.binder.bind(bootField.field!);
       section.appendChild(bootField.row);
 
       section.appendChild(createHint(

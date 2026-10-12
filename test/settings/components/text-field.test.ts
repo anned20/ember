@@ -1,5 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {createTextField} from '@settings/components/text-field.js';
+import {createBinder} from '@settings/settings-binding.js';
+import type {Config} from '@lib/types.js';
 
 describe('createTextField', () => {
   it('builds a labelled input and applies type attributes', () => {
@@ -32,5 +34,22 @@ describe('createTextField', () => {
     expect(field.input.value).toBe('https://example.com/a.jpg');
     field.input.value = '  https://example.com/b.jpg  ';
     expect(field.field!.read()).toBe('https://example.com/b.jpg');
+  });
+
+  it('registers its own field with the injected binder, codec included', () => {
+    const binder = createBinder({background: {overlayOpacity: 0.45}} as unknown as Config);
+    const field = createTextField({
+      label: 'Overlay opacity', focusIndex: 935, path: 'background.overlayOpacity',
+      parse: function (raw) { return Number(raw) / 100; },
+      format: function (value) { return String(Math.round(Number(value || 0.45) * 100)); },
+      binder: binder
+    });
+    // Read-back runs through the codec: 0.45 → "45".
+    expect(field.input.value).toBe('45');
+
+    field.input.value = '30';
+    const out = {} as Config;
+    binder.collect(out);
+    expect(out.background.overlayOpacity).toBe(0.3);
   });
 });

@@ -1,3 +1,6 @@
+import {registerField, stepperField} from '@settings/settings-binding.js';
+import type {FieldCodec, SettingsBinder} from '@settings/settings-binding.js';
+
 /** One choice in a createOptionStepper picker. */
 export interface StepperOption {
   value: string;
@@ -13,7 +16,7 @@ export interface OptionStepperElement extends HTMLDivElement {
 }
 
 /** The arguments for createOptionStepper. */
-export interface OptionStepperOptions {
+export interface OptionStepperOptions extends FieldCodec {
   /** The choices to step through. */
   choices: StepperOption[];
   focusIndex: number | string;
@@ -22,6 +25,12 @@ export interface OptionStepperOptions {
   /** Extra class on the control, after the default `focusable`. */
   className?: string;
   onChange?: (value: string) => void;
+  /** The config path this picker edits (see settings-binding.js). */
+  path?: string;
+  /** The binder to register the field with; needs `path`. */
+  binder?: SettingsBinder;
+  /** Register without reading config back (hand-initialised). Default: true. */
+  readBack?: boolean;
 }
 
 /** A `‹ label ›` picker: arrows step through options, clicking the body advances. */
@@ -111,5 +120,10 @@ export function createOptionStepper(options: OptionStepperOptions): OptionSteppe
   const start = indexOfValue(options.value);
   index = start >= 0 ? start : 0;
   render();
+  if (options.path && options.binder) {
+    registerField(options.binder, stepperField(el, options.path, {
+      parse: options.parse, format: options.format
+    }), options.readBack);
+  }
   return el;
 }

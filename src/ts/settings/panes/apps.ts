@@ -279,9 +279,9 @@ export function createAppsPane(): PaneHandle {
       const allAppsTileField = createToggle({
         label: 'All apps tile on the home row',
         focusIndex: '1190',
-        path: 'launcher.allAppsTile'
+        path: 'launcher.allAppsTile',
+        binder: ctx.binder
       });
-      ctx.binder.bind(allAppsTileField.field!);
       appsSection.appendChild(allAppsTileField.row);
       appsSection.appendChild(createHint(
         'Opens a grid of every app on the TV: open any app without pinning it here.'
@@ -292,9 +292,9 @@ export function createAppsPane(): PaneHandle {
       const numberKeyField = createToggle({
         label: 'Number keys open home row tiles',
         focusIndex: '1191',
-        path: 'launcher.numberKeyLaunch'
+        path: 'launcher.numberKeyLaunch',
+        binder: ctx.binder
       });
-      ctx.binder.bind(numberKeyField.field!);
       appsSection.appendChild(numberKeyField.row);
       appsSection.appendChild(createHint(
         'Press 1\u20139 on the remote to open the tile at that position ' +

@@ -5,7 +5,8 @@
  * section, a mini button, an app row, a photo gallery, an option stepper, or an
  * AI provider picker. Panes compose them; a control's shape (DOM, classes,
  * focus index, events) lives in one module instead of being hand-built at every
- * call site.
+ * call site. A control that edits a config path takes the settings binder in
+ * its options and registers its own field, so the pane states the path once.
  */
 
 export * from './labeled.js';

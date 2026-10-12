@@ -1,6 +1,6 @@
 import {labeledControl, labeledBlock} from './labeled.js';
-import {textField} from '@settings/settings-binding.js';
-import type {ConfigField, FieldCodec} from '@settings/settings-binding.js';
+import {registerField, textField} from '@settings/settings-binding.js';
+import type {ConfigField, FieldCodec, SettingsBinder} from '@settings/settings-binding.js';
 
 export interface TextFieldOptions extends FieldCodec {
   label: string;
@@ -18,6 +18,10 @@ export interface TextFieldOptions extends FieldCodec {
   autocomplete?: string;
   /** The config path this field edits (see settings-binding.js). */
   path?: string;
+  /** The binder to register the field with; needs `path`. */
+  binder?: SettingsBinder;
+  /** Register without reading config back (hand-initialised). Default: true. */
+  readBack?: boolean;
   /** Overrides the default `settings-text focusable` / textarea class. */
   className?: string;
   /** Lay the label out as a `settings-block` heading instead of a row. */
@@ -65,5 +69,6 @@ export function createTextField(options: TextFieldOptions): TextField {
       parse: options.parse, format: options.format, trim: options.trim
     })
     : undefined;
+  if (field && options.binder) registerField(options.binder, field, options.readBack);
   return {row: row, input: input, field: field};
 }

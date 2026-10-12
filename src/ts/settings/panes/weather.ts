@@ -6,7 +6,6 @@ import {
   createToggle,
   labeledControl
 } from '@settings/components/index.js';
-import {stepperField} from '@settings/settings-binding.js';
 import {foldPlaceText, normalizeWeatherConfig, searchPlaces} from '@home/weather.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 import type {WeatherLocation} from '@lib/types.js';
@@ -34,9 +33,9 @@ export function createWeatherPane(): PaneHandle {
       const enabledField = createToggle({
         label: 'Show weather',
         focusIndex: '1020',
-        path: 'weather.enabled'
+        path: 'weather.enabled',
+        binder: ctx.binder
       });
-      ctx.binder.bind(enabledField.field!);
       section.appendChild(enabledField.row);
 
       const unitsSelect = createOptionStepper({
@@ -44,11 +43,11 @@ export function createWeatherPane(): PaneHandle {
         choices: [
           {value: 'c', label: '°C'},
           {value: 'f', label: '°F'}
-        ]
+        ],
+        path: 'weather.units',
+        parse: function (raw) { return raw === 'f' ? 'f' : 'c'; },
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(unitsSelect, 'weather.units', {
-        parse: function (raw) { return raw === 'f' ? 'f' : 'c'; }
-      }));
       section.appendChild(labeledControl('Temperature', unitsSelect));
 
       const placeHint = createHint('');

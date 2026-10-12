@@ -7,7 +7,6 @@ import {
   createToggle,
   labeledControl
 } from '@settings/components/index.js';
-import {stepperField} from '@settings/settings-binding.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 
 /**
@@ -22,9 +21,9 @@ export function createScreensaverPane(): PaneHandle {
       const customSsField = createToggle({
         label: 'Launch Home screensaver',
         focusIndex: '990',
-        path: 'launcher.customScreensaver'
+        path: 'launcher.customScreensaver',
+        binder: ctx.binder
       });
-      ctx.binder.bind(customSsField.field!);
       section.appendChild(customSsField.row);
 
       const customSsIdle = createOptionStepper({
@@ -38,14 +37,14 @@ export function createScreensaverPane(): PaneHandle {
           {value: '30', label: '30 minutes'},
           {value: '45', label: '45 minutes'},
           {value: '60', label: '60 minutes'}
-        ]
-      });
-      ctx.binder.bind(stepperField(customSsIdle, 'launcher.customScreensaverMinutes', {
+        ],
+        path: 'launcher.customScreensaverMinutes',
         parse: function (raw) {
           const n = parseInt(raw, 10);
           return isNaN(n) || n < 1 ? 5 : n;
-        }
-      }));
+        },
+        binder: ctx.binder
+      });
       section.appendChild(labeledControl('Start after (idle)', customSsIdle));
 
       const customSsSlide = createOptionStepper({
@@ -57,30 +56,30 @@ export function createScreensaverPane(): PaneHandle {
           {value: '45', label: '45 seconds'},
           {value: '60', label: '1 minute'},
           {value: '120', label: '2 minutes'}
-        ]
-      });
-      ctx.binder.bind(stepperField(customSsSlide, 'launcher.customScreensaverSlideSec', {
+        ],
+        path: 'launcher.customScreensaverSlideSec',
         parse: function (raw) {
           const n = parseInt(raw, 10);
           return isNaN(n) || n < 8 ? 20 : n;
-        }
-      }));
+        },
+        binder: ctx.binder
+      });
       section.appendChild(labeledControl('Photo change every', customSsSlide));
 
       const customSsClockField = createToggle({
         label: 'Screensaver clock',
         focusIndex: '993',
-        path: 'launcher.customScreensaverShowClock'
+        path: 'launcher.customScreensaverShowClock',
+        binder: ctx.binder
       });
-      ctx.binder.bind(customSsClockField.field!);
       section.appendChild(customSsClockField.row);
 
       const customSsDateField = createToggle({
         label: 'Screensaver date',
         focusIndex: '994',
-        path: 'launcher.customScreensaverShowDate'
+        path: 'launcher.customScreensaverShowDate',
+        binder: ctx.binder
       });
-      ctx.binder.bind(customSsDateField.field!);
       section.appendChild(customSsDateField.row);
 
       section.appendChild(createHint(
@@ -117,12 +116,13 @@ export function createScreensaverPane(): PaneHandle {
           {value: '20', label: '20 minutes'},
           {value: '30', label: '30 minutes'}
         ],
-        value: String(ssMins)
+        value: String(ssMins),
+        path: 'launcher.screensaverMinutes',
+        parse: function (raw) { return parseInt(raw, 10); },
+        // The TV enum is coerced, and the value is raised past the in-app saver.
+        readBack: false,
+        binder: ctx.binder
       });
-      // The TV enum is coerced, and the value is raised past the in-app saver.
-      ctx.binder.add(stepperField(screensaverSelect, 'launcher.screensaverMinutes', {
-        parse: function (raw) { return parseInt(raw, 10); }
-      }));
       ctx.binder.hook(function (cfg) {
         cfg.launcher.screensaverMinutes = coerceScreensaverMinutes(cfg.launcher.screensaverMinutes);
         // Keep system saver from firing before the in-app one.

@@ -10,7 +10,6 @@ import {
   createOptionStepper
 } from '@settings/components/index.js';
 import type {StepperOption} from '@settings/components/index.js';
-import {stepperField} from '@settings/settings-binding.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 import type {BuiltinMusicEntry, UsbTrack} from '@lib/types.js';
 
@@ -34,17 +33,17 @@ export function createMusicPane(): PaneHandle {
       const musicEnabledField = createToggle({
         label: 'Ambient music',
         focusIndex: '940',
-        path: 'music.enabled'
+        path: 'music.enabled',
+        binder: ctx.binder
       });
-      ctx.binder.bind(musicEnabledField.field!);
       section.appendChild(musicEnabledField.row);
 
       const showMusicBarField = createToggle({
         label: 'Show music bar',
         focusIndex: '9405',
-        path: 'music.showBar'
+        path: 'music.showBar',
+        binder: ctx.binder
       });
-      ctx.binder.bind(showMusicBarField.field!);
       section.appendChild(showMusicBarField.row);
 
       section.appendChild(createHint(
@@ -57,11 +56,12 @@ export function createMusicPane(): PaneHandle {
           {value: 'builtin', label: 'Built-in ambient (6 tracks)'},
           {value: 'usb', label: 'My tracks (USB)'}
         ],
+        path: 'music.source',
+        binder: ctx.binder,
         onChange: function () {
           syncMusicFields();
         }
       });
-      ctx.binder.bind(stepperField(musicSourceSelect, 'music.source'));
       section.appendChild(labeledControl('Source', musicSourceSelect));
 
       // --- Built-in: multi-select which of the 8 packaged tracks to rotate ---
@@ -98,9 +98,10 @@ export function createMusicPane(): PaneHandle {
 
       const builtinTrackSelect = createOptionStepper({
         focusIndex: 950,
-        choices: builtinStartOptions()
+        choices: builtinStartOptions(),
+        path: 'music.builtin',
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(builtinTrackSelect, 'music.builtin'));
       const builtinTrackRow = labeledControl('Start with', builtinTrackSelect);
       section.appendChild(builtinTrackRow);
 
@@ -151,11 +152,11 @@ export function createMusicPane(): PaneHandle {
         focusIndex: '952',
         placeholder: 'e.g. /media/usb1/lounge/music',
         path: 'music.path',
-        trim: true
+        trim: true,
+        binder: ctx.binder
       });
       const musicPathInput = musicPathField.input;
       const musicPathRow = musicPathField.row;
-      ctx.binder.bind(musicPathField.field!);
       section.appendChild(musicPathRow);
 
       musicPathInput.addEventListener('change', function () {
@@ -246,10 +247,10 @@ export function createMusicPane(): PaneHandle {
       const shuffleField = createToggle({
         label: 'Shuffle',
         focusIndex: '990',
-        path: 'music.shuffle'
+        path: 'music.shuffle',
+        binder: ctx.binder
       });
       const shuffleRow = shuffleField.row;
-      ctx.binder.bind(shuffleField.field!);
       section.appendChild(shuffleRow);
 
       const repeatSelect = createOptionStepper({
@@ -258,9 +259,10 @@ export function createMusicPane(): PaneHandle {
           {value: 'all', label: 'Repeat all'},
           {value: 'one', label: 'Repeat one'},
           {value: 'off', label: 'Play once'}
-        ]
+        ],
+        path: 'music.repeat',
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(repeatSelect, 'music.repeat'));
       const repeatRow = labeledControl('Repeat', repeatSelect);
       section.appendChild(repeatRow);
 
@@ -273,9 +275,9 @@ export function createMusicPane(): PaneHandle {
         max: '50',
         path: 'music.volume',
         parse: function (raw) { return Number(raw) / 100; },
-        format: function (value) { return String(Math.round(Number(value || 0.15) * 100)); }
+        format: function (value) { return String(Math.round(Number(value || 0.15) * 100)); },
+        binder: ctx.binder
       });
-      ctx.binder.bind(musicVolumeField.field!);
       section.appendChild(musicVolumeField.row);
 
       section.appendChild(createHint(

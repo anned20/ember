@@ -8,7 +8,6 @@ import {
   createToggle,
   createOptionStepper
 } from '@settings/components/index.js';
-import {stepperField} from '@settings/settings-binding.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 
 /**
@@ -42,11 +41,12 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
         choices: PROFILE_OPTIONS.map(function (entry) {
           return {value: entry.id, label: entry.label};
         }),
+        path: 'profile',
+        binder: ctx.binder,
         onChange: function (value) {
           if (options.background) options.background.setProfile(value);
         }
       });
-      ctx.binder.bind(stepperField(profileSelect, 'profile'));
       profileSection.appendChild(labeledControl('Active profile', profileSelect));
 
       profileSection.appendChild(createHint(
@@ -121,11 +121,11 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
           {value: 'green', label: 'Green'},
           {value: 'warm', label: 'Warm'}
         ],
+        path: 'launcher.glassTint',
+        parse: function (raw) { return raw || 'light'; },
+        binder: ctx.binder,
         onChange: paintGlassPreview
       });
-      ctx.binder.bind(stepperField(glassSelect, 'launcher.glassTint', {
-        parse: function (raw) { return raw || 'light'; }
-      }));
       glassSection.appendChild(labeledControl('Tile colour', glassSelect));
       glassSection.appendChild(createHint('Inside the app tiles, input buttons and Settings button. ' +
         'Dark or Black suit dark wallpapers.'));
@@ -143,11 +143,11 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
           {value: 'warm', label: 'Warm'},
           {value: 'gold', label: 'Gold'}
         ],
+        path: 'launcher.glassBorder',
+        parse: function (raw) { return raw || 'white'; },
+        binder: ctx.binder,
         onChange: paintGlassPreview
       });
-      ctx.binder.bind(stepperField(glassBorderSelect, 'launcher.glassBorder', {
-        parse: function (raw) { return raw || 'white'; }
-      }));
       glassSection.appendChild(labeledControl('Tile outline', glassBorderSelect));
       glassSection.appendChild(createHint('The thin line around each tile and button.'));
 
@@ -162,11 +162,11 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
           {value: 'green', label: 'Green'},
           {value: 'gold', label: 'Gold'}
         ],
+        path: 'launcher.focusColour',
+        parse: function (raw) { return raw || 'warm'; },
+        binder: ctx.binder,
         onChange: paintGlassPreview
       });
-      ctx.binder.bind(stepperField(focusColourSelect, 'launcher.focusColour', {
-        parse: function (raw) { return raw || 'warm'; }
-      }));
       glassSection.appendChild(labeledControl('Selection highlight', focusColourSelect));
       glassSection.appendChild(createHint('The glow around the tile or button the remote is on, ' +
         'and the colour of the current input.'));
@@ -178,9 +178,9 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
       const showClockField = createToggle({
         label: 'Show clock',
         focusIndex: '1000',
-        path: 'launcher.showClock'
+        path: 'launcher.showClock',
+        binder: ctx.binder
       });
-      ctx.binder.bind(showClockField.field!);
       clockSection.appendChild(showClockField.row);
 
       const clockFormatSelect = createOptionStepper({
@@ -188,19 +188,19 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
         choices: [
           {value: '24', label: '24-hour (18:30)'},
           {value: '12', label: '12-hour (6:30 PM)'}
-        ]
+        ],
+        path: 'launcher.clockFormat',
+        parse: function (raw) { return raw === '12' ? '12' : '24'; },
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(clockFormatSelect, 'launcher.clockFormat', {
-        parse: function (raw) { return raw === '12' ? '12' : '24'; }
-      }));
       clockSection.appendChild(labeledControl('Clock format', clockFormatSelect));
 
       const showDateField = createToggle({
         label: 'Show date',
         focusIndex: '1001',
-        path: 'launcher.showDate'
+        path: 'launcher.showDate',
+        binder: ctx.binder
       });
-      ctx.binder.bind(showDateField.field!);
       clockSection.appendChild(showDateField.row);
 
       const clockAlignSelect = createOptionStepper({
@@ -210,14 +210,14 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
           {value: 'center', label: 'Centre top'},
           {value: 'center-middle', label: 'Centre middle'},
           {value: 'right', label: 'Top right'}
-        ]
-      });
-      ctx.binder.bind(stepperField(clockAlignSelect, 'launcher.clockAlign', {
+        ],
+        path: 'launcher.clockAlign',
         // Normalise unknown legacy values to centre top.
         parse: function (raw) {
           return ['left', 'center', 'center-middle', 'right'].indexOf(raw) < 0 ? 'center' : raw;
-        }
-      }));
+        },
+        binder: ctx.binder
+      });
       clockSection.appendChild(labeledControl('Clock position', clockAlignSelect));
 
       const clockSizeSelect = createOptionStepper({
@@ -228,20 +228,21 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
           {value: 'large', label: 'Large'},
           {value: 'x-large', label: 'X-Large'},
           {value: 'xx-large', label: 'XX-Large'}
-        ]
+        ],
+        path: 'launcher.clockSize',
+        parse: function (raw) { return raw || 'large'; },
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(clockSizeSelect, 'launcher.clockSize', {
-        parse: function (raw) { return raw || 'large'; }
-      }));
       clockSection.appendChild(labeledControl('Clock size', clockSizeSelect));
 
       const timezoneSelect = createOptionStepper({
         focusIndex: 1004,
         choices: TIMEZONE_OPTIONS.map(function (option) {
           return {value: option.value, label: option.label};
-        })
+        }),
+        path: 'launcher.timezone',
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(timezoneSelect, 'launcher.timezone'));
       clockSection.appendChild(labeledControl('Timezone', timezoneSelect));
 
       const iconSizeSelect = createOptionStepper({
@@ -250,9 +251,10 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
           {value: 'small', label: 'Small'},
           {value: 'medium', label: 'Medium'},
           {value: 'large', label: 'Large'}
-        ]
+        ],
+        path: 'launcher.iconSize',
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(iconSizeSelect, 'launcher.iconSize'));
       clockSection.appendChild(labeledControl('Icon size', iconSizeSelect));
 
       const iconAlignSelect = createOptionStepper({
@@ -261,9 +263,10 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
           {value: 'left', label: 'Left'},
           {value: 'center', label: 'Centre'},
           {value: 'right', label: 'Right'}
-        ]
+        ],
+        path: 'launcher.iconAlign',
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(iconAlignSelect, 'launcher.iconAlign'));
       clockSection.appendChild(labeledControl('Icon alignment', iconAlignSelect));
 
       const iconLayoutSelect = createOptionStepper({
@@ -271,9 +274,10 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
         choices: [
           {value: 'scroll', label: 'Scroll one row'},
           {value: 'wrap', label: 'Stacked rows'}
-        ]
+        ],
+        path: 'launcher.iconLayout',
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(iconLayoutSelect, 'launcher.iconLayout'));
       clockSection.appendChild(labeledControl('Icon layout', iconLayoutSelect));
 
       const iconsPerRowSelect = createOptionStepper({
@@ -282,19 +286,19 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
           {value: '4', label: '4'}, {value: '5', label: '5'}, {value: '6', label: '6'},
           {value: '7', label: '7'}, {value: '8', label: '8'}, {value: '9', label: '9'},
           {value: '10', label: '10'}, {value: '11', label: '11'}, {value: '12', label: '12'}
-        ]
+        ],
+        path: 'launcher.iconsPerRow',
+        parse: function (raw) { return parseInt(raw, 10) || 7; },
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(iconsPerRowSelect, 'launcher.iconsPerRow', {
-        parse: function (raw) { return parseInt(raw, 10) || 7; }
-      }));
       clockSection.appendChild(labeledControl('Icons per row (scroll mode)', iconsPerRowSelect));
 
       const bundledIconsField = createToggle({
         label: 'Use Launch Home app icons',
         focusIndex: '1008',
-        path: 'launcher.bundledIcons'
+        path: 'launcher.bundledIcons',
+        binder: ctx.binder
       });
-      ctx.binder.bind(bundledIconsField.field!);
       clockSection.appendChild(bundledIconsField.row);
 
       clockSection.appendChild(createHint(

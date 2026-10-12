@@ -6,7 +6,6 @@ import {
   createSection,
   labeledControl
 } from '@settings/components/index.js';
-import {stepperField} from '@settings/settings-binding.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 import type {Config} from '@lib/types.js';
 
@@ -171,9 +170,10 @@ export function createInputsPane(): PaneHandle {
           {value: 'favourites', label: 'Favourites (or all)'},
           {value: 'all', label: 'All channels'},
           {value: 'off', label: 'Off'}
-        ]
+        ],
+        path: 'launcher.channels',
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(channelsSelect, 'launcher.channels'));
       section.appendChild(labeledControl('TV channels', channelsSelect));
       section.appendChild(createHint(
         'Adds a Channels button after the inputs when the TV has Live TV ' +

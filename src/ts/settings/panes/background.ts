@@ -22,7 +22,6 @@ import {
   createOptionStepper
 } from '@settings/components/index.js';
 import type {GalleryEntry, OptionStepperElement} from '@settings/components/index.js';
-import {stepperField, textField} from '@settings/settings-binding.js';
 import {beginSettingsTextEdit} from '@settings/text-gate.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 import type {BuiltinBackground, Config} from '@lib/types.js';
@@ -177,13 +176,14 @@ export function createBackgroundPane(): BackgroundPaneHandle {
           {value: 'url', label: 'Online URL (nature + anime)'},
           {value: 'aerial', label: 'Aerial videos (Apple)'}
         ],
+        path: 'background.source',
+        binder: ctx.binder,
         onChange: function (value) {
           syncFields({
             revealGallery: value === 'url' || value === 'builtin' || value === 'aerial'
           });
         }
       });
-      ctx.binder.bind(stepperField(sourceSelect, 'background.source'));
       section.appendChild(labeledControl('Source', sourceSelect));
 
       // A profile with its own background (Cinema) overrides the Source above.
@@ -200,9 +200,10 @@ export function createBackgroundPane(): BackgroundPaneHandle {
           {value: 'cool-gradient', label: 'Cool gradient'},
           {value: 'midnight', label: 'Midnight'},
           {value: 'ember', label: 'Ember'}
-        ]
+        ],
+        path: 'background.preset',
+        binder: ctx.binder
       });
-      ctx.binder.bind(stepperField(presetSelect, 'background.preset'));
       // Only shown when Source is Gradient / Animated Gradient (not when Photo is set).
       const presetRow = labeledControl('Gradient style', presetSelect);
       section.appendChild(presetRow);
@@ -213,11 +214,12 @@ export function createBackgroundPane(): BackgroundPaneHandle {
           {value: 'static', label: 'Single image'},
           {value: 'slideshow', label: 'Slideshow'}
         ],
+        path: 'background.mode',
+        binder: ctx.binder,
         onChange: function () {
           syncFields();
         }
       });
-      ctx.binder.bind(stepperField(displaySelect, 'background.mode'));
       const displayRow = labeledControl('Display', displaySelect);
       section.appendChild(displayRow);
 
@@ -225,10 +227,10 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       const bgShuffleField = createToggle({
         label: 'Shuffle clips',
         focusIndex: '936',
-        path: 'background.shuffle'
+        path: 'background.shuffle',
+        binder: ctx.binder
       });
       const bgShuffleRow = bgShuffleField.row;
-      ctx.binder.bind(bgShuffleField.field!);
       section.appendChild(bgShuffleRow);
 
       // Aerial clips (Apple) — title-only picker; the clips stream from Apple's
@@ -282,10 +284,10 @@ export function createBackgroundPane(): BackgroundPaneHandle {
         focusIndex: '930',
         placeholder: 'living-room.jpg',
         path: 'background.file',
-        trim: true
+        trim: true,
+        binder: ctx.binder
       });
       const usbFileRow = usbField.row;
-      ctx.binder.bind(usbField.field!);
       section.appendChild(usbFileRow);
 
       // Match curated remote by saved id, else by URL, else default first entry.
@@ -305,16 +307,19 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       const urlField = createTextField({
         label: 'Image URL',
         focusIndex: '931',
-        placeholder: 'https://images.unsplash.com/photo-…'
+        placeholder: 'https://images.unsplash.com/photo-…',
+        path: 'background.url',
+        trim: true,
+        // Derived init (a catalog pick prefills the field), so add the field
+        // without reading the raw config over it.
+        readBack: false,
+        binder: ctx.binder
       });
       const urlInput = urlField.input;
       const urlRow = urlField.row;
       // Prefer saved URL; if empty and a catalog pick is selected, prefill that.
       const remotePrefill = findRemoteBackgroundById(initialRemote);
       urlInput.value = bg.url || (remotePrefill && remotePrefill.url) || '';
-      // Derived init (a catalog pick prefills the field), so register the field
-      // without reading the raw config over it.
-      ctx.binder.add(textField(urlInput, 'background.url', {trim: true}));
 
       // Visual photo gallery (replaces text-only stepper) — D-pad pickable tiles.
       let selectedRemoteId = initialRemote;
@@ -454,10 +459,10 @@ export function createBackgroundPane(): BackgroundPaneHandle {
         placeholder: 'One https image URL per line (leave empty to use curated online set)',
         path: 'background.urls',
         parse: parseUrlList,
-        format: function (value) { return Array.isArray(value) ? value.join('\n') : ''; }
+        format: function (value) { return Array.isArray(value) ? value.join('\n') : ''; },
+        binder: ctx.binder
       });
       const urlsRow = urlsField.row;
-      ctx.binder.bind(urlsField.field!);
       section.appendChild(urlsRow);
 
       const intervalField = createTextField({
@@ -469,19 +474,19 @@ export function createBackgroundPane(): BackgroundPaneHandle {
         step: '30',
         path: 'background.slideshowIntervalSec',
         parse: function (raw) { return Number(raw) || 300; },
-        format: function (value) { return String(value || 300); }
+        format: function (value) { return String(value || 300); },
+        binder: ctx.binder
       });
       const intervalRow = intervalField.row;
-      ctx.binder.bind(intervalField.field!);
       section.appendChild(intervalRow);
 
       const kenBurnsField = createToggle({
         label: 'Slow zoom background',
         focusIndex: '934',
-        path: 'background.kenBurns'
+        path: 'background.kenBurns',
+        binder: ctx.binder
       });
       const kenBurnsRow = kenBurnsField.row;
-      ctx.binder.bind(kenBurnsField.field!);
       section.appendChild(kenBurnsRow);
       const kenBurnsHint = createHint(
         'When on, the wallpaper slowly zooms in and drifts a little (like a calm slideshow). When off, the picture stays still. Photos only — not gradients. ' +
@@ -498,9 +503,9 @@ export function createBackgroundPane(): BackgroundPaneHandle {
         max: '60',
         path: 'background.overlayOpacity',
         parse: function (raw) { return Number(raw) / 100; },
-        format: function (value) { return String(Math.round(Number(value || 0.45) * 100)); }
+        format: function (value) { return String(Math.round(Number(value || 0.45) * 100)); },
+        binder: ctx.binder
       });
-      ctx.binder.bind(overlayField.field!);
       section.appendChild(overlayField.row);
 
       const oledNote = document.createElement('p');

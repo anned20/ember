@@ -3,24 +3,12 @@ import {listInstalledApps} from '@apps/apps.js';
 import {lgHomeAppsToAdd} from '@apps/lg-home.js';
 import {isAppInstalled, loadAppCatalog, rememberApps, resolvePinnedApp, setIconSrc, lazyLoadIcon} from '@apps/app-catalog.js';
 import {KNOWN_BUILTIN_APPS, getBuiltinAppIcon, getBuiltinAppTitle, BUILTIN_ICON_CHOICES} from '@apps/app-icons.js';
-import {
-  loadBuiltinManifest,
-  normalizeBackgroundConfig,
-  parseUrlList,
-  REMOTE_BACKGROUNDS,
-  findRemoteBackgroundById,
-  findRemoteBackgroundByUrl,
-  remoteThumbUrl,
-  builtinImageUrl,
-  jpegForTv
-} from '@background/backgrounds.js';
-import {AERIAL_BACKGROUNDS} from '@background/aerials.js';
-import {applyActiveProfile, getProfileOverrides, PROFILE_OPTIONS} from '@config/profiles.js';
+import {applyActiveProfile, PROFILE_OPTIONS} from '@config/profiles.js';
 import {indexInRow} from '@focus/focus-row.js';
 import {
   disableVoice, enableVoice, isVoiceRunning, listLaunchPoints, whoAmI
 } from '@luna/luna.js';
-import {attachInputScrollHelpers, beginSettingsTextEdit} from './text-gate.js';
+import {attachInputScrollHelpers} from './text-gate.js';
 import {APP_VERSION} from '@lib/version.js';
 import {
   getVoiceConfig,
@@ -36,6 +24,7 @@ import {createWeatherPane} from './panes/weather.js';
 import {createInputsPane} from './panes/inputs.js';
 import {createMusicPane} from './panes/music.js';
 import {createToolsPane} from './panes/tools.js';
+import {createBackgroundPane} from './panes/background.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from './pane.js';
 export type {SettingsPanelOptions} from './pane.js';
 import {
@@ -46,20 +35,16 @@ import {
   createTextField,
   createMiniButton,
   createAppRow,
-  createGallery,
   createOptionStepper,
   createProviderPicker
 } from './components/index.js';
-import type {GalleryEntry, OptionStepperElement, ProviderPickerElement, StepperOption} from './components/index.js';
+import type {OptionStepperElement, ProviderPickerElement, StepperOption} from './components/index.js';
 import {createBinder, stepperField, textField, toggleField} from './settings-binding.js';
 import type {
   Config,
   CustomApp,
   AppCatalog,
-  AppRecord,
-  BuiltinBackground,
-  AerialBackground,
-  RemoteBackground
+  AppRecord
 } from '@lib/types.js';
 
 // The focus manager reads the text-field keyboard gate through the panel module.
@@ -74,28 +59,6 @@ export interface SettingsPanelHandle {
   hide(): void;
   isVisible(): boolean;
   handleBack(): boolean;
-}
-
-/** The background controls syncBackgroundFields toggles, keyed by name. */
-interface BackgroundRefs {
-  displayRow: HTMLElement;
-  bgShuffleRow: HTMLElement;
-  aerialRow: HTMLElement;
-  builtinRow: HTMLElement;
-  usbHint: HTMLElement;
-  usbFileRow: HTMLElement;
-  remoteRow: HTMLElement;
-  urlHint: HTMLElement;
-  urlRow: HTMLElement;
-  urlsRow: HTMLElement;
-  intervalRow: HTMLElement;
-  kenBurnsRow: HTMLElement;
-  kenBurnsHint: HTMLElement;
-  displaySelect: OptionStepperElement;
-}
-
-interface SyncFieldsOptions {
-  revealGallery?: boolean;
 }
 
 /** The row/input/show-button bundle makeKeyRow returns. */
@@ -119,7 +82,6 @@ export function createSettingsPanel(
   // Built once: the Tools pane holds its restore report across the redraw a
   // restore triggers, which rebuilds the panel and every other pane.
   const toolsPane = createToolsPane();
-  let builtinManifest: BuiltinBackground[] = [];
   let pinnedOrder: string[] = [];
   let pinnedContainer: HTMLElement | null = null;
   let appsByIdMap: AppCatalog = {};
@@ -380,46 +342,6 @@ export function createSettingsPanel(
     }
   }
 
-  function syncBackgroundFields(source: string, refs: BackgroundRefs, opts?: SyncFieldsOptions): void {
-    const isImage = source !== 'preset' && source !== 'animated-gradient';
-    const showBuiltin = source === 'builtin';
-    const showUsb = source === 'usb';
-    const showUrl = source === 'url';
-    const showAerial = source === 'aerial';
-    const isSlideshow = refs.displaySelect.value === 'slideshow';
-    const revealGallery = !!(opts && opts.revealGallery);
-
-    refs.displayRow.hidden = !isImage;
-    // Aerial Slideshow cycles the whole catalog, so the single-clip picker is
-    // hidden there (as the built-in gallery is for its own slideshow).
-    refs.aerialRow.hidden = !showAerial || isSlideshow;
-    refs.bgShuffleRow.hidden = !(showAerial && isSlideshow);
-    // Built-in / online / aerial galleries are mutually exclusive by source.
-    refs.builtinRow.hidden = !showBuiltin || isSlideshow;
-    refs.usbHint.hidden = !showUsb;
-    refs.usbFileRow.hidden = !showUsb || isSlideshow;
-    refs.remoteRow.hidden = !showUrl || isSlideshow;
-    refs.urlHint.hidden = !showUrl;
-    refs.urlRow.hidden = !showUrl || isSlideshow;
-    refs.urlsRow.hidden = !showUrl || !isSlideshow;
-    // Neither applies to aerials: clips advance on the clip's own end, and a
-    // Ken Burns pan on top of a moving video is meaningless.
-    refs.intervalRow.hidden = !isImage || !isSlideshow || showAerial;
-    refs.kenBurnsRow.hidden = !isImage || showAerial;
-    refs.kenBurnsHint.hidden = !isImage || showAerial;
-
-    // When the user switches Source to a photo catalog, scroll that gallery into view.
-    if (revealGallery && !isSlideshow) {
-      if (showAerial && refs.aerialRow && !refs.aerialRow.hidden) {
-        focusPhotoGallery(refs.aerialRow);
-      } else if (showBuiltin && refs.builtinRow && !refs.builtinRow.hidden) {
-        focusPhotoGallery(refs.builtinRow);
-      } else if (showUrl && refs.remoteRow && !refs.remoteRow.hidden) {
-        focusPhotoGallery(refs.remoteRow);
-      }
-    }
-  }
-
   function movePinned(index: number, delta: number): void {
     const next = index + delta;
     if (next < 0 || next >= pinnedOrder.length) return;
@@ -533,16 +455,11 @@ export function createSettingsPanel(
   async function render(gen: number): Promise<void> {
     const config = getConfig();
     const effective = applyActiveProfile(config);
-    const bg = normalizeBackgroundConfig(effective.background);
     // Every plain control is bound to the config path it edits; Save runs
     // binder.collect(), which reads the whole field table back into `config`.
     // Derived / asynchronous fields (galleries, playlists, the USB scan, the
     // weather place, the AI keys) register hook()s instead.
     const binder = createBinder(effective);
-    // Cap waits so the panel never sits empty after we clear the loading shell.
-    const loaded = await withDeadline(loadBuiltinManifest(), 4000);
-    if (gen !== renderGen || !visible) return;
-    builtinManifest = loaded || builtinManifest || [];
 
     pinnedOrder = (config.launcher.pinnedApps || []).slice();
     customApps = (config.launcher.customApps || []).map(function (entry) {
@@ -1805,6 +1722,10 @@ export function createSettingsPanel(
       });
     }
 
+    // The Background pane is built below and driven from here (the profile
+    // picker) and by the Look pane; it reads its dependencies from the context.
+    const backgroundPane = createBackgroundPane();
+
     const profileSection = createSection('Profile');
 
     const profileSelect = createOptionStepper({
@@ -1812,7 +1733,7 @@ export function createSettingsPanel(
       choices: PROFILE_OPTIONS.map(function (entry) {
         return {value: entry.id, label: entry.label};
       }),
-      onChange: function (value) { syncProfileBackgroundNote(value); }
+      onChange: function (value) { backgroundPane.setProfile(value); }
     });
     binder.bind(stepperField(profileSelect, 'profile'));
     profileSection.appendChild(labeledControl('Active profile', profileSelect));
@@ -1822,398 +1743,10 @@ export function createSettingsPanel(
     ));
     panes.look.appendChild(profileSection);
 
-    const section = createSection('Background');
-
-    const sourceSelect = createOptionStepper({
-      focusIndex: 902,
-      choices: [
-        {value: 'preset', label: 'Gradient'},
-        {value: 'animated-gradient', label: 'Animated Gradient'},
-        {value: 'builtin', label: 'Built-in photos'},
-        {value: 'usb', label: 'USB folder'},
-        {value: 'url', label: 'Online URL (nature + anime)'},
-        {value: 'aerial', label: 'Aerial videos (Apple)'}
-      ],
-      onChange: function (value) {
-        syncFields({
-          revealGallery: value === 'url' || value === 'builtin' || value === 'aerial'
-        });
-      }
-    });
-    binder.bind(stepperField(sourceSelect, 'background.source'));
-    section.appendChild(labeledControl('Source', sourceSelect));
-
-    // A profile with its own background (Cinema) overrides the Source above.
-    // Unexplained, Save looked like it reset photos back to Gradient.
-    const profileBgNote = createHint('');
-    section.appendChild(profileBgNote);
-    function syncProfileBackgroundNote(profileId: string): void {
-      const overrides = getProfileOverrides(
-        {profile: profileId, profiles: config.profiles} as Config);
-      const forced = !!(overrides.background && overrides.background.source);
-      const entry = PROFILE_OPTIONS.filter(function (p) { return p.id === profileId; })[0];
-      profileBgNote.hidden = !forced;
-      profileBgNote.textContent = forced
-        ? 'The ' + (entry ? entry.label : profileId) + ' profile uses its own dark background, ' +
-          'so this Source applies once Active profile is Default or Night.'
-        : '';
-    }
-    syncProfileBackgroundNote(config.profile || 'default');
-
-    const presetSelect = createOptionStepper({
-      focusIndex: 903,
-      choices: [
-        {value: 'warm-gradient', label: 'Warm gradient'},
-        {value: 'cool-gradient', label: 'Cool gradient'},
-        {value: 'midnight', label: 'Midnight'},
-        {value: 'ember', label: 'Ember'}
-      ]
-    });
-    binder.bind(stepperField(presetSelect, 'background.preset'));
-    // Only shown when Source is Gradient / Animated Gradient (not when Photo is set).
-    const presetRow = labeledControl('Gradient style', presetSelect);
-    section.appendChild(presetRow);
-
-    const displaySelect = createOptionStepper({
-      focusIndex: 904,
-      choices: [
-        {value: 'static', label: 'Single image'},
-        {value: 'slideshow', label: 'Slideshow'}
-      ],
-      onChange: function () {
-        syncFields();
-      }
-    });
-    binder.bind(stepperField(displaySelect, 'background.mode'));
-    const displayRow = labeledControl('Display', displaySelect);
-    section.appendChild(displayRow);
-
-    // Aerial Slideshow only: randomise the clip order.
-    const bgShuffleField = createToggle({
-      label: 'Shuffle clips',
-      focusIndex: '936',
-      path: 'background.shuffle'
-    });
-    const bgShuffleRow = bgShuffleField.row;
-    binder.bind(bgShuffleField.field!);
-    section.appendChild(bgShuffleRow);
-
-    // Aerial clips (Apple) — title-only picker; the clips stream from Apple's
-    // CDN, so there are no packaged thumbnails to show.
-    let selectedAerialId = bg.aerial || (AERIAL_BACKGROUNDS[0] && AERIAL_BACKGROUNDS[0].id) || '';
-    const aerialGallery = createGallery({
-      heading: 'Choose an aerial clip (' + AERIAL_BACKGROUNDS.length + ' \u00b7 streams from Apple)',
-      focusIndex: indexInRow('settings-photo', 0),
-      gridClassName: 'aerial-picker-grid',
-      selectedId: selectedAerialId,
-      entries: AERIAL_BACKGROUNDS.map(function (entry) {
-        return {id: entry.id, title: entry.title || entry.id, text: true};
-      }),
-      onSelect: function (id) {
-        selectedAerialId = id || '';
-        aerialGallery.markSelection(selectedAerialId);
-      }
-    });
-    const aerialRow = aerialGallery.row;
-    section.appendChild(aerialRow);
-
-    aerialRow.appendChild(createHint(
-      'Clips stream from Apple\u2019s network (nothing is packaged) and play muted, full-screen and looping. The TV must be online; if a clip will not play, the gradient above is used instead. ' +
-      'Aerials are the heaviest background source (network plus continuous video decode), and Performance mode has no effect on video.'
-    ));
-
-    // Built-in photo gallery (thumbnails) — only visible when Source is Built-in photos.
-    let selectedBuiltinId = bg.builtin || (builtinManifest[0] && builtinManifest[0].id) || '';
-    const builtinGallery = createGallery({
-      heading: 'Choose a built-in photo (~3840px, sharp on 4K)',
-      focusIndex: indexInRow('settings-photo', 0),
-      selectedId: selectedBuiltinId,
-      entries: (builtinManifest || []).map(function (entry) {
-        return {
-          id: entry.id,
-          title: entry.title || entry.id,
-          // 480px thumbnails: decoding the full wallpapers for 200px tiles
-          // stalled the panel on open and while scrolling past the gallery.
-          sources: [
-            builtinImageUrl('thumbs/' + entry.file),
-            builtinImageUrl(entry.file),
-            'assets/backgrounds/' + entry.file
-          ]
-        };
-      }),
-      onSelect: function (id) {
-        selectedBuiltinId = id || '';
-        builtinGallery.markSelection(selectedBuiltinId);
-      }
-    });
-    const builtinRow = builtinGallery.row;
-    builtinRow.appendChild(createHint(
-      'Packaged at ~3840px for 4K TVs; Performance mode downloads 1920px copies. Arrows browse \u00b7 OK chooses the photo and moves on.'
-    ));
-    section.appendChild(builtinRow);
-
-    const usbHint = createHint('USB path: lounge/backgrounds/ with images.json. For a single file, enter the filename below.');
-    section.appendChild(usbHint);
-
-    const usbField = createTextField({
-      label: 'USB filename',
-      focusIndex: '930',
-      placeholder: 'living-room.jpg',
-      path: 'background.file',
-      trim: true
-    });
-    const usbFileRow = usbField.row;
-    binder.bind(usbField.field!);
-    section.appendChild(usbFileRow);
-
-    // Match curated remote by saved id, else by URL, else default first entry.
-    let initialRemote = bg.remote || '';
-    if (!findRemoteBackgroundById(initialRemote)) {
-      const byUrl = findRemoteBackgroundByUrl(bg.url);
-      initialRemote = byUrl ? byUrl.id : (REMOTE_BACKGROUNDS[0] && REMOTE_BACKGROUNDS[0].id) || '';
-    }
-    // Empty string = custom typed URL (not a catalog entry).
-    if (bg.url && !findRemoteBackgroundByUrl(bg.url) && !findRemoteBackgroundById(bg.remote)) {
-      initialRemote = '';
-    }
-
-    const urlHint = createHint('Loads over the network (not stored in the app package). Choose a photo below (nature or anime), or pick Custom URL and paste any direct https image link (Unsplash, Pexels, Wallhaven, your own host). TV must be online. Slideshow with no URLs uses the curated set.');
-    section.appendChild(urlHint);
-
-    const urlField = createTextField({
-      label: 'Image URL',
-      focusIndex: '931',
-      placeholder: 'https://images.unsplash.com/photo-…'
-    });
-    const urlInput = urlField.input;
-    const urlRow = urlField.row;
-    // Prefer saved URL; if empty and a catalog pick is selected, prefill that.
-    const remotePrefill = findRemoteBackgroundById(initialRemote);
-    urlInput.value = bg.url || (remotePrefill && remotePrefill.url) || '';
-    // Derived init (a catalog pick prefills the field), so register the field
-    // without reading the raw config over it.
-    binder.add(textField(urlInput, 'background.url', {trim: true}));
-
-    // Visual photo gallery (replaces text-only stepper) — D-pad pickable tiles.
-    let selectedRemoteId = initialRemote;
-    const customHint = document.createElement('span');
-    customHint.className = 'photo-picker-custom-hint';
-    customHint.textContent = 'Paste link below';
-    customHint.style.pointerEvents = 'none';
-    const customEntry: GalleryEntry = {
-      id: '',
-      title: 'Custom URL',
-      className: 'photo-picker-custom',
-      ariaLabel: 'Custom URL',
-      extra: customHint,
-      onSelect: function () {
-        selectRemote('');
-        try {
-          urlInput.scrollIntoView({block: 'nearest', behavior: 'smooth'});
-        } catch (err) {
-          try { urlInput.scrollIntoView(true); } catch (err2) { /* ignore */ }
-        }
-        window.setTimeout(function () {
-          beginSettingsTextEdit(urlInput);
-        }, 120);
-      }
-    };
-    const remoteGallery = createGallery({
-      heading: 'Choose an online photo (' + REMOTE_BACKGROUNDS.length + ' network images · nature + anime)',
-      focusIndex: indexInRow('settings-photo', 0),
-      selectedId: selectedRemoteId,
-      entries: REMOTE_BACKGROUNDS.map(function (entry): GalleryEntry {
-        return {
-          id: entry.id,
-          title: entry.title || entry.id,
-          sources: [remoteThumbUrl(entry.url)]
-        };
-      }).concat([customEntry]),
-      onSelect: function (id) { selectRemote(id); }
-    });
-    const remoteRow = remoteGallery.row;
-    function markRemoteSelection(): void {
-      remoteGallery.markSelection(selectedRemoteId);
-    }
-    function selectRemote(id: string): void {
-      selectedRemoteId = id || '';
-      const picked = findRemoteBackgroundById(selectedRemoteId);
-      if (picked) {
-        urlInput.value = picked.url;
-      }
-      markRemoteSelection();
-    }
-    section.appendChild(remoteRow);
-
-    // Keep remote id aligned when the user edits the URL by hand.
-    // Under the field: whether the link loads as an image. A web page link
-    // (an image host's page for the photo) was accepted and silently showed
-    // nothing on the home screen.
-    const urlStatus = createHint('', 'settings-url-status');
-    urlStatus.hidden = true;
-    let urlCheckTimer: ReturnType<typeof setTimeout> | null = null;
-    let urlCheckGen = 0;
-    function showUrlStatus(text: string, kind: string): void {
-      urlStatus.textContent = text;
-      urlStatus.hidden = !text;
-      urlStatus.classList.toggle('is-ok', kind === 'ok');
-      urlStatus.classList.toggle('is-error', kind === 'error');
-    }
-    function checkUrl() {
-      const url = urlInput.value.trim();
-      const gen = ++urlCheckGen;
-      // A built-in online photo: known good.
-      if (!url || findRemoteBackgroundByUrl(url)) {
-        showUrlStatus('', '');
-        return;
-      }
-      if (!/^https?:\/\//i.test(url)) {
-        showUrlStatus('This needs a web link starting with https://', 'error');
-        return;
-      }
-      showUrlStatus('Checking the link\u2026', '');
-      const img = new Image();
-      let settled = false;
-      function done(ok: boolean) {
-        if (settled || gen !== urlCheckGen) return;
-        settled = true;
-        if (ok) {
-          showUrlStatus('The link loads as an image (' + img.naturalWidth + ' \u00d7 ' +
-            img.naturalHeight + '). Press Save to use it.', 'ok');
-        } else {
-          showUrlStatus('That link didn\u2019t load as an image. Use the direct image link: it ' +
-            'usually ends in .jpg or .png (on an image host, \u201cCopy image address\u201d or ' +
-            '\u201cDirect link\u201d). A link to a web page about the photo won\u2019t work.', 'error');
-        }
-      }
-      img.onload = function () { done(true); };
-      img.onerror = function () { done(false); };
-      setTimeout(function () { done(false); }, 20000);
-      img.src = jpegForTv(url);
-    }
-    urlInput.addEventListener('input', function () {
-      const match = findRemoteBackgroundByUrl(urlInput.value.trim());
-      selectedRemoteId = match ? match.id : '';
-      markRemoteSelection();
-      if (urlCheckTimer !== null) clearTimeout(urlCheckTimer);
-      urlCheckTimer = setTimeout(checkUrl, 800);
-    });
-
-    section.appendChild(urlRow);
-    section.appendChild(urlStatus);
-    // A saved link is checked when Settings opens, too.
-    if (urlInput.value.trim()) checkUrl();
-
-    // Gallery picks and the URL/remote-id alignment are derived fields.
-    binder.hook(function (cfg) {
-      cfg.background.builtin = selectedBuiltinId || '';
-      cfg.background.aerial = selectedAerialId || '';
-      // Online catalog is independent of built-in; only apply when source is url,
-      // and keep the remote id aligned with a matching URL.
-      cfg.background.remote = selectedRemoteId || '';
-      if (cfg.background.url) {
-        const match = findRemoteBackgroundByUrl(cfg.background.url);
-        if (match) cfg.background.remote = match.id;
-      } else if (selectedRemoteId) {
-        const picked = findRemoteBackgroundById(selectedRemoteId);
-        if (picked) {
-          cfg.background.url = picked.url;
-          cfg.background.remote = picked.id;
-        }
-      }
-    });
-
-    const urlsField = createTextField({
-      label: 'Slideshow URLs',
-      focusIndex: '932',
-      textarea: true,
-      rows: 4,
-      block: true,
-      placeholder: 'One https image URL per line (leave empty to use curated online set)',
-      path: 'background.urls',
-      parse: parseUrlList,
-      format: function (value) { return Array.isArray(value) ? value.join('\n') : ''; }
-    });
-    const urlsRow = urlsField.row;
-    binder.bind(urlsField.field!);
-    section.appendChild(urlsRow);
-
-    const intervalField = createTextField({
-      label: 'Seconds per slide',
-      focusIndex: '933',
-      type: 'number',
-      min: '30',
-      max: '3600',
-      step: '30',
-      path: 'background.slideshowIntervalSec',
-      parse: function (raw) { return Number(raw) || 300; },
-      format: function (value) { return String(value || 300); }
-    });
-    const intervalRow = intervalField.row;
-    binder.bind(intervalField.field!);
-    section.appendChild(intervalRow);
-
-    const kenBurnsField = createToggle({
-      label: 'Slow zoom background',
-      focusIndex: '934',
-      path: 'background.kenBurns'
-    });
-    const kenBurnsRow = kenBurnsField.row;
-    binder.bind(kenBurnsField.field!);
-    section.appendChild(kenBurnsRow);
-    const kenBurnsHint = createHint(
-      'When on, the wallpaper slowly zooms in and drifts a little (like a calm slideshow). When off, the picture stays still. Photos only — not gradients. ' +
-      'While the wallpaper moves, tiles and buttons are tinted instead of frosted glass: blurring a moving picture makes TVs stutter.'
-    );
-    section.appendChild(kenBurnsHint);
-
-    const overlayField = createTextField({
-      label: 'Overlay opacity',
-      focusIndex: '935',
-      type: 'range',
-      className: 'focusable',
-      min: '20',
-      max: '60',
-      path: 'background.overlayOpacity',
-      parse: function (raw) { return Number(raw) / 100; },
-      format: function (value) { return String(Math.round(Number(value || 0.45) * 100)); }
-    });
-    binder.bind(overlayField.field!);
-    section.appendChild(overlayField.row);
-
-    const oledNote = document.createElement('p');
-    oledNote.className = 'oled-note';
-    oledNote.textContent = 'On OLED TVs, prefer slideshow or gradients over a single static photo left on screen for long periods.';
-    section.appendChild(oledNote);
-    panes.look.appendChild(section);
-
-    const refs = {
-      displayRow: displayRow,
-      bgShuffleRow: bgShuffleRow,
-      aerialRow: aerialRow,
-      builtinRow: builtinRow,
-      usbHint: usbHint,
-      usbFileRow: usbFileRow,
-      remoteRow: remoteRow,
-      urlHint: urlHint,
-      urlRow: urlRow,
-      urlsRow: urlsRow,
-      intervalRow: intervalRow,
-      kenBurnsRow: kenBurnsRow,
-      kenBurnsHint: kenBurnsHint,
-      displaySelect: displaySelect
-    };
-
-    function syncFields(opts?: SyncFieldsOptions): void {
-      // Gradient style only applies to gradient sources — hide entirely for
-      // photos (builtin/USB/URL) so a leftover "Warm gradient" is not confusing.
-      const isGradientSource =
-        sourceSelect.value === 'preset' || sourceSelect.value === 'animated-gradient';
-      presetRow.hidden = !isGradientSource;
-      syncBackgroundFields(sourceSelect.value, refs, opts);
-    }
-
-    syncFields();
+    // The Background section, behind the seam: it reads its dependencies from
+    // the context, and exposes a handle the profile picker (and the Look pane)
+    // drives.
+    backgroundPane.build(context);
 
     // Swap loading shell → full chrome now (profile + background already in body).
     // Remaining sections append to the live body so the user always sees content.
@@ -3103,6 +2636,12 @@ export function createSettingsPanel(
       const pane = paneHandles[CATEGORIES[i].id];
       if (!pane || !pane.load) continue;
       await withDeadline(pane.load(context), PANE_LOAD_MS);
+      if (gen !== renderGen || !visible) return;
+    }
+    // The Background pane builds inside the Look category, so its fill is not
+    // in the category loop above.
+    if (backgroundPane.load) {
+      await withDeadline(backgroundPane.load(context), PANE_LOAD_MS);
       if (gen !== renderGen || !visible) return;
     }
 

@@ -28,6 +28,8 @@ export interface Gallery {
   row: HTMLDivElement;
   grid: HTMLDivElement;
   markSelection(selectedId: string): void;
+  /** Replace the tiles, e.g. once an async manifest arrives. */
+  setEntries(entries: GalleryEntry[], selectedId?: string): void;
 }
 
 /**
@@ -48,7 +50,17 @@ export function createGallery(options: GalleryOptions): Gallery {
   grid.className = 'photo-picker-grid' + (options.gridClassName ? ' ' + options.gridClassName : '');
   row.appendChild(grid);
 
-  (options.entries || []).forEach(function (entry, index) {
+  function markSelection(selectedId: string): void {
+    const tiles = grid.querySelectorAll('.photo-picker-tile');
+    for (let i = 0; i < tiles.length; i += 1) {
+      const tile = tiles[i] as HTMLElement;
+      const isSelected = (tile.dataset.galleryId || '') === (selectedId || '');
+      tile.classList.toggle('is-selected', isSelected);
+      tile.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    }
+  }
+
+  function makeTile(entry: GalleryEntry, index: number): HTMLDivElement {
     // div+role=button: a native <button> on webOS often eats Select/OK and
     // leaves focus stuck so you cannot scroll to the next settings rows.
     const tile = document.createElement('div');
@@ -100,19 +112,17 @@ export function createGallery(options: GalleryOptions): Gallery {
       else options.onSelect(entry.id);
     });
 
-    grid.appendChild(tile);
-  });
-
-  function markSelection(selectedId: string): void {
-    const tiles = grid.querySelectorAll('.photo-picker-tile');
-    for (let i = 0; i < tiles.length; i += 1) {
-      const tile = tiles[i] as HTMLElement;
-      const isSelected = (tile.dataset.galleryId || '') === (selectedId || '');
-      tile.classList.toggle('is-selected', isSelected);
-      tile.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-    }
+    return tile;
   }
 
-  if (options.selectedId !== undefined) markSelection(options.selectedId);
-  return {row: row, grid: grid, markSelection: markSelection};
+  function setEntries(entries: GalleryEntry[], selectedId?: string): void {
+    grid.innerHTML = '';
+    (entries || []).forEach(function (entry, index) {
+      grid.appendChild(makeTile(entry, index));
+    });
+    if (selectedId !== undefined) markSelection(selectedId);
+  }
+
+  setEntries(options.entries || [], options.selectedId);
+  return {row: row, grid: grid, markSelection: markSelection, setEntries: setEntries};
 }

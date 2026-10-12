@@ -63,7 +63,8 @@ builds the moved panes in category order and drives each pane's `load` under a
 deadline; a pane's own async work (the USB scan) checks `isVisible` before it
 writes. Panes never import each other or reach into the root's state; a coupling
 between two panes goes through a handle method (the Profile → Background note is
-one).
+one: the Background pane extends `PaneHandle` with `setProfile`, and whoever
+builds the profile picker calls it).
 
 ## Focus
 

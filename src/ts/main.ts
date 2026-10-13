@@ -3,7 +3,7 @@ import {createAllApps} from '@apps/all-apps.js';
 import type {AllApps} from '@apps/all-apps.js';
 import {loadConfig, saveConfig, applyUsbConfig, readStoredConfigText} from '@config/config.js';
 import {applyActiveProfile} from '@config/profiles.js';
-import {resolveLoungePaths} from '@lib/usb.js';
+import {resolveLoungePaths, findLoungeRoots} from '@lib/usb.js';
 import {createBackgroundController} from '@background/background.js';
 import type {BackgroundController} from '@background/background.js';
 import {createMusicPlayer} from '@music/music.js';
@@ -36,6 +36,7 @@ import {
   disableBootLaunch,
   enableVoice,
   writeAutoBackup,
+  readSettingsBackups,
   setSystemVolume,
   setScreensaverTimeout,
   execRoot
@@ -50,7 +51,7 @@ import {setLiteImages} from '@background/background-sources.js';
 import {addVoiceListener, setVoiceWsEnabled, stopVoiceWs} from '@voice/voice-ws.js';
 import {resolveVoiceLaunch} from '@voice/voice-launch.js';
 import {activity, noteForeground} from '@lib/activity.js';
-import {settingsBackupText} from '@settings/settings-backup.js';
+import {settingsBackupText, importLegacySettings} from '@settings/settings-backup.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
 import type {Config, LauncherConfig, AppRecord, LunaResponse} from '@lib/types.js';
@@ -226,6 +227,8 @@ export function createApp(): AppLifecycle {
   let visible = true;
   let lastVoiceLaunchKey = '';
   let lastVoiceLaunchAt = 0;
+  // Set when a Launch Home backup was imported on this first start, for the toast.
+  let importedNotice = '';
 
   let started = false;
   let stopped = false;
@@ -1107,6 +1110,28 @@ export function createApp(): AppLifecycle {
     return added;
   }
 
+  /**
+   * On the first start with no stored config, adopt the newest Launch Home
+   * backup (TV copy, automatic copies, or a USB drive) so an upgrade keeps its
+   * setup. Doing it before buildModules() means the home screen paints with it.
+   * Quietly stays on defaults when there is nothing to import or root is absent.
+   */
+  async function importLegacyOnFirstRun() {
+    let imported = null;
+    try {
+      imported = await importLegacySettings(storedSettingsAtStart, baseConfig, async function () {
+        const roots = await findLoungeRoots();
+        return readSettingsBackups(roots);
+      });
+    } catch (err) {
+      // No root (Homebrew Channel) or unreadable drive: start on defaults.
+    }
+    if (!imported) return;
+    setConfig(imported.config);
+    saveConfig(baseConfig);
+    importedNotice = 'Imported your Launch Home settings.';
+  }
+
   function keepSettingsFromBeforeUpdate() {
     let last: string | null = null;
     try {
@@ -1184,6 +1209,8 @@ export function createApp(): AppLifecycle {
       return;
     }
 
+    await importLegacyOnFirstRun();
+    if (stopped) return;
     buildModules();
     built = true;
     setVoiceWsEnabled(!!(baseConfig.launcher && baseConfig.launcher.voiceEnabled));
@@ -1206,6 +1233,11 @@ export function createApp(): AppLifecycle {
 
     await refreshAll();
     if (stopped) return;
+
+    // Confirms a first-run import once the home screen is up.
+    if (importedNotice) {
+      laterTracked(function () { showToast(importedNotice); }, 900);
+    }
 
     // In-app photo/clock screensaver after idle.
     customScreensaver.start();

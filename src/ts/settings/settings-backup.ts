@@ -9,7 +9,7 @@
  * format than this version knows is listed but not restored.
  */
 
-import {CONFIG_SCHEMA_VERSION} from '@config/config.js';
+import {CONFIG_SCHEMA_VERSION, configFromBackup} from '@config/config.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
 import type {BackupFitResult, Config} from '@lib/types.js';
@@ -20,6 +20,9 @@ import type {BackupFitResult, Config} from '@lib/types.js';
 export const BACKUP_FORMAT = 1;
 
 const APP_ID = BRAND.appId;
+// Backups made before the Ember rename carry the Launch Home app id; they stay
+// readable so an upgrade can import them and the restore list still lists them.
+const LEGACY_APP_ID = BRAND.legacy.appId;
 
 // When and where the last backup went, shown under the buttons (a small note
 // of its own, not part of the settings).
@@ -118,7 +121,8 @@ export function parseBackup(text: string, where: string): ParsedBackup | null {
   } catch (err) {
     return null;
   }
-  if (!data || data.app !== APP_ID || !data.config || typeof data.config !== 'object') return null;
+  if (!data || (data.app !== APP_ID && data.app !== LEGACY_APP_ID) ||
+      !data.config || typeof data.config !== 'object') return null;
   const format = typeof data.format === 'number' ? data.format : 1;
   let schema: number | undefined = typeof data.schema === 'number' ? data.schema : data.config.version;
   if (typeof schema !== 'number') schema = 1;
@@ -203,4 +207,36 @@ export function restoreReport(b: ParsedBackup, result: BackupFitResult): string 
       ' from a newer version and not used here: ' + listSome(unused) + '.';
   }
   return text;
+}
+
+/** What a first-run import did, for the confirmation toast. */
+export interface FirstRunImport {
+  config: Config;
+  where: string;
+  savedAt: string;
+}
+
+/**
+ * On the first start with no stored config, import the newest Launch Home
+ * backup so an upgrade keeps its setup. `readBackups` returns every backup
+ * found (the TV copy, the automatic copies and each USB drive); it is injected
+ * so the decision can be tested without the TV filesystem. Newest wins, and a
+ * backup whose settings don't fit is skipped. Returns null (Ember starts on
+ * defaults) when there is a stored config, no readable backup, or nothing fits.
+ */
+export async function importLegacySettings(
+  storedConfigText: string,
+  current: Config,
+  readBackups: () => Promise<SettingsBackupFound[]>
+): Promise<FirstRunImport | null> {
+  if (storedConfigText) return null;
+  const backups = listBackups(await readBackups());
+  for (const b of backups) {
+    if (!b.readable) continue;
+    const fitted = configFromBackup(b.data.config, current);
+    if (fitted) {
+      return {config: fitted.config, where: b.where, savedAt: b.data.savedAt || ''};
+    }
+  }
+  return null;
 }

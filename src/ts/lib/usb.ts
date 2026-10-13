@@ -66,7 +66,7 @@ export function normalizeTrack(entry: unknown, basePath: string): UsbTrack | nul
 }
 
 export async function findLoungeRoots(): Promise<string[]> {
-  const roots: string[] = [];
+  const mounts: string[] = [];
 
   try {
     const res = await getStorageDevices();
@@ -76,13 +76,18 @@ export async function findLoungeRoots(): Promise<string[]> {
       const drives = device.storageDriveList || [];
       for (const drive of drives) {
         if (!drive.isMounted || !drive.mountName) continue;
-        roots.push(joinPath(drive.mountName, BRAND.usbFolder));
+        mounts.push(drive.mountName);
       }
     }
   } catch (err) {
     // USB discovery may fail in browser dev mode.
   }
 
+  // Prefer the Ember folder on every drive; an older Launch Home drive still
+  // has its media under `lounge/`, so fall back to it.
+  const roots: string[] = [];
+  for (const mount of mounts) roots.push(joinPath(mount, BRAND.usbFolder));
+  for (const mount of mounts) roots.push(joinPath(mount, BRAND.legacy.usbFolder));
   return roots;
 }
 
@@ -149,9 +154,7 @@ export function parseM3u(text: string, basePath: string): UsbTrack[] {
   return tracks;
 }
 
-export async function loadUsbConfig(): Promise<{root: string; config: unknown} | null> {
-  const roots = await findLoungeRoots();
-
+async function loadUsbConfigFrom(roots: string[]): Promise<{root: string; config: unknown} | null> {
   for (const root of roots) {
     try {
       const config = await fetchJson(joinPath(root, 'config.json'));
@@ -226,10 +229,38 @@ export async function discoverBackgroundImages(backgroundPath: string): Promise<
   return [];
 }
 
+/** Whether `root` holds a USB config or any background/music media. */
+async function rootHasContent(root: string): Promise<boolean> {
+  const probes = [
+    'config.json',
+    'music/playlist.m3u',
+    'music/tracks.json',
+    'backgrounds/images.json'
+  ];
+  for (const probe of probes) {
+    try {
+      await fetchText(joinPath(root, probe));
+      return true;
+    } catch (err) {
+      // Not here; try the next file.
+    }
+  }
+  return false;
+}
+
 export async function resolveLoungePaths(config: Config): Promise<LoungePaths> {
-  const usb = await loadUsbConfig();
-  const roots = usb ? [usb.root] : await findLoungeRoots();
-  const root = roots[0] || '';
+  const roots = await findLoungeRoots();
+  const usb = await loadUsbConfigFrom(roots);
+  let root = usb ? usb.root : '';
+  if (!root) {
+    // No USB config: take the first folder (Ember, else Launch Home) with media.
+    for (const candidate of roots) {
+      if (await rootHasContent(candidate)) {
+        root = candidate;
+        break;
+      }
+    }
+  }
 
   const musicPath = (config.music && config.music.path) || (root ? joinPath(root, 'music') : '');
   const backgroundPath = (config.background && config.background.path) || (root ? joinPath(root, 'backgrounds') : '');

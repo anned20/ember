@@ -69,12 +69,17 @@ export const BRAND = {
     boot: '50-' + SLUG + '-boot'
   },
 
-  // Names from earlier identities, swept up when a feature is enabled: the
-  // Launch Home app-id namespace (kept out of the dock), the init.d hooks those
-  // identities left behind, and the /tmp prefixes their pid and log files used.
+  // Names from earlier identities. The app-id namespace and the voice id are
+  // used on first run to read Launch Home's settings backups and keep its apps
+  // out of the dock; the init.d hooks and /tmp prefixes are swept up when a
+  // feature is enabled.
   legacy: {
+    appId: 'org.webosbrew.lounge.launcher',
     appIdNamespace: 'org.webosbrew.lounge.',
     voiceAppId: 'org.webosbrew.lounge.voice',
+    configDir: '/home/root/.config/launch-home',
+    usbFolder: 'lounge',
+    usbSettingsFile: 'launch-home-settings.json',
     hooks: [
       '40-launch-home-watcher',
       '45-launch-home-voice',

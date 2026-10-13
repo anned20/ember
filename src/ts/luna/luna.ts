@@ -341,6 +341,11 @@ const USB_SETTINGS_BACKUP_NAME = BRAND.usbSettingsFile;
 // Copies Launch Home keeps by itself: before each restore (one, replaced each
 // time) and before each update (the newest few).
 const SETTINGS_AUTO_DIR = BRAND.configDir + '/auto';
+// The Launch Home backup locations, read on first run to import an upgrade and
+// listed so an old backup can still be restored.
+const LEGACY_SETTINGS_BACKUP_FILE = BRAND.legacy.configDir + '/settings-backup.json';
+const LEGACY_SETTINGS_AUTO_DIR = BRAND.legacy.configDir + '/auto';
+const LEGACY_USB_SETTINGS_BACKUP_NAME = BRAND.legacy.usbSettingsFile;
 const AUTO_UPDATE_COPIES = 3;
 const FILE_MARK = BRAND.fileMark;
 
@@ -428,26 +433,34 @@ export async function writeSettingsBackup(text: string, usbRoot?: string): Promi
 }
 
 /**
- * Every settings backup found: the TV copy, the automatic copies, and one per
- * USB Ember folder in `usbRoots`. Resolves [{where: 'TV' | 'USB', text}].
+ * Every settings backup found: the TV copy and the automatic copies (Ember's
+ * and the older Launch Home ones), plus one per USB folder in `usbRoots`.
+ * Resolves [{where: 'TV' | 'USB', text}].
  */
 export async function readSettingsBackups(usbRoots?: string[]): Promise<SettingsBackup[]> {
   const found: SettingsBackup[] = [];
-  const tv = await readFileAsRoot(SETTINGS_BACKUP_FILE);
-  if (tv) found.push({where: 'TV', text: tv});
-  try {
-    (await readJsonFilesAsRoot(SETTINGS_AUTO_DIR)).forEach(function (file) {
-      found.push({where: 'TV', text: file.text});
-    });
-  } catch (err) {
-    // No automatic copies yet.
+  for (const file of [SETTINGS_BACKUP_FILE, LEGACY_SETTINGS_BACKUP_FILE]) {
+    const tv = await readFileAsRoot(file);
+    if (tv) found.push({where: 'TV', text: tv});
+  }
+  for (const dir of [SETTINGS_AUTO_DIR, LEGACY_SETTINGS_AUTO_DIR]) {
+    try {
+      (await readJsonFilesAsRoot(dir)).forEach(function (file) {
+        found.push({where: 'TV', text: file.text});
+      });
+    } catch (err) {
+      // No automatic copies yet.
+    }
   }
   for (const root of usbRoots || []) {
-    try {
-      const text = await readFileAsRoot(String(root).replace(/\/+$/, '') + '/' + USB_SETTINGS_BACKUP_NAME);
-      if (text) found.push({where: 'USB', text: text});
-    } catch (err) {
-      // An unreadable drive just has no backup.
+    const base = String(root).replace(/\/+$/, '');
+    for (const name of [USB_SETTINGS_BACKUP_NAME, LEGACY_USB_SETTINGS_BACKUP_NAME]) {
+      try {
+        const text = await readFileAsRoot(base + '/' + name);
+        if (text) found.push({where: 'USB', text: text});
+      } catch (err) {
+        // An unreadable drive just has no backup.
+      }
     }
   }
   return found;

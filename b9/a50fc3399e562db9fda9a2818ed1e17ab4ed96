@@ -1,0 +1,173 @@
+scripts/boot-launch.sh
+  s_2a0e385cd36c86::t_948f3992dd741c 2
+  s_2a0e385cd36c86::t_c63d69dc385ccf 32
+  s_2a0e385cd36c86::t_fe491177781c5c 53
+  s_2a0e385cd36c86::t_7fd6556ab648e3 5
+  s_2a0e385cd36c86::t_419dac3078f7a5 60
+docs/adr/0001-webos-22-floor.md
+  s_2a0e385cd36c86::t_7559e30d9947b4 9
+  s_2a0e385cd36c86::t_a74946b99e2d71 28
+  s_2a0e385cd36c86::t_9026c12f84a642 5
+install2tvfrommacos.sh
+  s_2a0e385cd36c86::t_5a76b733832e1f 3
+docs/background-sources.md
+  s_2a0e385cd36c86::t_f32ad3cbd01271 3,5-6
+src/ts/settings/settings-backup.ts
+  s_2a0e385cd36c86::t_1dd9c0feadff3d 170
+  s_2a0e385cd36c86::t_66e8d6c1ea9854 141
+  s_2a0e385cd36c86::t_1a65121d0c0bb0 7
+  s_2a0e385cd36c86::t_ef7e915240c721 114
+  s_2a0e385cd36c86::t_95c8479233a60d 89
+scripts/enable-home-watcher.sh
+  s_2a0e385cd36c86::t_1ac349f5e9ae4c 2
+package.json
+  s_2a0e385cd36c86::t_7aafe19dee1ca7 2,4
+src/styles/main.css
+  s_2a0e385cd36c86::t_4163b365e720a0 277,961
+src/ts/settings/panes/tools.ts
+  s_2a0e385cd36c86::t_120f574426221a 28
+  s_2a0e385cd36c86::t_4163b365e720a0 52-54
+voice/daemon/luna_service.py
+  s_2a0e385cd36c86::t_4163b365e720a0 22,32,200,274,303,506,1117,1168,1478,1489,1727
+scripts/channels.sh
+  s_2a0e385cd36c86::t_352d482b820bfd 2
+scripts/enable-boot-launch.sh
+  s_2a0e385cd36c86::t_ae72f2b009d6fc 2
+src/ts/home/channels.ts
+  s_2a0e385cd36c86::t_ecfa93d36f76ef 208
+src/ts/lib/foreground-watcher.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 6,11,34,37,56,70,146,177
+scripts/disable-voice.sh
+  s_2a0e385cd36c86::t_d6b8b454fd2eca 20
+  s_2a0e385cd36c86::t_6cc3207c0d4273 2
+src/ts/settings/panes/apps.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 203
+scripts/deploy.sh
+  s_2a0e385cd36c86::t_0ecfeab2c75b75 3
+scripts/disable-boot-launch.sh
+  s_2a0e385cd36c86::t_87ad9b537c0ee1 2
+voice/daemon/openrouter_client.py
+  s_2a0e385cd36c86::t_56221aa2f3f490 190
+  s_2a0e385cd36c86::t_c6f164fece52c4 76
+scripts/voice-run.sh
+  s_2a0e385cd36c86::t_9c35a7349cb2b1 30
+  s_2a0e385cd36c86::t_9d87aa1ed499c6 2
+src/ts/background/background-sources.ts
+  s_2a0e385cd36c86::t_821b9d412ca589 75
+src/ts/lib/launch-state.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 17
+voice/daemon/voice_daemon.py
+  s_2a0e385cd36c86::t_4163b365e720a0 2,217,951,7332
+docs/agents/architecture.md
+  s_2a0e385cd36c86::t_23b67409fe6623 120
+  s_2a0e385cd36c86::t_1fcc6600fdd7d0 139
+src/ts/luna/luna.ts
+  s_2a0e385cd36c86::t_c607b02bdc5214 531
+  s_2a0e385cd36c86::t_c7017b16557c06 562
+  s_2a0e385cd36c86::t_f8030e95963934 322
+  s_2a0e385cd36c86::t_5b60269200eb59 535
+  s_2a0e385cd36c86::t_6e195f38be01d6 787
+  s_2a0e385cd36c86::t_6343a549dea30c 612
+  s_2a0e385cd36c86::t_238e350880140e 294
+  s_2a0e385cd36c86::t_3628549ca0b246 884
+src/ts/apps/all-apps.ts
+  s_2a0e385cd36c86::t_249f1f1f01838d 188
+  s_2a0e385cd36c86::t_c62cd65044d768 14-15
+  s_2a0e385cd36c86::t_b23369b459202c 137
+src/ts/background/screensaver.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 2,4
+docs/agents/config-and-backups.md
+  s_2a0e385cd36c86::t_00cc5ebc10669f 68
+  s_2a0e385cd36c86::t_c4d289778f9b27 87,89,93-108
+  s_2a0e385cd36c86::t_c33e67a8b3d6d5 14
+  s_2a0e385cd36c86::t_01a512f783832b 62
+  s_2a0e385cd36c86::t_16db8898a8e69c 63
+src/ts/apps/app-catalog.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 297
+src/ts/settings/tv-check.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 9,26,28,76
+scripts/diagnostics.sh
+  s_2a0e385cd36c86::t_ff1729a04bd1a1 81
+src/ts/config/config.ts
+  s_2a0e385cd36c86::t_30cbb99408c049 576
+  s_2a0e385cd36c86::t_8b6e5322e29f0b 128
+  s_2a0e385cd36c86::t_fc2722c98d4b4c 108
+  s_2a0e385cd36c86::t_adb18564a5e410 125
+  s_2a0e385cd36c86::t_a24ad78fabd147 391
+  s_2a0e385cd36c86::t_a61a01c12cce23 114
+  s_2a0e385cd36c86::t_47279372e804ae 116
+  s_2a0e385cd36c86::t_d6d1b3310207e0 119
+  s_2a0e385cd36c86::t_8d298c73dd7b00 569
+scripts/generate-icons.py
+  s_2a0e385cd36c86::t_4163b365e720a0 2
+CONTEXT.md
+  s_2a0e385cd36c86::t_78b1630ad887d9 59
+  s_2a0e385cd36c86::t_7d0d6fd190f6a7 28
+  s_2a0e385cd36c86::t_259c42cff53964 1,8
+  s_2a0e385cd36c86::t_0836e303977964 109
+  s_2a0e385cd36c86::t_4ef032cf058975 102-105
+  s_2a0e385cd36c86::t_502c4669ecb9e3 113
+scripts/home-watcher.sh
+  s_2a0e385cd36c86::t_f74d9ca9f0ee20 2,5,7
+  s_2a0e385cd36c86::t_ec65407ad7d51e 86-87,89,91
+  s_2a0e385cd36c86::t_9fed8a7196b5fd 132
+src/ts/home/weather.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 573
+src/ts/settings/panes/ai.ts
+  s_2a0e385cd36c86::t_cd552a071e4cbc 1095
+  s_2a0e385cd36c86::t_127ee2b206746a 881
+  s_2a0e385cd36c86::t_4f051da62de648 940
+  s_2a0e385cd36c86::t_6f0cc70de55387 844
+voice/overlay/js/app.js
+  s_2a0e385cd36c86::t_4163b365e720a0 4,160,254
+voice/daemon/web_search.py
+  s_2a0e385cd36c86::t_8e5aeb265c277e 26
+scripts/disable-home-watcher.sh
+  s_2a0e385cd36c86::t_1f992d0a291c4b 2
+src/ts/settings/panes/system.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 39,85
+README.md
+  s_2a0e385cd36c86::t_e172c054dbbd46 1,5,7,20,22,25-27,33,37,41-42,44,46,48,50,63-64,66,68-69,73-77,81,170-171,181,185,192-194
+  s_2a0e385cd36c86::t_f75e66ab41a02e 195
+src/ts/music/music.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 464
+src/ts/voice/voice-config.ts
+  s_2a0e385cd36c86::t_a58317d920fc8f 2
+voice/daemon/config_store.py
+  s_2a0e385cd36c86::t_4163b365e720a0 1,3,373,661,675
+src/ts/main.ts
+  s_2a0e385cd36c86::t_fc27756208a1ae 951
+  s_2a0e385cd36c86::t_70ce1762028524 999
+  s_2a0e385cd36c86::t_88ebcb833739d0 919
+  s_2a0e385cd36c86::t_3b22ef40de6e21 656,658
+docs/agents/issue-tracker.md
+  s_2a0e385cd36c86::t_c0f34877dda314 5
+src/ts/focus/focus.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 865
+docs/agents/layout.md
+  s_2a0e385cd36c86::t_e83523184be9bc 86
+src/ts/voice/voice-ws.ts
+  s_2a0e385cd36c86::t_4163b365e720a0 2,6-7
+scripts/enable-voice.sh
+  s_2a0e385cd36c86::t_df20269fa2006f 111
+  s_2a0e385cd36c86::t_d93f258e30cd8c 2,4
+  s_2a0e385cd36c86::t_8a0359350c5ca2 44
+src/ts/lib/activity.ts
+  s_2a0e385cd36c86::t_84ea2e2b639ce9 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b9a50fc3399e562db9fda9a2818ed1e17ab4ed96",
+  "prompts": {},
+  "sessions": {
+    "s_2a0e385cd36c86": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ecac1799dffeDZcGmAJfXXy0Wj",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": null
+    }
+  }
+}

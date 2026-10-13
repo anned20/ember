@@ -90,7 +90,7 @@ async function build() {
     legalComments: 'none',
     alias: tsAliases,
     define: {
-      __LOUNGE_VERSION__: JSON.stringify(version)
+      __EMBER_VERSION__: JSON.stringify(version)
     }
   });
 
@@ -180,7 +180,7 @@ async function build() {
  * .ipk: ares-package leaves out every *.ipk file.
  */
 function packVoiceCard(aresPackage: string, version: string) {
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'launch-home-voice-card-'));
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'ember-voice-card-'));
   try {
     const stage = path.join(work, 'app');
     copyRecursive(path.join(root, 'voice/overlay'), stage);

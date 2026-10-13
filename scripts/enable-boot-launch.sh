@@ -6,8 +6,6 @@
 LAUNCH="$APP_DIR/boot-launch.sh"
 LOG="$TMP_PREFIX-boot.log"
 INITD="$INITD_DIR/$HOOK_BOOT"
-# Legacy name from when the app was branded "Lounge Launcher".
-OLD_INITD="$INITD_DIR/$LEGACY_HOOK_BOOT"
 
 if [ ! -f "$LAUNCH" ]; then
   echo missing_boot_script
@@ -16,7 +14,10 @@ fi
 
 chmod 755 "$LAUNCH"
 mkdir -p "$INITD_DIR"
-rm -f "$OLD_INITD"
+# Drop the stale hooks left by the Launch Home and older Lounge identities.
+for h in $LEGACY_HOOKS; do
+  rm -f "$INITD_DIR/$h"
+done
 
 cat >"$INITD" <<EOF
 #!/bin/sh

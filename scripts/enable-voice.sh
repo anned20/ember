@@ -9,7 +9,7 @@
 
 . "$(dirname "$0")/brand.sh"
 
-APPDIR="${LH_APPDIR:-$APP_DIR}"
+APPDIR="${EMBER_APPDIR:-$APP_DIR}"
 VOICE="$APPDIR/voice"
 RUN="$APPDIR/voice-run.sh"
 CONF_DIR="$VOICE_CONFIG_DIR"
@@ -75,11 +75,32 @@ if [ -n "$want" ] && [ "$have" != "$want" ]; then
   echo "card_installed=$want"
 fi
 
+# The old Launch Home voice card is dead weight next to Ember's: remove it.
+OLD_CARD_ID="$LEGACY_VOICE_APP_ID"
+OLD_CARD_DIR="$APPS_DIR/$OLD_CARD_ID"
+if [ -d "$OLD_CARD_DIR" ]; then
+  luna-send -n 1 -w 3000 -f luna://com.webos.applicationManager/closeByAppId \
+    "{\"id\":\"$OLD_CARD_ID\"}" >/dev/null 2>&1 </dev/null
+  luna-send -n 6 -w 30000 -f luna://com.webos.appInstallService/dev/remove \
+    "{\"id\":\"$OLD_CARD_ID\",\"subscribe\":true}" >/dev/null 2>&1 </dev/null &
+  remover=$!
+  i=0
+  while [ "$i" -lt 40 ] && [ -d "$OLD_CARD_DIR" ]; do
+    sleep 0.5
+    i=$((i + 1))
+  done
+  kill "$remover" 2>/dev/null
+fi
+
 # Start at power-on.
 mkdir -p "$INITD_DIR"
+# Drop the stale hooks left by the Launch Home and older Lounge identities.
+for h in $LEGACY_HOOKS; do
+  rm -f "$INITD_DIR/$h"
+done
 cat >"$INITD" <<EOF
 #!/bin/sh
-# Launch Home voice assistant (turned on in Launch Home Settings > AI Voice).
+# Ember voice assistant (turned on in Ember Settings > AI Voice).
 if [ -f "$RUN" ]; then
   sh "$RUN" start >/dev/null 2>&1 </dev/null
 fi

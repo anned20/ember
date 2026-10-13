@@ -608,7 +608,7 @@ class SocketUnixCapture:
 def load_config(path: Optional[str] = None) -> dict[str, Any]:
     candidates = [
         path,
-        os.environ.get("LH_VOICE_CONFIG"),
+        os.environ.get("EMBER_VOICE_CONFIG"),
         DEFAULT_CONFIG_PATH,
         str(FALLBACK_CONFIG_PATH),
     ]

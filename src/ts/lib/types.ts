@@ -1,8 +1,8 @@
-// Shared domain vocabulary for Launch Home.
+// Shared domain vocabulary for Ember.
 //
 // Cross-module shapes live here: the settings/config tree, the app record and
 // catalog shapes, backup fit/restore results, music tracks, and the ambient
-// webOS device globals plus the `__LOUNGE_VERSION__` build define. Module-local
+// webOS device globals plus the `__EMBER_VERSION__` build define. Module-local
 // types stay with their module.
 
 /* -------------------------------------------------------------------------- */
@@ -233,7 +233,7 @@ export interface WebOSSystem {
 
 declare global {
   /** Injected by esbuild (`scripts/build.ts`) and vitest's `define`. */
-  const __LOUNGE_VERSION__: string;
+  const __EMBER_VERSION__: string;
 
   interface Window {
     webOS?: WebOS;

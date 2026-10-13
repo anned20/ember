@@ -1148,7 +1148,7 @@ class LunaBridge:
                     except OSError:
                         pass
         # answerPartial is extremely chatty during streaming; log only gaps /
-        # important events so /tmp/launch-home-voice.log stays readable.
+        # important events so /tmp/ember-voice.log stays readable.
         if event not in ("answerPartial", "transcriptPartial"):
             print(
                 "[voice] broadcast %s -> %d client(s), %d ws"

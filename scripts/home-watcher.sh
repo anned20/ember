@@ -7,7 +7,7 @@
 # Home even though Launch Home is painted on top — dock appears dead).
 #
 # Start detached only:
-#   setsid home-watcher.sh >/tmp/launch-home-watcher.log 2>&1 </dev/null &
+#   setsid home-watcher.sh >/tmp/ember-watcher.log 2>&1 </dev/null &
 #
 # Supported floor: webOS 22+. The foreground subscription is durable, so there
 # is no poll-and-restart loop; polling is only a last resort when the

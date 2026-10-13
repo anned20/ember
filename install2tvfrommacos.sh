@@ -255,7 +255,7 @@ install_ipk_ssh() {
 	base="$(basename "$ipk")"
 	remote_dir="/media/developer/temp"
 	remote_ipk="${remote_dir}/${base}"
-	log_file="/tmp/lounge-install-${base}.log"
+	log_file="/tmp/ember-install-${base}.log"
 	appinfo_path="$APPS_DIR/${APP_ID}/appinfo.json"
 	icon_path="$APPS_DIR/${APP_ID}/assets/icon.png"
 	version="$(read_version)"

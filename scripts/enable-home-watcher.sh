@@ -9,10 +9,13 @@ WATCH="$APP_DIR/home-watcher.sh"
 PIDF="$TMP_PREFIX-watcher.pid"
 LOG="$TMP_PREFIX-watcher.log"
 INITD="$INITD_DIR/$HOOK_HOME_WATCHER"
-# Legacy names from "Lounge Launcher" branding.
-OLD_INITD="$INITD_DIR/$LEGACY_HOOK_HOME"
-OLD_PIDF="$LEGACY_TMP_PREFIX-watcher.pid"
-OLD_LOG="$LEGACY_TMP_PREFIX-watcher.log"
+# pid and log files from the Launch Home and older Lounge identities.
+OLD_PIDFS=""
+OLD_LOGS=""
+for p in $LEGACY_TMP_PREFIXES; do
+  OLD_PIDFS="$OLD_PIDFS $p-watcher.pid"
+  OLD_LOGS="$OLD_LOGS $p-watcher.log"
+done
 
 if [ ! -f "$WATCH" ]; then
   echo missing_watcher
@@ -21,7 +24,10 @@ fi
 
 chmod 755 "$WATCH"
 mkdir -p "$INITD_DIR"
-rm -f "$OLD_INITD"
+# Drop the stale hooks left by the Launch Home and older Lounge identities.
+for h in $LEGACY_HOOKS; do
+  rm -f "$INITD_DIR/$h"
+done
 
 # Boot hook — detach with setsid. Wait for applicationManager so the watcher
 # does not start before LS2 answers on a cold boot.
@@ -43,7 +49,7 @@ EOF
 chmod 755 "$INITD"
 
 # Stop prior instances (new + legacy pidfiles).
-for pf in "$PIDF" "$OLD_PIDF"; do
+for pf in "$PIDF" $OLD_PIDFS; do
   if [ -f "$pf" ]; then
     old=$(cat "$pf" 2>/dev/null)
     if [ -n "$old" ]; then
@@ -58,7 +64,7 @@ killall home-watcher.sh 2>/dev/null || true
 # and the shell that ran it, so it killed itself before starting the watcher.
 pkill -f "^sh $WATCH\$" 2>/dev/null || true
 pkill -f "^/bin/sh $WATCH\$" 2>/dev/null || true
-rm -f "$PIDF" "$OLD_PIDF"
+rm -f "$PIDF" $OLD_PIDFS
 sleep 1
 
 start_watcher() {
@@ -87,5 +93,7 @@ done
 echo start_failed
 echo ---log---
 tail -20 "$LOG" 2>/dev/null || true
-tail -20 "$OLD_LOG" 2>/dev/null || true
+for l in $OLD_LOGS; do
+  tail -20 "$l" 2>/dev/null || true
+done
 exit 1

@@ -12,7 +12,7 @@ interface RawTrackEntry {
   artist?: string;
 }
 
-/** Paths discovered on a USB drive's lounge folder. */
+/** Paths discovered on a USB drive's Ember folder. */
 export interface LoungePaths {
   root: string;
   usbConfig: unknown;

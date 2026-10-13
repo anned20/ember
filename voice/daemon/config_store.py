@@ -19,13 +19,13 @@ from typing import Any, Optional
 import brand
 
 CONFIG_DIR = os.environ.get(
-    "LH_VOICE_CONFIG_DIR", brand.VOICE_CONFIG_DIR
+    "EMBER_VOICE_CONFIG_DIR", brand.VOICE_CONFIG_DIR
 )
 CONFIG_PATH = os.environ.get(
-    "LH_VOICE_CONFIG", os.path.join(CONFIG_DIR, "config.json")
+    "EMBER_VOICE_CONFIG", os.path.join(CONFIG_DIR, "config.json")
 )
 EXAMPLE_PATH = os.environ.get(
-    "LH_VOICE_CONFIG_EXAMPLE", brand.APP_DIR + "/voice/config.example.json"
+    "EMBER_VOICE_CONFIG_EXAMPLE", brand.APP_DIR + "/voice/config.example.json"
 )
 
 PLACEHOLDER_KEY = "xai-..."

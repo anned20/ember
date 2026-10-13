@@ -6,7 +6,7 @@
 
 . "$(dirname "$0")/brand.sh"
 
-APPDIR="${LH_APPDIR:-$APP_DIR}"
+APPDIR="${EMBER_APPDIR:-$APP_DIR}"
 RUN="$APPDIR/voice-run.sh"
 CARD_ID="$VOICE_APP_ID"
 CARD_DIR="$VOICE_CARD_DIR"

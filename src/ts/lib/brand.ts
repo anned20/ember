@@ -11,9 +11,9 @@
 
 // The file-name slug behind the paths, root hooks and the voice service name.
 // Renaming the app's filesystem footprint starts here.
-const SLUG = 'launch-home';
+const SLUG = 'ember';
 // The localStorage namespace (the config, apps, weather… keys).
-const STORAGE_PREFIX = 'lounge';
+const STORAGE_PREFIX = 'ember';
 
 const NAME = 'Ember';
 const APP_ID = 'com.ember.launcher';
@@ -41,7 +41,7 @@ export const BRAND = {
   configDir: CONFIG_DIR,
   voiceConfigDir: CONFIG_DIR + '-voice',
   initdDir: '/var/lib/webosbrew/init.d',
-  // /tmp/launch-home-* names are built as tmpPrefix + '-…'.
+  // /tmp/ember-* names are built as tmpPrefix + '-…'.
   tmpPrefix: '/tmp/' + SLUG,
   voiceSocket: '/var/run/' + SLUG + '-voice.sock',
 
@@ -69,17 +69,24 @@ export const BRAND = {
     boot: '50-' + SLUG + '-boot'
   },
 
-  // Ids and names from earlier identities: the Launch Home app-id namespace
-  // (kept out of the dock) and the older "Lounge" hooks (swept up on enable).
+  // Names from earlier identities, swept up when a feature is enabled: the
+  // Launch Home app-id namespace (kept out of the dock), the init.d hooks those
+  // identities left behind, and the /tmp prefixes their pid and log files used.
   legacy: {
     appIdNamespace: 'org.webosbrew.lounge.',
-    tmpPrefix: '/tmp/lounge-home',
-    homeWatcherHook: '40-lounge-home',
-    bootHook: '50-lounge-boot'
+    voiceAppId: 'org.webosbrew.lounge.voice',
+    hooks: [
+      '40-launch-home-watcher',
+      '45-launch-home-voice',
+      '50-launch-home-boot',
+      '40-lounge-home',
+      '50-lounge-boot'
+    ],
+    tmpPrefixes: ['/tmp/launch-home', '/tmp/lounge-home']
   },
 
   // On a USB drive.
-  usbFolder: 'lounge',
+  usbFolder: 'ember',
   usbSettingsFile: SLUG + '-settings.json'
 } as const;
 

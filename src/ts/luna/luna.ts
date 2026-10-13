@@ -334,8 +334,8 @@ export function runTvCheck(appLine: string) {
 }
 
 // Settings -> Backup & restore. The TV copy is outside the app folder, so it
-// survives reinstalling Launch Home; a USB drive gets one in its lounge folder
-// (not config.json there, which Launch Home applies at every start).
+// survives reinstalling Ember; a USB drive gets one in its Ember folder
+// (not config.json there, which Ember applies at every start).
 const SETTINGS_BACKUP_FILE = BRAND.configDir + '/settings-backup.json';
 const USB_SETTINGS_BACKUP_NAME = BRAND.usbSettingsFile;
 // Copies Launch Home keeps by itself: before each restore (one, replaced each
@@ -413,7 +413,7 @@ export async function writeAutoBackup(name: string, text: string): Promise<void>
 
 /**
  * Save the settings backup `text` on the TV and, when `usbRoot` (a USB
- * drive's lounge folder) is given, there too. The TV copy must succeed.
+ * drive's Ember folder) is given, there too. The TV copy must succeed.
  * Resolves {usb: true | false | null, usbError}.
  */
 export async function writeSettingsBackup(text: string, usbRoot?: string): Promise<SettingsBackupWriteResult> {
@@ -429,7 +429,7 @@ export async function writeSettingsBackup(text: string, usbRoot?: string): Promi
 
 /**
  * Every settings backup found: the TV copy, the automatic copies, and one per
- * USB lounge folder in `usbRoots`. Resolves [{where: 'TV' | 'USB', text}].
+ * USB Ember folder in `usbRoots`. Resolves [{where: 'TV' | 'USB', text}].
  */
 export async function readSettingsBackups(usbRoots?: string[]): Promise<SettingsBackup[]> {
   const found: SettingsBackup[] = [];

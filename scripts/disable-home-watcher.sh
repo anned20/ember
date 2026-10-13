@@ -5,11 +5,13 @@
 
 WATCH="$APP_DIR/home-watcher.sh"
 PIDF="$TMP_PREFIX-watcher.pid"
-OLD_PIDF="$LEGACY_TMP_PREFIX-watcher.pid"
+OLD_PIDFS=""
+for p in $LEGACY_TMP_PREFIXES; do
+  OLD_PIDFS="$OLD_PIDFS $p-watcher.pid"
+done
 INITD="$INITD_DIR/$HOOK_HOME_WATCHER"
-OLD_INITD="$INITD_DIR/$LEGACY_HOOK_HOME"
 
-for pf in "$PIDF" "$OLD_PIDF"; do
+for pf in "$PIDF" $OLD_PIDFS; do
   if [ -f "$pf" ]; then
     old=$(cat "$pf" 2>/dev/null)
     if [ -n "$old" ]; then
@@ -22,6 +24,6 @@ killall home-watcher.sh 2>/dev/null || true
 # script (disable-home-watcher.sh), so it died before removing the boot hook.
 pkill -f "^sh $WATCH\$" 2>/dev/null || true
 pkill -f "^/bin/sh $WATCH\$" 2>/dev/null || true
-rm -f "$PIDF" "$OLD_PIDF" "$INITD" "$OLD_INITD"
+rm -f "$PIDF" $OLD_PIDFS "$INITD"
 echo disabled
 exit 0

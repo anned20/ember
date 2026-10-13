@@ -2,7 +2,7 @@
 """SuperGrok / SuperGrok Heavy OIDC device-code auth (same client as Grok CLI).
 
 Ported from macos-grok-agent `supergrok_auth.rs`. Tokens are stored under
-/home/root/.config/launch-home-voice/oauth.json and used as Bearer for api.x.ai.
+/home/root/.config/ember-voice/oauth.json and used as Bearer for api.x.ai.
 """
 
 from __future__ import annotations
@@ -25,10 +25,10 @@ SCOPE = "openid profile email offline_access api:access grok-cli:access"
 DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 
 CONFIG_DIR = os.environ.get(
-    "LH_VOICE_CONFIG_DIR", brand.VOICE_CONFIG_DIR
+    "EMBER_VOICE_CONFIG_DIR", brand.VOICE_CONFIG_DIR
 )
 OAUTH_PATH = os.environ.get(
-    "LH_VOICE_OAUTH", os.path.join(CONFIG_DIR, "oauth.json")
+    "EMBER_VOICE_OAUTH", os.path.join(CONFIG_DIR, "oauth.json")
 )
 CLI_AUTH_CANDIDATES = (
     "/home/root/.grok/auth.json",

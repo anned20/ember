@@ -174,12 +174,12 @@ describe('music pane', () => {
 
     const {pane, config, ctx} = buildMusic(makeConfig({
       source: 'usb',
-      path: '/media/usb1/lounge/music',
+      path: '/media/usb1/ember/music',
       usbPlaylist: ['u1']
     }));
 
     await waitFor(function () { return trackRowCount(pane) === 2; });
-    expect(discoverMusicTracks).toHaveBeenCalledWith('/media/usb1/lounge/music');
+    expect(discoverMusicTracks).toHaveBeenCalledWith('/media/usb1/ember/music');
 
     // Only the saved track is ticked; the other is left out.
     const boxes = pane.querySelectorAll('.settings-track-row input[type=checkbox]') as

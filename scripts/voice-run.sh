@@ -7,13 +7,13 @@
 #   voice-run.sh stop     stop the loop and the daemon with its helpers
 #   voice-run.sh status   "running pid=N current|outdated" or "stopped"
 #
-# Everything here is Launch Home's own (port 8678, /tmp/launch-home-voice*,
-# /home/root/.config/launch-home-voice). Another voice assistant on the TV,
+# Everything here is Ember's own (port 8678, /tmp/ember-voice*,
+# /home/root/.config/ember-voice). Another voice assistant on the TV,
 # such as VoxRelay, is never stopped or changed.
 
 . "$(dirname "$0")/brand.sh"
 
-APPDIR="${LH_APPDIR:-$APP_DIR}"
+APPDIR="${EMBER_APPDIR:-$APP_DIR}"
 RUN="$APPDIR/voice-run.sh"
 DAEMON="$APPDIR/voice/daemon/voice_daemon.py"
 RUNPID=$TMP_PREFIX-voice-run.pid

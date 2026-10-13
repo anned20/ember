@@ -150,7 +150,7 @@ export function createMusicPane(): PaneHandle {
       const musicPathField = createTextField({
         label: 'Music folder',
         focusIndex: '952',
-        placeholder: 'e.g. /media/usb1/lounge/music',
+        placeholder: 'e.g. /media/usb1/ember/music',
         path: 'music.path',
         trim: true,
         binder: ctx.binder

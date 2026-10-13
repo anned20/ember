@@ -1,1 +1,1 @@
-export const APP_VERSION = __LOUNGE_VERSION__;
+export const APP_VERSION = __EMBER_VERSION__;

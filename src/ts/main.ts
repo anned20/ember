@@ -190,9 +190,9 @@ function isTrueFlag(value: unknown): boolean {
 }
 
 function launchParamsWantPreview() {
-  const previewFlag = (window as Window & {__LH_PREVIEW_SS?: unknown}).__LH_PREVIEW_SS;
+  const previewFlag = (window as Window & {__EMBER_PREVIEW_SS?: unknown}).__EMBER_PREVIEW_SS;
   try {
-    // Injected by install/SSH: <script>window.__LH_PREVIEW_SS=1</script>
+    // Injected by install/SSH: <script>window.__EMBER_PREVIEW_SS=1</script>
     if (isTrueFlag(previewFlag)) {
       return true;
     }

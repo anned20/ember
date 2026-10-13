@@ -1,9 +1,9 @@
 #!/bin/sh
-# Launch Home TV check: model, CPU, memory, background activity, and how long
-# TV Settings takes to open. Run as root (Settings -> TV check, or over SSH):
-#   sh diagnostics.sh [--open-settings] [--app "Launch Home settings line"]
+# Ember TV check: model, CPU, memory, background activity, and how long TV
+# Settings takes to open. Run as root (Settings -> TV check, or over SSH):
+#   sh diagnostics.sh [--open-settings] [--app "Ember settings line"]
 # Prints a short summary (shown on the TV and in its QR code), then details.
-# The full report is also saved to /tmp/launch-home-diagnostics.txt.
+# The full report is also saved to /tmp/ember-diagnostics.txt.
 
 # The brand values (app id, /tmp prefixes): generated from src/ts/lib/brand.ts
 # into brand.sh, shipped next to this script.
@@ -83,7 +83,7 @@ close_settings() {
   csid=$1
   closed=0
   close_how="not closed"
-  for how in closeByAppId process launch-home; do
+  for how in closeByAppId process ember; do
     case "$how" in
       closeByAppId)
         luna 'luna://com.webos.applicationManager/closeByAppId' "{\"id\":\"$csid\"}" >/dev/null
@@ -95,7 +95,7 @@ close_settings() {
         [ -n "$cpid" ] && luna 'luna://com.webos.applicationManager/close' \
           "{\"processId\":\"$cpid\"}" >/dev/null
         ;;
-      launch-home)
+      ember)
         luna 'luna://com.webos.applicationManager/launch' "{\"id\":\"$APP_ID\"}" >/dev/null
         ;;
     esac

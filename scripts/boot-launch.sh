@@ -6,7 +6,7 @@
 # floor (webOS 22+) LS2 answers only once the compositor is up, so there is no
 # settle delay and no retry loop.
 #
-# Invoked detached from /var/lib/webosbrew/init.d/50-launch-home-boot.
+# Invoked detached from /var/lib/webosbrew/init.d/50-ember-boot.
 
 . "$(dirname "$0")/brand.sh"
 

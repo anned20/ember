@@ -1,0 +1,77 @@
+voice/overlay/appinfo.json
+  s_2a0e385cd36c86::t_04cb377041990a 2,5,7,11
+  s_2a0e385cd36c86::t_456d110a2fac33 6
+src/ts/lib/brand.ts
+  s_2a0e385cd36c86::t_bb8dbeb2281821 18-20
+  s_2a0e385cd36c86::t_3063108c7c9045 72-73,75
+  s_2a0e385cd36c86::t_0090a111111b5c 29,31
+src/ts/apps/lg-home.ts
+  s_2a0e385cd36c86::t_e8f203a200407a 22-24
+  s_2a0e385cd36c86::t_e7659abb3fe4fb 8
+  s_2a0e385cd36c86::t_625a31e1322a94 25-27,29
+appinfo.json
+  s_2a0e385cd36c86::t_ef1af9383563bd 2,4,7,14
+  s_2a0e385cd36c86::t_456d110a2fac33 3
+src/index.html
+  s_2a0e385cd36c86::t_3a05594f37e53d 9
+voice/overlay/index.html
+  s_2a0e385cd36c86::t_66b4dfabd9c441 6
+scripts/brand.sh
+  s_2a0e385cd36c86::t_b904188b928237 3-9,12-13
+package.json
+  s_2a0e385cd36c86::t_456d110a2fac33 3
+test/settings/panes/system.test.ts
+  s_2a0e385cd36c86::t_859d566a9ac098 5
+  s_2a0e385cd36c86::t_730a8a76de6876 64
+voice/daemon/openrouter_client.py
+  s_2a0e385cd36c86::t_cff491ec09aa98 77,191
+  s_2a0e385cd36c86::t_fc8f5c4aa81c8e 18
+test/settings/tv-check.test.ts
+  s_2a0e385cd36c86::t_309034dc86c91d 5
+  s_2a0e385cd36c86::t_ab5b7e65fdec8a 18
+  s_2a0e385cd36c86::t_2ed8c79d69bb85 46
+version.md
+  s_2a0e385cd36c86::t_456d110a2fac33 1
+scripts/build.ts
+  s_2a0e385cd36c86::t_98662a2bc24894 178-180
+  s_2a0e385cd36c86::t_a2ad363c1a0ff0 165
+test/settings/panes/tools.test.ts
+  s_2a0e385cd36c86::t_422aad4a614eab 188
+  s_2a0e385cd36c86::t_d95bdd96d06958 2
+test/brand.test.ts
+  s_2a0e385cd36c86::t_f1a6552060445c 26
+voice/daemon/brand.py
+  s_2a0e385cd36c86::t_b904188b928237 3-9,12-13
+voice/daemon/voice_daemon.py
+  s_2a0e385cd36c86::t_5c2216961ffff7 6721
+  s_2a0e385cd36c86::t_615919b4fd60fd 7329
+  s_2a0e385cd36c86::t_af8496c94dfd3c 6714
+voice/daemon/web_search.py
+  s_2a0e385cd36c86::t_77ff9fa9ea5717 23-24,26
+voice/daemon/grok_client.py
+  s_2a0e385cd36c86::t_ccce68bfa3824b 170
+test/apps/lg-home.test.ts
+  s_2a0e385cd36c86::t_9593eb84312a29 1-19
+test/foreground-watcher.test.ts
+  s_2a0e385cd36c86::t_d4560af303143a 192
+  s_2a0e385cd36c86::t_5eef48d4a5ea22 149
+  s_2a0e385cd36c86::t_c64a97f9ae9204 161
+package-lock.json
+  s_2a0e385cd36c86::t_916b9c53a60b9c 3,9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "130849745f3ae6efc9164d668a6591084839ea7c",
+  "prompts": {},
+  "sessions": {
+    "s_2a0e385cd36c86": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ecac1799dffeDZcGmAJfXXy0Wj",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

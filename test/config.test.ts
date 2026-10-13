@@ -97,15 +97,15 @@ describe('first-run import', () => {
       {where: 'TV', text: legacyBackupText({}, '2024-01-01T00:00:00Z')},
       {where: 'USB', text: legacyBackupText({launcher: {glassTint: 'dark'}}, '2024-06-01T00:00:00Z')}
     ]);
-    expect(result?.config.launcher.glassTint).toBe('dark');
+    expect(result?.launcher.glassTint).toBe('dark');
   });
 
   it('brings an old-schema backup forward through the migrations', async () => {
     const result = await importLegacySettings('', DEFAULT_CONFIG, async () => [
       {where: 'TV', text: legacyBackupText({launcher: {glassTint: 'blue'}}, '2024-01-01T00:00:00Z', 1)}
     ]);
-    expect(result?.config.launcher.glassTint).toBe('blue');
-    expect(result?.config.version).toBe(CONFIG_SCHEMA_VERSION);
+    expect(result?.launcher.glassTint).toBe('blue');
+    expect(result?.version).toBe(CONFIG_SCHEMA_VERSION);
   });
 
   it('does not import when Ember already has a stored config', async () => {

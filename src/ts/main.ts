@@ -1127,9 +1127,9 @@ export function createApp(): AppLifecycle {
       // No root (Homebrew Channel) or unreadable drive: start on defaults.
     }
     if (!imported) return;
-    setConfig(imported.config);
+    setConfig(imported);
     saveConfig(baseConfig);
-    importedNotice = 'Imported your Launch Home settings.';
+    importedNotice = 'Imported your previous settings.';
   }
 
   function keepSettingsFromBeforeUpdate() {

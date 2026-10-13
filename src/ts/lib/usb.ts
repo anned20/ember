@@ -229,10 +229,9 @@ export async function discoverBackgroundImages(backgroundPath: string): Promise<
   return [];
 }
 
-/** Whether `root` holds a USB config or any background/music media. */
+/** Whether `root` holds any background/music media (its config is checked first). */
 async function rootHasContent(root: string): Promise<boolean> {
   const probes = [
-    'config.json',
     'music/playlist.m3u',
     'music/tracks.json',
     'backgrounds/images.json'

@@ -209,13 +209,6 @@ export function restoreReport(b: ParsedBackup, result: BackupFitResult): string 
   return text;
 }
 
-/** What a first-run import did, for the confirmation toast. */
-export interface FirstRunImport {
-  config: Config;
-  where: string;
-  savedAt: string;
-}
-
 /**
  * On the first start with no stored config, import the newest Launch Home
  * backup so an upgrade keeps its setup. `readBackups` returns every backup
@@ -228,15 +221,13 @@ export async function importLegacySettings(
   storedConfigText: string,
   current: Config,
   readBackups: () => Promise<SettingsBackupFound[]>
-): Promise<FirstRunImport | null> {
+): Promise<Config | null> {
   if (storedConfigText) return null;
   const backups = listBackups(await readBackups());
   for (const b of backups) {
     if (!b.readable) continue;
     const fitted = configFromBackup(b.data.config, current);
-    if (fitted) {
-      return {config: fitted.config, where: b.where, savedAt: b.data.savedAt || ''};
-    }
+    if (fitted) return fitted.config;
   }
   return null;
 }

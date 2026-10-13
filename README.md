@@ -1,10 +1,10 @@
-# webOS Launch Home
+# Ember
 
 A fullscreen home screen for rooted LG webOS TVs. Pick an app, switch inputs, and enjoy ambient background music — without the stock launcher clutter.
 
-![Launch Home on an LG TV](docs/screenshots/screengrab1.jpg)
+![Ember on an LG TV](docs/screenshots/screengrab1.jpg)
 
-![Launch Home settings](docs/screenshots/screengrab2.jpg)
+![Ember settings](docs/screenshots/screengrab2.jpg)
 
 ## Features
 
@@ -17,37 +17,37 @@ A fullscreen home screen for rooted LG webOS TVs. Pick an app, switch inputs, an
 - Weather for today and the next 4 days (Open-Meteo, no API key), with a city search and °C/°F in Settings
 - Compact volume control; optional music bar (track name) in Settings
 - **TV channels** — when the TV has Live TV channels tuned, a Channels button after the inputs opens a strip above them with what's on now and your LG favourite channels (or all of them); pick one to watch it
-- Optional TV system volume levels for Launch Home vs when apps launch (default “Don’t change” keeps the volume you set with the remote)
+- Optional TV system volume levels for Ember vs when apps launch (default “Don’t change” keeps the volume you set with the remote)
 - Adjustable icon size and left/center/right icon alignment
-- Launch Home icon set for popular apps, or switch it off to use each app’s own TV icon (needs root)
+- Ember icon set for popular apps, or switch it off to use each app’s own TV icon (needs root)
 - Dedicated app settings button and a TV Settings tile for quick access to system settings
 - **Add all apps from LG's home screen** in one press (Settings → Apps → Add an app), in LG's order, or pick installed apps one by one; no app ids to type
-- **Launch on Home button** — root watcher reopens Launch Home when stock Home appears
-- **Boot on TV start** — root init.d script launches Launch Home after power-on
-- **Backup & restore** — Settings → Tools saves all your Launch Home settings to the TV (kept when you reinstall Launch Home) and to a plugged-in USB drive (`lounge/launch-home-settings.json`) to move them to another TV. Launch Home also keeps its own copy before each restore and each update, and backups made by other versions restore as far as they fit, telling you what didn't (see [Backup & restore](#backup--restore)); needs root
+- **Launch on Home button** — root watcher reopens Ember when stock Home appears
+- **Boot on TV start** — root init.d script launches Ember after power-on
+- **Backup & restore** — Settings → Tools saves all your Ember settings to the TV (kept when you reinstall Ember) and to a plugged-in USB drive (`ember/ember-settings.json`) to move them to another TV. Ember also keeps its own copy before each restore and each update, and backups made by other versions restore as far as they fit, telling you what didn't (see [Backup & restore](#backup--restore)); needs root
 - **Voice assistant (optional)** — built in: the Magic Remote's Voice button answers with Grok, Gemini or OpenRouter, opens apps and controls the TV (see [Voice](#voice))
 - Remote-friendly navigation. Settings is a category list (Look, Music, Screensaver, Apps, Inputs & channels, Weather, System, AI Voice, Tools): Up/Down picks a category, Right or OK enters it, Left or Back returns to the list
 
 ## Voice
 
-Launch Home has its own voice assistant for the Magic Remote's **Voice** button, built in and **off by default**. Turn it on in **Settings → AI Voice → Voice assistant** (needs root through Homebrew Channel). Then add an xAI (Grok) key or sign in with SuperGrok, or use a Gemini or OpenRouter key, and press Save.
+Ember has its own voice assistant for the Magic Remote's **Voice** button, built in and **off by default**. Turn it on in **Settings → AI Voice → Voice assistant** (needs root through Homebrew Channel). Then add an xAI (Grok) key or sign in with SuperGrok, or use a Gemini or OpenRouter key, and press Save.
 
 **What you can say:** open apps (“open Netflix”), volume up/down/mute or a level, channel up/down or a number, switch inputs (“HDMI 2”), captions on/off, a sleep timer, “turn off the TV”, the weather, and any other question, which is answered on screen and spoken aloud.
 
-**While it's on, Launch Home:**
+**While it's on, Ember:**
 
 - Shows a small **mic badge** top-right while it listens.
 - Opens the apps it asks for from the foreground (the reliable way to bring native apps such as Prime Video to the front).
-- Runs its daemon (`voice/daemon`, Python 3, runs as root) from the Launch Home app folder, restarts it after updates, and starts it at power-on (`/var/lib/webosbrew/init.d/45-launch-home-voice`).
-- Installs a small hidden app, **Launch Home Voice** (`org.webosbrew.lounge.voice`), that shows the question and answer and plays the spoken reply.
+- Runs its daemon (`voice/daemon`, Python 3, runs as root) from the Ember app folder, restarts it after updates, and starts it at power-on (`/var/lib/webosbrew/init.d/45-ember-voice`).
+- Installs a small hidden app, **Ember Voice** (`com.ember.voice`), that shows the question and answer and plays the spoken reply.
 
-Turning it off stops the daemon, removes the boot hook and the voice card, and gives the Voice button back to LG. Your settings and SuperGrok sign-in stay in `/home/root/.config/launch-home-voice` for next time. The log is `/tmp/launch-home-voice.log`.
+Turning it off stops the daemon, removes the boot hook and the voice card, and gives the Voice button back to LG. Your settings and SuperGrok sign-in stay in `/home/root/.config/ember-voice` for next time. The log is `/tmp/ember-voice.log`.
 
-**Other voice assistants.** Everything above belongs to Launch Home alone: its own port (`127.0.0.1:8678`), files, settings and app ids. Launch Home only talks to a voice service that identifies itself as its own, and never stops or changes another assistant such as VoxRelay. If VoxRelay is also running or installed, the AI Voice tab warns you, because both would answer the Voice button.
+**Other voice assistants.** Everything above belongs to Ember alone: its own port (`127.0.0.1:8678`), files, settings and app ids. Ember only talks to a voice service that identifies itself as its own, and never stops or changes another assistant such as VoxRelay. If VoxRelay is also running or installed, the AI Voice tab warns you, because both would answer the Voice button.
 
-**Interface** (between Launch Home and its daemon). On `ws://127.0.0.1:8678` Launch Home first sends `{"type": "hello", "params": {"role": "launcher"}}` and continues only if the reply names `launch-home-voice`. The daemon sends JSON `{"event": …, "payload": …}`:
+**Interface** (between Ember and its daemon). On `ws://127.0.0.1:8678` Ember first sends `{"type": "hello", "params": {"role": "launcher"}}` and continues only if the reply names `ember-voice`. The daemon sends JSON `{"event": …, "payload": …}`:
 
-| Event | Payload | Launch Home |
+| Event | Payload | Ember |
 |---|---|---|
 | `sessionStarted`, `sessionCatchup` | `listening: true` (or `early: true` / `reason: "button_press"`) | show mic badge |
 | `listeningEnded`, `sessionEnded`, `error` | — | hide mic badge |
@@ -60,21 +60,25 @@ AI Voice settings are requests `{"type": …, "params": …, "id": …}`, answer
 
 **Settings → Tools → Backup & restore** (needs root through Homebrew Channel):
 
-- **Back up settings** saves everything you set in Launch Home to `/home/root/.config/launch-home/settings-backup.json` on the TV, and to `lounge/launch-home-settings.json` on a plugged-in USB drive. Voice keys and the SuperGrok sign-in aren't included; they stay in `/home/root/.config/launch-home-voice`.
-- **Restore settings** lists every backup it finds: yours, the USB drive's, and the copies Launch Home keeps by itself in `/home/root/.config/launch-home/auto/` (one from before your last restore, and the settings from before each of the last three updates). Pick one and press **Restore this backup**.
+- **Back up settings** saves everything you set in Ember to `/home/root/.config/ember/settings-backup.json` on the TV, and to `ember/ember-settings.json` on a plugged-in USB drive. Voice keys and the SuperGrok sign-in aren't included; they stay in `/home/root/.config/ember-voice`.
+- **Restore settings** lists every backup it finds: yours, the USB drive's, and the copies Ember keeps by itself in `/home/root/.config/ember/auto/` (one from before your last restore, and the settings from before each of the last three updates). Pick one and press **Restore this backup**.
 
-Launch Home is young and its settings still change between versions, so a backup made by one version can be restored by another:
+Ember is young and its settings still change between versions, so a backup made by one version can be restored by another:
 
-- Each backup file records the Launch Home version that wrote it and its settings layout version.
-- **Older backup:** its settings are updated by the same steps Launch Home uses when you update it.
+- Each backup file records the Ember version that wrote it and its settings layout version.
+- **Older backup:** its settings are updated by the same steps Ember uses when you update it.
 - **Newer backup:** settings this version doesn't have are kept but not used.
 - A setting that doesn't fit (for example, a number where this version expects text) keeps your current value. After a restore, the status line lists every setting that was skipped or not used.
 - The voice assistant's on/off setting belongs to each TV and isn't restored.
-- To undo a restore, restore the copy marked **before your last restore**. To go back to an older Launch Home, restore the copy marked **before updating** that it wrote.
+- To undo a restore, restore the copy marked **before your last restore**. To go back to an older Ember, restore the copy marked **before updating** that it wrote.
+
+### Upgrading from Launch Home
+
+Ember is the renamed successor of Launch Home. On its first start with no Ember settings of its own, it imports the newest Launch Home backup it can find — the TV copy at `/home/root/.config/launch-home/settings-backup.json`, its automatic copies, or `lounge/launch-home-settings.json` on a USB drive — and starts you with those settings. Launch Home backups also still appear in **Restore settings** and restore as far as they fit. The old Launch Home app (and its own folder) is left in place; remove it by hand once you're happy with Ember.
 
 ## Compatibility
 
-Launch Home requires **webOS 22 or later** (Chromium 87+). On an older TV it
+Ember requires **webOS 22 or later** (Chromium 87+). On an older TV it
 shows a "This TV is too old" message and refuses to start: no home screen, no
 root hooks and no Home-button watcher are installed. The check runs at startup,
 reads the TV's `sdkVersion` (webOS 22 reports `7`), and falls back to the
@@ -163,8 +167,8 @@ cp /media/developer/apps/usr/palm/services/org.webosbrew.hbchannel.service/start
 ```
 
 This lives **outside** the app directory
-(`/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher`), so
-reinstalling or updating the Launch Home `.ipk` does **not** remove it —
+(`/media/developer/apps/usr/palm/applications/com.ember.launcher`), so
+reinstalling or updating the Ember `.ipk` does **not** remove it —
 root elevation survives app updates.
 
 ### 3. (Optional) Force re-elevation on every boot
@@ -174,16 +178,20 @@ boot as root. Add a hook so the service is always re-elevated after an update:
 
 ```bash
 mkdir -p /var/lib/webosbrew/init.d
-cat > /var/lib/webosbrew/init.d/30-lounge-elevate <<'EOF'
+cat > /var/lib/webosbrew/init.d/30-ember-elevate <<'EOF'
 #!/bin/sh
 /media/developer/apps/usr/palm/services/org.webosbrew.hbchannel.service/elevate-service
 EOF
-chmod +x /var/lib/webosbrew/init.d/30-lounge-elevate
+chmod +x /var/lib/webosbrew/init.d/30-ember-elevate
 ```
 
 > Note: A full **TV firmware update** can reset root. If app scanning stops
 > working after a system update, re-root the TV / reinstall Homebrew Channel and
 > repeat steps 1–2.
+
+## Credits
+
+Ember is based on [gprot42/webos-launch-home](https://github.com/gprot42/webos-launch-home). Thanks to its author and contributors.
 
 ## License
 

@@ -1,5 +1,5 @@
 /**
- * AI Voice settings client for Launch Home's own voice assistant.
+ * AI Voice settings client for Ember's own voice assistant.
  *
  * Talks to the voice daemon (voice/daemon) only through its local socket
  * (voice-ws.js, ws://127.0.0.1:8678) with these requests:

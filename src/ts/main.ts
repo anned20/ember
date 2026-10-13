@@ -653,9 +653,9 @@ export function createApp(): AppLifecycle {
   }
 
   async function openTvSettings() {
-    // TV Settings opens as a panel over Launch Home, which stays on screen
+    // TV Settings opens as a panel over Ember, which stays on screen
     // underneath: pause its animations now rather than waiting for a blur event
-    // (older webOS may not send one). Any key back in Launch Home clears it.
+    // (older webOS may not send one). Any key back in Ember clears it.
     setAppInactive(true);
     const config = getConfig();
     if (config.music && config.music.pauseOnLaunch) {
@@ -916,7 +916,7 @@ export function createApp(): AppLifecycle {
   }
 
   /**
-   * @param {{resume?: boolean}} [opts] resume: returning to Launch Home; keeps
+   * @param {{resume?: boolean}} [opts] resume: returning to Ember; keeps
    *   the dock as-is when nothing about it changed (see apps.refresh).
    */
   async function refreshAll(opts?: {resume?: boolean}) {
@@ -948,7 +948,7 @@ export function createApp(): AppLifecycle {
 
   // Reclaim system keyboard/pointer focus and re-select a dock tile.
   // After Home-button intercept, webOS often leaves INPUT routed to stock Home
-  // even though Launch Home is painted on top — remote OK does nothing until we
+  // even though Ember is painted on top — remote OK does nothing until we
   // re-assert window focus and a real focusable tile.
   function reclaimInput() {
     // Settings is open (e.g. after a screensaver preview): stay on the row the
@@ -996,7 +996,7 @@ export function createApp(): AppLifecycle {
     reclaimTimer3 = setTimeout(reclaimInput, 1600);
   }
 
-  // An overlay app such as LG Settings takes the remote but leaves Launch Home
+  // An overlay app such as LG Settings takes the remote but leaves Ember
   // on screen underneath. Hold the wallpaper motion still meanwhile, so the TV
   // isn't re-compositing the 4K photo and the glass blur behind that panel on
   // every frame (its menus felt sluggish).

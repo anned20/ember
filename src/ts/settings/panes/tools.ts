@@ -25,7 +25,7 @@ const ROOTS_DEADLINE_MS = 4000;
 /** Where diagnostics.sh saves its full report on the TV. */
 const DIAGNOSTICS_FILE = BRAND.tmpPrefix + '-diagnostics.txt';
 
-/** A Launch Home backup file as parsed by settings-backup.js. */
+/** An Ember backup file as parsed by settings-backup.js. */
 interface BackupRecord {
   data: {config: any; savedAt?: string; updatedTo?: string};
   where: string;
@@ -49,9 +49,9 @@ export function createToolsPane(): PaneHandle {
 
   return {
     build: function (ctx: SettingsContext): void {
-      // Backup & restore: every Launch Home setting to a file on the TV (kept
-      // when Launch Home is reinstalled) and to a plugged-in USB drive, to move
-      // them to another TV. Launch Home also keeps copies by itself, before each
+      // Backup & restore: every Ember setting to a file on the TV (kept
+      // when Ember is reinstalled) and to a plugged-in USB drive, to move
+      // them to another TV. Ember also keeps copies by itself, before each
       // restore and each update. Backups from other versions restore as far as
       // they fit (config.js, configFromBackup). Needs root (Homebrew Channel).
       const backupSection = createSection('Backup & restore');

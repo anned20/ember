@@ -205,7 +205,7 @@ export function createChannelStrip(
 
   return {
     // Read the channel list if it is older than LIST_MAX_AGE_MS (at start and
-    // on each return to Launch Home).
+    // on each return to Ember).
     refresh: function () { return load(false); },
     available: function () { return shown().length > 0; },
     hasChannels: hasChannels,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch Home voice daemon — button, audio, AI answers and the voice card."""
+"""Ember voice daemon — button, audio, AI answers and the voice card."""
 
 from __future__ import annotations
 
@@ -214,7 +214,7 @@ DEFAULT_NATIVE_VOICE_SERVICES = ["voiceconductor.service"]
 # LG trigger_thinq watches /tmp via inotify; creating this file disables native
 # setInputEvent forwarding from trigger.alexa / trigger.thinq into voiceconductor.
 NATIVE_SET_INPUT_EVENT_DISABLE_FILE = "/tmp/voiceinput_disable_set_input_event"
-# Launch Home's voice card (voice/overlay), installed by enable-voice.sh.
+# Ember's voice card (voice/overlay), installed by enable-voice.sh.
 OVERLAY_APP_ID = brand.VOICE_APP_ID
 
 # Bluetooth remote mic, exposed as an ALSA capture PCM on this TV.
@@ -948,7 +948,7 @@ class GrokVoiceDaemon:
         if close_poll < 10:
             close_poll = 12.0
         self.luna = LunaBridge(
-            # Always Launch Home's own card, whatever an old config says.
+            # Always Ember's own card, whatever an old config says.
             overlay_app_id=OVERLAY_APP_ID,
             close_native=bool(config.get("close_native_aiplatform", True)),
             native_close_poll_sec=close_poll,
@@ -7329,7 +7329,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=brand.NAME + " voice daemon")
     parser.add_argument("--config", default=None)
     args = parser.parse_args()
-    # Own process group, so Launch Home's run loop (voice-run.sh) can stop the
+    # Own process group, so Ember's run loop (voice-run.sh) can stop the
     # daemon together with its helpers (tail, luna-send, arecord).
     try:
         os.setsid()

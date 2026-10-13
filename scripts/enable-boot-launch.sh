@@ -1,5 +1,5 @@
 #!/bin/sh
-# Enable Launch Home boot-on-start via Homebrew init.d (run as root via hbchannel exec).
+# Enable Ember boot-on-start via Homebrew init.d (run as root via hbchannel exec).
 
 . "$(dirname "$0")/brand.sh"
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Enable Launch Home button watcher (run as root via hbchannel exec).
+# Enable Ember button watcher (run as root via hbchannel exec).
 # Packaged next to home-watcher.sh in the app directory.
 # Requires setsid on the supported floor (webOS 22+).
 

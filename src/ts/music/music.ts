@@ -461,7 +461,7 @@ export function createMusicPlayer(
     busyRetry = setTimeout(function () {
       busyRetry = null;
       urlCandidateIndex = 0;
-      // Another app is on screen: try when Launch Home is back (fadeInAndResume).
+      // Another app is on screen: try when Ember is back (fadeInAndResume).
       if (document.hidden) {
         retryOnReturn = true;
         return;

@@ -1,6 +1,6 @@
-"""Config read/write for the Launch Home voice daemon.
+"""Config read/write for the Ember voice daemon.
 
-Services the settings RPCs Launch Home's AI Voice tab sends over the local
+Services the settings RPCs Ember's AI Voice tab sends over the local
 WebSocket (ws://127.0.0.1:8678), bypassing the webOS ACG private bus that
 blocks non-root luna-send calls.
 
@@ -370,7 +370,7 @@ def provider_key_configured(config: dict[str, Any] | None = None) -> bool:
     return not is_placeholder_key(cfg.get("xai_api_key"))
 
 
-# Labels for settings pickers. Settings clients (Launch Home's AI Voice tab, or
+# Labels for settings pickers. Settings clients (Ember's AI Voice tab, or
 # any launcher that shows an AI Voice pane) render settings_options() as-is and
 # keep no model lists of their own, so model updates happen only in this file.
 _OPTION_LABELS = {
@@ -658,7 +658,7 @@ def apply_updates(updates: dict[str, Any]) -> tuple[dict[str, Any], bool]:
 
 
 def restart_daemon() -> tuple[bool, str]:
-    """Restart by exiting: Launch Home's run loop (voice-run.sh) starts a fresh
+    """Restart by exiting: Ember's run loop (voice-run.sh) starts a fresh
     daemon a few seconds later. The delay lets the setConfig reply go out."""
     import os
     import threading
@@ -672,7 +672,7 @@ def get_status() -> dict[str, Any]:
     # Answering this request means the daemon is running.
     daemon_active = True
     provider = str(config.get("ai_provider") or "xai").lower()
-    # WS probe: Launch Home and the voice card need 8678 open.
+    # WS probe: Ember and the voice card need 8678 open.
     ws_ok = False
     try:
         import socket as _socket

@@ -36,7 +36,7 @@ function volumeLevelOptions(selected: string): StepperOption[] {
 }
 
 /**
- * The System pane: the Launch Home vs app-launch volume levels, performance
+ * The System pane: the Ember vs app-launch volume levels, performance
  * mode, the rooted Home button watcher and boot-on-start.
  */
 export function createSystemPane(): PaneHandle {
@@ -82,7 +82,7 @@ export function createSystemPane(): PaneHandle {
 
       // Off by default: when enabled, stock Home coming to the foreground
       // (Home button press after another app, or an app exiting to home)
-      // relaunches Launch Home.
+      // relaunches Ember.
       const launchOnHomeField = createToggle({
         label: 'Launch on Home button',
         focusIndex: '1010',

@@ -1,8 +1,8 @@
 #!/bin/sh
-# Launch Home — launch on TV boot (webOS Homebrew init.d).
+# Ember — launch on TV boot (webOS Homebrew init.d).
 #
 # Waits for applicationManager / LS2 to come up after cold boot, then launches
-# Launch Home and polls briefly until it owns the foreground. On the supported
+# Ember and polls briefly until it owns the foreground. On the supported
 # floor (webOS 22+) LS2 answers only once the compositor is up, so there is no
 # settle delay and no retry loop.
 #
@@ -29,7 +29,7 @@ luna_once() {
   luna-send -i -n 1 -w 4000 -f "$uri" "$payload" 2>/dev/null
 }
 
-# Is Launch Home the foreground app right now?
+# Is Ember the foreground app right now?
 is_foreground() {
   fg=$(luna_once 'luna://com.webos.applicationManager/getForegroundAppInfo' '{"subscribe":true}' 2>/dev/null)
   case "$fg" in
@@ -50,14 +50,14 @@ while [ "$i" -lt 90 ]; do
 done
 
 # LS2 answers only once the compositor is up, so launch straight away and poll
-# briefly until Launch Home is foreground.
+# briefly until Ember is foreground.
 log "launch (uptime $(uptime_s)s)"
 luna_once 'luna://com.webos.applicationManager/launch' "{\"id\":\"${APP_ID}\"}" >>"$LOG" 2>&1 || true
 j=0
 while [ "$j" -lt 8 ]; do
   sleep 0.5
   if is_foreground; then
-    log "Launch Home is foreground — done (uptime $(uptime_s)s)"
+    log "Ember is foreground — done (uptime $(uptime_s)s)"
     exit 0
   fi
   j=$((j + 1))

@@ -200,7 +200,7 @@ export function createAppsPane(): PaneHandle {
         }
       });
     }
-    // The TV's list couldn't be read (no root): offer the apps Launch Home knows.
+    // The TV's list couldn't be read (no root): offer the apps Ember knows.
     if (!listed.length) {
       KNOWN_BUILTIN_APPS.forEach(function (id) {
         const app = apps.appsByIdMap[id];

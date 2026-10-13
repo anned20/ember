@@ -841,7 +841,7 @@ export function createAiPane(): AiPaneHandle {
       }
     }
 
-    // Voice assistant on/off. Launch Home installs and runs its own voice
+    // Voice assistant on/off. Ember installs and runs its own voice
     // daemon (voice/ in this app) as root; everything below talks to it, so
     // those sections only show while it is on.
     const aiPowerSection = createSection('Voice assistant');
@@ -878,7 +878,7 @@ export function createAiPane(): AiPaneHandle {
     }
 
     // VoxRelay (a separate project) answering the same button would clash.
-    // Launch Home only reports it; it never stops or changes it.
+    // Ember only reports it; it never stops or changes it.
     function paintOtherVoice(state: string): void {
       aiOtherVoice.hidden = !state;
       aiOtherVoice.textContent = state === 'running'
@@ -937,7 +937,7 @@ export function createAiPane(): AiPaneHandle {
 
     /**
      * Fill a picker from the voice service's own choices (config.options),
-     * so Launch Home ships no model or language lists. The saved value is
+     * so Ember ships no model or language lists. The saved value is
      * always shown, even if the service no longer offers it.
      */
     function fillFromService(select: OptionStepperElement, key: string): void {
@@ -1092,7 +1092,7 @@ export function createAiPane(): AiPaneHandle {
       if (isRetry !== true) aiLoadRetries = 0;
       if (!voiceOn) {
         // Off in this app's settings, but the daemon may still be running
-        // (e.g. Launch Home was reinstalled): show what is really there.
+        // (e.g. Ember was reinstalled): show what is really there.
         isVoiceRunning().then(function (running) {
           if (disposed || !ctx.isVisible() || voiceBusy || voiceOn || !running) return;
           persistVoiceEnabled(true);

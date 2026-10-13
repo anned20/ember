@@ -1,7 +1,7 @@
 #!/bin/sh
-# Turn on Launch Home's voice assistant (run as root via hbchannel exec).
+# Turn on Ember's voice assistant (run as root via hbchannel exec).
 # Safe to run again: it only installs or restarts what is missing or outdated,
-# so Launch Home runs it at every start while voice is on.
+# so Ember runs it at every start while voice is on.
 #
 # Prints "enabled ..." when done, "other_voice=voxrelay:running|installed"
 # when another voice assistant is also on this TV (it is left alone), or an
@@ -41,7 +41,7 @@ chmod 600 "$CONF_DIR/config.json" 2>/dev/null
 chmod 600 "$CONF_DIR/oauth.json" 2>/dev/null
 
 # The voice card: a small hidden app that shows the question and answer and
-# plays the spoken reply. It is packed inside Launch Home as voice/card.pkg.
+# plays the spoken reply. It is packed inside Ember as voice/card.pkg.
 card_version() {
   sed -n 's/.*"version" *: *"\([^"]*\)".*/\1/p' "$1" 2>/dev/null | head -1
 }
@@ -108,7 +108,7 @@ exit 0
 EOF
 chmod 755 "$INITD"
 
-# Start the daemon, or restart it when Launch Home was updated.
+# Start the daemon, or restart it when Ember was updated.
 state=$(sh "$RUN" status)
 case "$state" in
   *current*)

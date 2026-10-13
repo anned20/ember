@@ -78,7 +78,7 @@ settings_on_screen() {
 
 # Close TV Settings ($1) and check it really went: on some TVs (webOS 9)
 # closeByAppId alone left it on screen. Tries closeByAppId, then closing its
-# process, then bringing Launch Home back. Sets closed (1 or 0) and close_how.
+# process, then bringing Ember back. Sets closed (1 or 0) and close_how.
 close_settings() {
   csid=$1
   closed=0

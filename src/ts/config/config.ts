@@ -105,27 +105,27 @@ export const DEFAULT_CONFIG: Config = {
     iconAlign: 'center',
     iconLayout: 'scroll',
     iconsPerRow: 7,
-    // Bundled Launch Home icons for known apps; false = the TV's own icons.
+    // Bundled Ember icons for known apps; false = the TV's own icons.
     bundledIcons: true,
     perfMode: false,
     bootOnStart: false,
     returnOnAppExit: false,
     // When true, press of the Home button (stock home coming to the
-    // foreground after another app) relaunches Launch Home. Off by default.
+    // foreground after another app) relaunches Ember. Off by default.
     launchOnHome: false,
-    // Launch Home's voice assistant (Settings -> AI Voice). It takes over the
+    // Ember's voice assistant (Settings -> AI Voice). It takes over the
     // remote's Voice button, so it is off until turned on.
     voiceEnabled: false,
-    // TV system volume (0–100) while Launch Home is in the foreground.
+    // TV system volume (0–100) while Ember is in the foreground.
     // null = don't change it (new installs); existing configs keep their level.
     volumeAtHome: null,
     // TV system volume (0–100) when launching another app / input. null = don't change.
     volumeOnAppLaunch: null,
     // System LG gallery screensaver wait (enum 3/10/20/30 only). 0 = off.
-    // When customScreensaver is on, Launch Home pushes this to 30 so the
+    // When customScreensaver is on, Ember pushes this to 30 so the
     // system saver does not interrupt the in-app slideshow first.
     screensaverMinutes: 30,
-    // In-app Launch Home screensaver (slideshow + clock while on home).
+    // In-app Ember screensaver (slideshow + clock while on home).
     customScreensaver: true,
     customScreensaverMinutes: 5,
     customScreensaverSlideSec: 20,
@@ -388,7 +388,7 @@ export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
     );
   },
 
-  // v21: in-app Launch Home screensaver.
+  // v21: in-app Ember screensaver.
   21: function addCustomScreensaver(config) {
     if (typeof config.launcher.customScreensaver !== 'boolean') {
       config.launcher.customScreensaver = true;
@@ -566,14 +566,14 @@ function fitSettings(
 
 /**
  * Settings -> Backup & restore: the settings in a backup, made to fit this
- * version of Launch Home. A backup from an older version runs through the same
+ * version of Ember. A backup from an older version runs through the same
  * migrations as stored settings; from a newer version, settings this version
  * doesn't have are kept but unused. Anything of the wrong kind keeps the TV's
  * current value, and this TV's own settings (DEVICE_SETTINGS) stay as they
  * are. Nothing is saved here.
  *
  * Returns {config, skipped: [{path, why: 'newer' | 'type'}], schema, newer,
- * older}, or null when `data` isn't Launch Home settings.
+ * older}, or null when `data` isn't Ember settings.
  */
 export function configFromBackup(data: unknown, current: Config): BackupFitResult | null {
   if (!isPlainObject(data) || !isPlainObject(data.launcher)) return null;

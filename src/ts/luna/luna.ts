@@ -291,7 +291,7 @@ const VOICE_DISABLE = HOME_WATCHER_APP_DIR + '/disable-voice.sh';
 const VOICE_RUN = HOME_WATCHER_APP_DIR + '/voice-run.sh';
 
 /**
- * Install + start the root Home-button watcher so Home opens Launch Home even when
+ * Install + start the root Home-button watcher so Home opens Ember even when
  * this web app is suspended.
  *
  * Runs a packaged enable script (not an inline command string). The previous
@@ -319,7 +319,7 @@ export function enableHomeWatcher() {
 /**
  * Settings -> TV check: model, memory, CPU load, background activity and how
  * long TV Settings takes to open (the script opens and closes it twice). About
- * 30-40 s. `appLine` (Launch Home's own settings) goes into the saved report.
+ * 30-40 s. `appLine` (Ember's own settings) goes into the saved report.
  * Resolves with the plain-text report.
  */
 export function runTvCheck(appLine: string) {
@@ -528,11 +528,11 @@ function rootScriptOutput(execPromise: Promise<LunaResponse>): Promise<string> {
 
 /**
  * Settings -> AI Voice -> Voice assistant on: installs the voice card and a
- * boot hook and starts Launch Home's own voice daemon (scripts/enable-voice.sh).
+ * boot hook and starts Ember's own voice daemon (scripts/enable-voice.sh).
  * Safe to repeat; after an update it restarts the daemon on the new code. The
  * first run installs the card, so allow a minute or two.
  * Resolves {listening, otherVoice}; otherVoice is 'running' or 'installed' when
- * VoxRelay is also on the TV (Launch Home leaves it alone), else ''.
+ * VoxRelay is also on the TV (Ember leaves it alone), else ''.
  */
 export function enableVoice(): Promise<VoiceEnableResult> {
   const cmd =
@@ -559,7 +559,7 @@ export function enableVoice(): Promise<VoiceEnableResult> {
   });
 }
 
-/** True while Launch Home's voice run loop is alive (voice-run.sh status). */
+/** True while Ember's voice run loop is alive (voice-run.sh status). */
 export function isVoiceRunning() {
   const cmd = 'sh "' + VOICE_RUN + '" status 2>/dev/null || echo stopped';
   return execRoot(cmd, TIMEOUTS.rootVoiceProbe).then(function (res) {
@@ -609,7 +609,7 @@ export function isHomeWatcherRunning() {
 }
 
 /**
- * Install Homebrew init.d hook so Launch Home launches after TV power-on.
+ * Install Homebrew init.d hook so Ember launches after TV power-on.
  * Requires rooted TV + Homebrew Channel startup (webosbrew init.d).
  */
 export function enableBootLaunch() {
@@ -784,7 +784,7 @@ function snapToAllowedMinutes(minutes: number | string | boolean, allowed: numbe
 }
 
 /**
- * Map a Launch Home "screensaver after N minutes" choice to a valid
+ * Map an Ember "screensaver after N minutes" choice to a valid
  * screenSaverTimer enum value. 0 / off → null (caller disables via
  * screenSaverEnabled).
  * @param {number|string|boolean} minutes
@@ -881,7 +881,7 @@ export function setScreensaverTimeout(minutes: number | string) {
 
 /**
  * Set the TV system volume (0–100). Best-effort across webOS audio services.
- * Used when entering Launch Home vs launching an external app.
+ * Used when entering Ember vs launching an external app.
  */
 export function setSystemVolume(level: number | string) {
   let n = Math.round(Number(level));

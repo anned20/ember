@@ -4,7 +4,7 @@
  * a backup's settings to this version (configFromBackup).
  *
  * Compatibility: each file says which layout of the file (format), of the
- * settings (schema, i.e. config.version) and which Launch Home (appVersion)
+ * settings (schema, i.e. config.version) and which version of Ember (appVersion)
  * wrote it. Every later version keeps reading older files; a file in a newer
  * format than this version knows is listed but not restored.
  */
@@ -86,7 +86,7 @@ export function lastBackupNote(): string {
 
 /**
  * The backup file for `config`. `opts.reason` is 'manual', 'before-restore' or
- * 'before-update'; `opts.appVersion` is the Launch Home that wrote these
+ * 'before-update'; `opts.appVersion` is the version of Ember that wrote these
  * settings (default: this one) and `opts.updatedTo` the version it was being
  * updated to. ASCII only (other characters as \u escapes) so it can go through
  * the shell in pieces.
@@ -111,7 +111,7 @@ export function settingsBackupText(config: Config, opts?: SettingsBackupOptions)
 
 /**
  * A backup file's contents as {data, where, time, format, schema, appVersion,
- * reason, readable}, or null when it isn't a Launch Home backup. Files from
+ * reason, readable}, or null when it isn't an Ember or Launch Home backup. Files from
  * 0.0.110 have no format or schema: format 1, schema from their settings.
  */
 export function parseBackup(text: string, where: string): ParsedBackup | null {
@@ -138,7 +138,7 @@ export function parseBackup(text: string, where: string): ParsedBackup | null {
   };
 }
 
-/** The Launch Home backups among `found` ([{where, text}]), newest first. */
+/** The Ember or Launch Home backups among `found` ([{where, text}]), newest first. */
 export function listBackups(found?: SettingsBackupFound[]): ParsedBackup[] {
   return (found || []).map(function (entry) {
     return parseBackup(entry.text, entry.where);
@@ -167,7 +167,7 @@ function madeBy(b: ParsedBackup): string {
   return b.appVersion ? ' (' + b.appVersion + ')' : '';
 }
 
-/** How a backup relates to this version of Launch Home, in words. */
+/** How a backup relates to this version of Ember, in words. */
 export function compatibilityNote(b: ParsedBackup): string {
   if (!b.readable) {
     return 'Made by a newer ' + BRAND.name + madeBy(b) + ' in a format this version can’t ' +

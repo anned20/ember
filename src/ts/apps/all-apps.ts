@@ -11,8 +11,8 @@ import {lazyLoadIcon} from './app-catalog.js';
 import {BRAND} from '@lib/brand.js';
 import type {AppRecord} from '@lib/types.js';
 
-const LAUNCH_HOME_ID = BRAND.appId;
-// Apps are rarely installed while Launch Home runs: list them again after this.
+const EMBER_ID = BRAND.appId;
+// Apps are rarely installed while Ember runs: list them again after this.
 const LIST_MAX_AGE_MS = 10 * 60 * 1000;
 
 /** One app as listInstalledApps reports it (with its hidden flag). */
@@ -134,7 +134,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
 
   async function load(): Promise<ListedApp[]> {
     const apps = (await listInstalledApps()).filter(function (app) {
-      return app && app.id && !app.hidden && app.id !== LAUNCH_HOME_ID;
+      return app && app.id && !app.hidden && app.id !== EMBER_ID;
     });
     apps.sort(function (a, b) {
       return (a.title || a.id).localeCompare(b.title || b.id);
@@ -185,7 +185,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     show: show,
     hide: hide,
     isOpen: function () { return open; },
-    /** After Launch Home regains input: stay on the app the remote was on. */
+    /** After Ember regains input: stay on the app the remote was on. */
     refocus: function () {
       const active = document.activeElement;
       if (panel && active && panel.contains(active) &&

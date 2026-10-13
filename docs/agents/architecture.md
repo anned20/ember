@@ -117,7 +117,7 @@ where it was.
 `createForegroundWatcher` in `lib/foreground-watcher.ts` polls the system
 foreground app id and drives three things:
 
-1. Music. It pauses ambient audio when Launch Home actually left the foreground
+1. Music. It pauses ambient audio when Ember actually left the foreground
    while a launch is pending (`launchState.shouldPauseForLaunch`).
 2. Launch recovery. It hands the observation to `launch-state.ts` and acts on
    the result: `reassert` brings the native card forward, `close` kills the
@@ -136,7 +136,7 @@ work to the poll that could block it.
 
 ## Platform compatibility
 
-Launch Home supports **webOS 22 or later** ([ADR-0001](../adr/0001-webos-22-floor.md)).
+Ember supports **webOS 22 or later** ([ADR-0001](../adr/0001-webos-22-floor.md)).
 `luna/platform.ts` is the one place the contract is decided: `getSdkVersion`
 reads the TV, `isSupportedPlatform` folds in the Chromium-87 user-agent
 fallback, and `main.ts`'s `init()` runs the gate as its first step — before

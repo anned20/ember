@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  // Launch Home's own voice daemon (voice/daemon), never another project's.
+  // Ember's own voice daemon (voice/daemon), never another project's.
   var EVENTS_WS_URI = 'ws://127.0.0.1:8678';
   window.__dbg = window.__dbg || [];
   function dbg(m) {
@@ -157,7 +157,7 @@
       ws.onopen = function () {
         bridgeOpening = null;
         wsReconnectAttempts = 0;
-        // Tell the daemon this is the voice card (not Launch Home), so it
+        // Tell the daemon this is the voice card (not Ember), so it
         // counts as the connected overlay and gets the spoken audio.
         try {
           ws.send(JSON.stringify({type: 'hello', id: 'hello', params: {role: 'overlay'}}));
@@ -251,7 +251,7 @@
       return;
     }
 
-    // Settings live in Launch Home's AI Voice tab: anything but a voice
+    // Settings live in Ember's AI Voice tab: anything but a voice
     // launch just closes the card.
     closeApp();
   }

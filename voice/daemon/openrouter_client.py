@@ -73,7 +73,7 @@ def stream_openrouter_chat(
             "Authorization": "Bearer " + key,
             "Content-Type": "application/json",
             "Accept": "text/event-stream",
-            "HTTP-Referer": "https://github.com/gprot42/webos-launch-home",
+            "HTTP-Referer": "https://github.com/anned20/ember",
             "X-Title": brand.NAME,
             "Connection": "close",
         },
@@ -187,7 +187,7 @@ def transcribe_openrouter(
         headers={
             "Authorization": "Bearer " + key,
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/gprot42/webos-launch-home",
+            "HTTP-Referer": "https://github.com/anned20/ember",
             "X-Title": brand.NAME,
         },
         method="POST",

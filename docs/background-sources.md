@@ -1,9 +1,9 @@
 # Background image sources
 
-Launch Home can show backgrounds from:
+Ember can show backgrounds from:
 
-1. **Built-in photos** — 5 premium **~3840px** JPEGs packaged under `assets/backgrounds/` (offline), sharp on 4K TVs. Online URL streams additional ~3840px photos without growing the package further. With **Performance mode** on, Launch Home uses 1920px versions instead, about a quarter of the pixels to decode, for slower TVs: online photos are requested at 1920px, and the built-ins' 1920px copies (`assets/backgrounds/1920/`, not packaged in the IPK) are downloaded from this repo via jsDelivr and cached. Offline, the packaged 4K originals are used.
-2. **USB folder** — files on a stick (`lounge/backgrounds/` + optional `images.json`)
+1. **Built-in photos** — 5 premium **~3840px** JPEGs packaged under `assets/backgrounds/` (offline), sharp on 4K TVs. Online URL streams additional ~3840px photos without growing the package further. With **Performance mode** on, Ember uses 1920px versions instead, about a quarter of the pixels to decode, for slower TVs: online photos are requested at 1920px, and the built-ins' 1920px copies (`assets/backgrounds/1920/`, not packaged in the IPK) are downloaded from this repo via jsDelivr and cached. Offline, the packaged 4K originals are used.
+2. **USB folder** — files on a stick (`ember/backgrounds/` + optional `images.json`; a legacy `lounge/backgrounds/` folder is still read)
 3. **Online URL** — direct `https://` image links (Unsplash nature, Wallhaven anime, Pexels, your CDN) — **not** stored in the package
 4. **Aerial videos** — Apple's aerial/screensaver clips, **hotlinked** from Apple's CDN and streamed as video (not stored in the package). See [Aerial videos](#aerial-videos).
 5. **Gradients** — CSS presets (no images)

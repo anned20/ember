@@ -1,5 +1,5 @@
 #!/bin/sh
-# Disable Launch Home boot-on-start (run as root via hbchannel exec).
+# Disable Ember boot-on-start (run as root via hbchannel exec).
 
 . "$(dirname "$0")/brand.sh"
 

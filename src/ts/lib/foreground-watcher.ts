@@ -3,12 +3,12 @@
  * its cadence live in one place and can be exercised with a fake foreground
  * source. It polls the system foreground app id and drives three things:
  *
- * 1. Music: it pauses ambient audio when Launch Home actually left the
+ * 1. Music: it pauses ambient audio when Ember actually left the
  *    foreground while a launch is in flight.
  * 2. Launch recovery: it hands the observation to `launch-state.ts` and acts on
  *    the result — `reassert` brings the native card forward, `close` kills the
  *    stuck app and reclaims input.
- * 3. Home intercept and return: when stock Home comes up it brings Launch Home
+ * 3. Home intercept and return: when stock Home comes up it brings Ember
  *    back, and when we reappear it regains the remote.
  *
  * It performs no DOM work: every side effect is an injected callback.
@@ -31,10 +31,10 @@ const POLL_IDLE_MS = 3000;
 const HOME_INTERCEPT_RATE_LIMIT_MS = 1500;
 
 /**
- * Whether Launch Home should intercept stock Home and bring itself back.
+ * Whether Ember should intercept stock Home and bring itself back.
  * `launchOnHome` (preferred) or legacy `returnOnAppExit`: when the stock home
  * comes to the foreground after another app (Home button or app exit),
- * relaunch Launch Home so it acts as the home screen.
+ * relaunch Ember so it acts as the home screen.
  */
 export function shouldInterceptHome(launcher: LauncherConfig | null | undefined): boolean {
   if (!launcher) return false;
@@ -53,7 +53,7 @@ export interface ForegroundActivitySink {
 
 /** The collaborators the watcher needs; it imports nothing but its machine. */
 export interface ForegroundWatcherOptions {
-  /** Launch Home's own app id. */
+  /** Ember's own app id. */
   selfAppId: string;
   /** The system foreground app id, '' when unknown. */
   getForegroundApp(): Promise<{appId?: string}>;
@@ -67,7 +67,7 @@ export interface ForegroundWatcherOptions {
   isVisible(): boolean;
   /** Whether to keep watching while backgrounded to intercept Home. */
   shouldInterceptHome(): boolean;
-  /** Pause ambient music because a launch left Launch Home. */
+  /** Pause ambient music because a launch left Ember. */
   pauseMusic(): void;
   /** Reclaim the remote's input focus at once. */
   reclaimInput(): void;
@@ -143,7 +143,7 @@ export function createForegroundWatcher(options: ForegroundWatcherOptions): Fore
   }
 
   // In-app backup for the root home-watcher: whenever stock Home is foreground,
-  // bring Launch Home forward. (The root watcher is the reliable path when
+  // bring Ember forward. (The root watcher is the reliable path when
   // suspended.)
   async function maybeReturnToLounge(appId: string) {
     if (!options.shouldInterceptHome()) return;
@@ -174,7 +174,7 @@ export function createForegroundWatcher(options: ForegroundWatcherOptions): Fore
       const appId = res.appId || '';
       options.activity.noteForeground(appId);
 
-      // Only pause ambient when we actually left Launch Home (or launched an
+      // Only pause ambient when we actually left Ember (or launched an
       // app). Pausing whenever the foreground is not us kills music on cold
       // start (the poll often returns Home / empty for a few seconds after a
       // launch).

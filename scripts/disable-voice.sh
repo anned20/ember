@@ -1,5 +1,5 @@
 #!/bin/sh
-# Turn off Launch Home's voice assistant (run as root via hbchannel exec).
+# Turn off Ember's voice assistant (run as root via hbchannel exec).
 # Stops the daemon, removes the boot hook and the voice card, and gives the
 # voice button back to LG. Settings and the SuperGrok sign-in are kept.
 # Another voice assistant (VoxRelay) is never stopped or changed.
@@ -17,7 +17,7 @@ rm -f "$INITD"
 if [ -f "$RUN" ]; then
   sh "$RUN" stop >/dev/null 2>&1
 else
-  # Launch Home files already gone: stop by pidfile.
+  # Ember files already gone: stop by pidfile.
   for pf in $TMP_PREFIX-voice-run.pid $TMP_PREFIX-voice.pid; do
     p=$(cat "$pf" 2>/dev/null)
     if [ -n "$p" ]; then

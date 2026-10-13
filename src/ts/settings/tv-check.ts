@@ -6,7 +6,7 @@ import {activity} from '@lib/activity.js';
 import type {Config} from '@lib/types.js';
 
 /**
- * Settings -> TV check: one line about Launch Home itself. It heads the text
+ * Settings -> TV check: one line about Ember itself. It heads the text
  * on screen and is saved in the report file too.
  */
 export function tvCheckHead(config: Config): string {
@@ -23,9 +23,9 @@ export function tvCheckHead(config: Config): string {
 }
 
 /**
- * Settings -> TV check: watch Launch Home itself while the check opens TV
+ * Settings -> TV check: watch Ember itself while the check opens TV
  * Settings over it. Counts only the moments something else has the remote
- * (TV Settings), and shows whether Launch Home got in the way: relaunching or
+ * (TV Settings), and shows whether Ember got in the way: relaunching or
  * bringing itself back, taking focus, or still animating underneath.
  */
 export function startLauncherProbe() {
@@ -73,7 +73,7 @@ export function startLauncherProbe() {
 }
 
 /**
- * Settings -> TV check text: the Launch Home line, then the summary part of
+ * Settings -> TV check text: the Ember line, then the summary part of
  * the root script's report (its details stay in /tmp).
  */
 export function tvCheckSummary(report: string, head: string): string {

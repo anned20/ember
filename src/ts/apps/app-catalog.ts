@@ -294,7 +294,7 @@ export function resolveAppIcon(app: RawApp): string {
   return raw;
 }
 
-// Settings → "Use Launch Home app icons". When off, the TV's own icon wins and
+// Settings → "Use Ember app icons". When off, the TV's own icon wins and
 // the bundled one is only a fallback for apps that don't report an icon.
 let preferBundledIcons = true;
 

@@ -570,7 +570,7 @@ export function createWeatherPanel(
   function start(): void {
     if (timer) return;
     // Periodic check: re-renders (rolls "Today" over at midnight) and refetches
-    // when stale, only while Launch Home is on screen.
+    // when stale, only while Ember is on screen.
     timer = setInterval(function () {
       if (isVisible()) refresh(false);
     }, CHECK_MS);

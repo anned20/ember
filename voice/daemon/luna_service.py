@@ -19,7 +19,7 @@ import brand
 SOCKET_PATH = brand.VOICE_SOCKET
 WS_HOST = "127.0.0.1"
 WS_PORT = 8678
-# Name returned to a "hello" request: Launch Home only talks to a socket that
+# Name returned to a "hello" request: Ember only talks to a socket that
 # identifies as its own voice service (never to another project on a port).
 SERVICE_NAME = brand.VOICE_SERVICE_NAME
 # Flag file clients may poll for an instant mic badge without waiting
@@ -29,7 +29,7 @@ VOICE_STATE_PATH = brand.TMP_PREFIX + "-voice-state.json"
 # should ever be connected; anything beyond this is a reconnect leak, so we
 # evict the oldest to protect the daemon's thread budget.
 MAX_UNIX_CLIENTS = 16
-# Launch Home and the voice card share the WS port; each says which it is with
+# Ember and the voice card share the WS port; each says which it is with
 # a "hello" request. Older single-client mode closed every prior socket on
 # connect, which kicked a client's mic badge off right as sessionStarted was
 # broadcast. Cap still limits reconnect leaks; evict oldest when over.
@@ -197,7 +197,7 @@ BROWSER_CLOSE_IDS = frozenset(
     }
 )
 
-# Launch Home itself: a voice turn started over it hands the screen back to it.
+# Ember itself: a voice turn started over it hands the screen back to it.
 LAUNCHER_APP_ID = brand.APP_ID
 
 VOICE_RESULT_APP_IDS = frozenset(
@@ -271,7 +271,7 @@ class LunaBridge:
         self._ws_server: Optional[socket.socket] = None
         self._ws_clients: list[socket.socket] = []
         # Role each client gave in "hello": "overlay" (the voice card) or
-        # "launcher" (Launch Home). Only the card counts as a connected overlay.
+        # "launcher" (Ember). Only the card counts as a connected overlay.
         self._ws_roles: dict[socket.socket, str] = {}
         self._ws_listening = False
         self._lock = threading.Lock()
@@ -300,7 +300,7 @@ class LunaBridge:
         # press (see _arm_browser_close). Never at daemon start, never at idle,
         # and never when the user was already in the browser.
         self._browser_close_until = 0.0
-        # Voice pressed while Launch Home was in front: bring it back when the
+        # Voice pressed while Ember was in front: bring it back when the
         # card closes (closing the card alone makes webOS show LG's home).
         self._return_to_launcher = False
         # Optional callback: (method: str, params: dict) -> dict. Handles
@@ -503,7 +503,7 @@ class LunaBridge:
         # Invalidate focus-retry / late session UI work from the launch press.
         self._session_ui_gen += 1
         # Drop the voice card's WS so a zombie card cannot paint chat over Prime.
-        # Launch Home's own socket stays (it only shows the mic badge).
+        # Ember's own socket stays (it only shows the mic badge).
         with self._lock:
             stale = [c for c in self._ws_clients if self._ws_roles.get(c) == "overlay"]
             self._ws_clients = [c for c in self._ws_clients if c not in stale]
@@ -1114,7 +1114,7 @@ class LunaBridge:
             clients = list(self._clients)
             ws_clients = list(self._ws_clients)
             if event == "answerAudio":
-                # Only the voice card plays speech; Launch Home ignores it.
+                # Only the voice card plays speech; Ember ignores it.
                 ws_clients = [c for c in ws_clients if self._ws_roles.get(c) == "overlay"]
         n_clients = len(clients)
         n_ws = len(ws_clients)
@@ -1165,7 +1165,7 @@ class LunaBridge:
         return sum(1 for c in self._ws_clients if self._ws_roles.get(c) == "overlay")
 
     def ws_client_count(self) -> int:
-        """Connected voice-card sockets (Launch Home's own socket excluded)."""
+        """Connected voice-card sockets (Ember's own socket excluded)."""
         with self._lock:
             return self._overlay_count_locked()
 
@@ -1475,7 +1475,7 @@ class LunaBridge:
             time.sleep(0.25)
 
     def _hand_back_to_launcher(self) -> None:
-        """Put Launch Home in front before the card closes, if the turn began there.
+        """Put Ember in front before the card closes, if the turn began there.
 
         Closing the card alone makes webOS's last-input handler open LG's home
         instead of the app underneath. Skipped when the turn opened something
@@ -1486,7 +1486,7 @@ class LunaBridge:
         fg = self._foreground_app_id()
         if fg and fg != self.overlay_app_id:
             return
-        print("[voice] handing the screen back to Launch Home", flush=True)
+        print("[voice] handing the screen back to Ember", flush=True)
         _luna_send(
             "luna://com.webos.applicationManager/launch",
             {"id": LAUNCHER_APP_ID},
@@ -1724,7 +1724,7 @@ class LunaBridge:
         self._arm_browser_close(fg)
         if fg and fg != self.overlay_app_id:
             self._return_to_launcher = fg == LAUNCHER_APP_ID
-        # The voice card also shows over Launch Home: it only draws the mic
+        # The voice card also shows over Ember: it only draws the mic
         # badge, so without the card there was no transcript or spoken answer.
         passive_home = False
         already_front = bool(

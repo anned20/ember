@@ -14,7 +14,7 @@ export type LaunchRecovery = 'none' | 'reassert' | 'close';
 
 /** The launch machine needs to know our own app id to spot "not us". */
 export interface LaunchStateOptions {
-  /** Launch Home's own app id. */
+  /** Ember's own app id. */
   selfAppId: string;
 }
 

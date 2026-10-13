@@ -11,7 +11,7 @@ version changes. The code is in `config/config.ts`, `config/profiles.ts`,
 `DEFAULT_CONFIG` in `config.ts` is the canonical shape, and every setting has a
 default there.
 
-- Storage: `localStorage` under `lounge.config.v1`, JSON-encoded.
+- Storage: `localStorage` under `ember.config.v1`, JSON-encoded.
 - Loading: `loadConfig()` does `deepMerge(DEFAULT_CONFIG, stored)`, then runs
   `normalizeBackgroundConfig` and `normalizeMusicConfig`, then `migrateConfig`.
   If a migration changed anything it writes back. A corrupt entry falls back to
@@ -59,12 +59,13 @@ A backup file (`settings-backup.ts`) is JSON with two independent versions:
 It also records `app`, `kind`, `appVersion`, `updatedTo`, `reason` (`manual`,
 `before-restore` or `before-update`) and `savedAt`. `settingsBackupText` emits
 ASCII only, with non-ASCII as `\u` escapes, because the text goes to the TV
-through a shell in chunks (`rootWriteCommands`).
+through a shell in chunks (`rootWriteCommands`). `parseBackup` accepts the
+`app` id from Ember or the old Launch Home app, so old backups still list and restore.
 
 ### Fitting a backup to this version
 
 `configFromBackup(data, current)` returns `{config, skipped, schema, newer,
-older}`, or `null` if `data` is not Launch Home settings. It:
+older}`, or `null` if `data` is not Ember settings. It:
 
 1. Deep-merges the backup over `DEFAULT_CONFIG` and, unless the backup is
    newer, runs `migrateConfig`.
@@ -83,13 +84,28 @@ The `skipped` list drives the restore status line (`restoreReport`).
 
 All three are written as root:
 
-- TV copy: `/home/root/.config/launch-home/settings-backup.json`. It survives a
+- TV copy: `/home/root/.config/ember/settings-backup.json`. It survives a
   reinstall.
-- Automatic copies: `/home/root/.config/launch-home/auto/`, holding one
+- Automatic copies: `/home/root/.config/ember/auto/`, holding one
   `before-restore.json` and the newest three `before-update-to-<version>.json`
   files (`writeAutoBackup`). `keepSettingsFromBeforeUpdate` in `main.ts` writes
   the before-update copy on the first start after an update.
-- USB: `<drive>/lounge/launch-home-settings.json`.
+- USB: `<drive>/ember/ember-settings.json`.
+
+`readSettingsBackups` reads those, and also the Launch Home copies — the TV
+`/home/root/.config/launch-home/settings-backup.json`, its `auto/` directory,
+and `<drive>/lounge/launch-home-settings.json` on every mounted drive — so a
+Launch Home backup shows up in the restore list.
+
+### Importing Launch Home settings on first run
+
+On the first start with no stored config, `importLegacySettings` in
+`settings-backup.ts` imports the newest readable backup whose settings fit
+through `configFromBackup` (so migrations apply), saves it as Ember's config and
+shows a brief toast. With no backup, or one that doesn't fit, Ember starts on
+defaults with no toast. `main.ts` calls it before `buildModules()`, passing the
+backup reader (`readSettingsBackups`) in, so the decision is testable without the
+TV filesystem.
 
 ## Checklist: add, remove or rename a setting
 

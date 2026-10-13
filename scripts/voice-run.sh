@@ -1,5 +1,5 @@
 #!/bin/sh
-# Launch Home voice assistant: runs voice/daemon/voice_daemon.py as root and
+# Ember voice assistant: runs voice/daemon/voice_daemon.py as root and
 # starts it again when it exits (settings changes restart it that way).
 #
 #   voice-run.sh          the run loop itself (start detaches it)
@@ -27,7 +27,7 @@ log() {
 }
 
 # Fingerprint of the code a running daemon was started from, so enable can
-# restart it after Launch Home is updated.
+# restart it after Ember is updated.
 code_version() {
   cat "$APPDIR"/voice/daemon/*.py "$RUN" 2>/dev/null | md5sum | cut -c1-32
 }

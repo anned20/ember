@@ -274,7 +274,7 @@ body.bg-moving .voice-indicator {
   background-color: rgba(14, 14, 22, 0.38);
 }
 
-/* Another app's panel (e.g. LG Settings) has the remote while Launch Home stays
+/* Another app's panel (e.g. LG Settings) has the remote while Ember stays
    on screen underneath: hold the wallpaper still (setAppInactive in main.js). */
 body.app-inactive #background-layer.has-image.ken-burns,
 body.app-inactive #background-layer.gradient-animated,
@@ -958,7 +958,7 @@ body.music-bar-clear .launcher {
 
 /* No nudge animation: moving the badge over the glass tiles re-blurred them
    every frame, dropping the whole screen to ~13 fps for 7 s each time the
-   hint appeared (on return to Launch Home and at the ends of the row). */
+   hint appeared (on return to Ember and at the ends of the row). */
 
 body.perf-mode .app-scroll-badge {
   animation: none !important;

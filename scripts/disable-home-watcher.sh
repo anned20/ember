@@ -1,5 +1,5 @@
 #!/bin/sh
-# Disable Launch Home button watcher (run as root via hbchannel exec).
+# Disable Ember button watcher (run as root via hbchannel exec).
 
 . "$(dirname "$0")/brand.sh"
 

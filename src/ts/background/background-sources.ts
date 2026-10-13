@@ -72,7 +72,7 @@ function aerialCatalog(): MediaDescriptor[] {
 // CDN marks them immutable, so the TV caches each one after the first view.
 // Offline or unreachable → the packaged 4K is used instead.
 const LITE_WALLPAPER_BASE =
-  'https://cdn.jsdelivr.net/gh/gprot42/webos-launch-home@v0.0.104/assets/backgrounds/1920/';
+  'https://cdn.jsdelivr.net/gh/anned20/ember@v0.0.104/assets/backgrounds/1920/';
 const LITE_RETRY_MS = 10 * 60 * 1000;
 
 let liteImages = false;

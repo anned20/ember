@@ -1,5 +1,5 @@
 #!/bin/sh
-# Launch Home: Live TV channels for the Channels chip (run as root via
+# Ember: Live TV channels for the Channels chip (run as root via
 # hbchannel exec). Uses LG's API adapter, the service LG's phone apps use.
 #
 #   channels.sh list           one line per channel:

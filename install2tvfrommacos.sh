@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# install2tvfrommacos.sh — Build and sideload Launch Home to a rooted LG TV.
+# install2tvfrommacos.sh — Build and sideload Ember to a rooted LG TV.
 #
 # Usage:
 #   ./install2tvfrommacos.sh

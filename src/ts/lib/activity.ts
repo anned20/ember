@@ -1,5 +1,5 @@
 /**
- * What Launch Home did in the background, for Settings -> TV check: main.js
+ * What Ember did in the background, for Settings -> TV check: main.js
  * counts, the check reads how much changed while TV Settings was open.
  */
 export interface Activity {

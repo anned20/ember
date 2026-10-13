@@ -1,7 +1,7 @@
 /**
- * In-app screensaver for Launch Home.
+ * In-app screensaver for Ember.
  *
- * After idle timeout while Launch Home is foreground, shows a full-screen
+ * After idle timeout while Ember is foreground, shows a full-screen
  * photo slideshow (from the same background sources as the home wallpaper)
  * with an optional large clock. Any remote key / pointer dismisses it.
  *

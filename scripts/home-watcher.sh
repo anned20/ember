@@ -1,10 +1,10 @@
 #!/bin/sh
-# Launch Home — intercept stock Home and open Launch Home instead.
+# Ember — intercept stock Home and open Ember instead.
 #
 # webOS always opens stock Home on the Home button first. We react when Home
-# is foreground, bring Launch Home forward, close Home, then launch Launch Home AGAIN so
+# is foreground, bring Ember forward, close Home, then launch Ember AGAIN so
 # webOS routes remote INPUT to our surface (launch alone often leaves input on
-# Home even though Launch Home is painted on top — dock appears dead).
+# Home even though Ember is painted on top — dock appears dead).
 #
 # Start detached only:
 #   setsid home-watcher.sh >/tmp/ember-watcher.log 2>&1 </dev/null &
@@ -83,12 +83,12 @@ close_home() {
   done
 }
 
-# Bring Launch Home to front AND own input. Order matters on webOS 25:
-#   1) launch Launch Home (graphics)
+# Bring Ember to front AND own input. Order matters on webOS 25:
+#   1) launch Ember (graphics)
 #   2) close stock Home (drop its input surface)
-#   3) launch Launch Home again (reclaim input after Home is gone)
+#   3) launch Ember again (reclaim input after Home is gone)
 activate_app() {
-  log "activate Launch Home"
+  log "activate Ember"
   launch_app
   sleep 0.25
   close_home
@@ -129,7 +129,7 @@ handle_fg() {
     last_action=$now
     prev="$last_app"
     last_app="$appId"
-    log "home after $prev -> activate Launch Home"
+    log "home after $prev -> activate Ember"
     activate_app
     return 0
   fi

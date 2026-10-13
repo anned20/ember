@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Launch Home icons from the source app mark.
+"""Generate Ember icons from the source app mark.
 
 Source art: assets/icon-source.png — full-bleed pictogram (no baked-in title).
 webOS already shows the app title under the tile, so the icon itself stays

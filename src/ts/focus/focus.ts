@@ -862,7 +862,7 @@ export function createFocusManager(
       }
     },
     /**
-     * After a return to Launch Home: back on the control the remote was on
+     * After a return to Ember: back on the control the remote was on
      * (the tile an app was opened from, or wherever the user has moved
      * since), else the first app tile. A return calls this several times over
      * 1.6 s; always taking the first tile pulled focus out from under the

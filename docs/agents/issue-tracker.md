@@ -2,7 +2,7 @@
 
 Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
 
-Repo: `anned20/webos-launch-home` (the `origin` remote). `gh` infers it automatically when run inside this clone.
+Repo: `anned20/ember` (the `origin` remote). `gh` infers it automatically when run inside this clone.
 
 ## Conventions
 

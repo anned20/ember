@@ -1,11 +1,11 @@
-# Launch Home context
+# Ember context
 
 A single-context repo. This file is the ubiquitous language: the terms the code,
 tests, settings and issues all use. Use these words in code, comments, tests and
 issue titles instead of inventing synonyms. Architecture decisions are recorded
 in `docs/adr/` (added as decisions are made).
 
-Launch Home is a fullscreen home screen for a rooted LG webOS TV. It replaces
+Ember is a fullscreen home screen for a rooted LG webOS TV. It replaces
 the stock Home surface with a dock of app tiles, an inputs row, and ambient
 backgrounds and music, all on top of the webOS Luna service bus.
 
@@ -25,7 +25,7 @@ backgrounds and music, all on top of the webOS Luna service bus.
 - **Weather panel**: the home-screen forecast (`weather.ts`).
 - **Settings panel**: the category list and pane UI (`settings.ts`).
 - **Screensaver**: two different things. The system screensaver is LG's gallery
-  saver (`screensaverMinutes`). The in-app screensaver is Launch Home's own
+  saver (`screensaverMinutes`). The in-app screensaver is Ember's own
   slideshow and clock shown while idle (`customScreensaver*`).
 
 ## Look
@@ -56,7 +56,7 @@ backgrounds and music, all on top of the webOS Luna service bus.
   native card forward once; `close` closes the stuck app and reclaims.
 - **Reclaim**: re-asserting keyboard and pointer focus plus a dock tile after
   webOS routed input to stock Home or another surface (`reclaimInput`).
-- **Home watcher**: the root init.d script that relaunches Launch Home when
+- **Home watcher**: the root init.d script that relaunches Ember when
   stock Home appears (`launchOnHome`). **Boot on start** (`bootOnStart`) does
   the same at power-on.
 - **Homebrew Channel** (root): app scanning, the Home watcher, boot-on-start and
@@ -99,14 +99,18 @@ backgrounds and music, all on top of the webOS Luna service bus.
   current value. One from a newer version is `why: 'newer'`, kept but unused.
 - **Device settings**: settings that belong to the TV rather than the person
   (`DEVICE_SETTINGS`), kept as-is across a restore (for example `voiceEnabled`).
+- **Launch Home import** (first-run import): on the first start with no stored
+  config, Ember imports the newest Launch Home backup it can find, so an upgrade
+  keeps its setup (`importLegacySettings`). Launch Home backups also stay
+  restorable through the normal **fit** path.
 
 ## Voice
 
-- **Voice assistant**: Launch Home's optional assistant for the Magic Remote's
+- **Voice assistant**: Ember's optional assistant for the Magic Remote's
   Voice button (`voice/`), off by default.
 - **Daemon**: the Python process that talks to the voice provider and the TV
   (`voice/daemon`, runs as root).
-- **Voice card** (overlay): the hidden `org.webosbrew.lounge.voice` app that
+- **Voice card** (overlay): the hidden `com.ember.voice` app that
   shows and speaks the answer (`voice/overlay`).
 - **Provider**: the assistant backend, one of Grok/xAI, Gemini or OpenRouter.
 

@@ -1,7 +1,7 @@
 {
-  "name": "webos-launch-home",
+  "name": "ember",
   "version": "0.2.0",
-  "description": "Launch Home — fullscreen home screen for rooted LG webOS TVs",
+  "description": "Ember — a fullscreen home screen for rooted LG webOS TVs",
   "private": true,
   "scripts": {
     "brand": "node scripts/generate-brand.ts",

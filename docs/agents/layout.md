@@ -83,7 +83,7 @@ Vitest with the jsdom environment (`vitest.config.mjs`). Tests mirror `src/ts/`:
 
 - `daemon/` is the Python 3 voice daemon. It runs as root on the TV and is
   copied to `dist/`.
-- `overlay/` is the hidden `org.webosbrew.lounge.voice` app, built into
+- `overlay/` is the hidden `com.ember.voice` app, built into
   `dist/voice/card.pkg` by `npm run pack`.
 
 ## `assets/`

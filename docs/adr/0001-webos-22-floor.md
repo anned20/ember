@@ -2,11 +2,11 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-13
-- **Issue:** [#56](https://github.com/anned20/webos-launch-home/issues/56)
+- **Issue:** [#56](https://github.com/anned20/ember/issues/56)
 
 ## Context
 
-Launch Home carried compatibility code for webOS 3/4/5/6 TVs: ES2015 prototype
+Ember carried compatibility code for webOS 3/4/5/6 TVs: ES2015 prototype
 polyfills, an XHR `fetch` shim, `file://`-vs-relative URL dances for packaged
 assets, an old-engine `play()` branch, `com.palm.*` app ids, `PalmSystem`
 launch params, an `es2015` build target, and defensive polling/retry fallbacks
@@ -25,7 +25,7 @@ remove the same code while dropping four release years of users.
 
 ## Decision
 
-**Launch Home supports webOS 22 or later.** The floor is expressed as
+**Ember supports webOS 22 or later.** The floor is expressed as
 `sdkVersion >= 7` in `src/ts/luna/platform.ts` (`MIN_WEBOS_SDK`).
 
 - **Enforcement is a runtime gate.** At startup, before any module is built,

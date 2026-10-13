@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# deploy.sh — Build, install and launch Launch Home on a TV over SSH.
+# deploy.sh — Build, install and launch Ember on a TV over SSH.
 #
 # Usage:
 #   npm run deploy

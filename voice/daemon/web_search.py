@@ -23,7 +23,7 @@ from typing import Callable, Optional
 import brand
 
 USER_AGENT = (
-    brand.NAME + "Voice/1.0 (+https://github.com/gprot42/webos-launch-home; rooted webOS voice)"
+    brand.NAME + " Voice/1.0 (+https://github.com/anned20/ember; rooted webOS voice)"
 )
 DEFAULT_WORKERS = 10
 DEFAULT_TIMEOUT_S = 3.5

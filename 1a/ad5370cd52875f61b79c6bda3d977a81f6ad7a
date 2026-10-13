@@ -1,0 +1,221 @@
+scripts/home-watcher.sh
+  s_2a0e385cd36c86::t_66a8f249f7610f 16-21
+scripts/disable-home-watcher.sh
+  s_2a0e385cd36c86::t_1125d778d4071e 4-10
+package.json
+  s_2a0e385cd36c86::t_a93156aba92809 7
+src/ts/lib/unsupported-surface.ts
+  s_2a0e385cd36c86::t_015c74d67f5227 10
+  s_2a0e385cd36c86::t_15f1d184bc216c 43
+  s_2a0e385cd36c86::t_1a1b87d29b5845 52
+voice/daemon/grok_client.py
+  s_2a0e385cd36c86::t_bb5858136c8c0a 486
+  s_2a0e385cd36c86::t_a6bbf285faf502 22-23
+voice/daemon/config_store.py
+  s_2a0e385cd36c86::t_65290a101d918c 51
+  s_2a0e385cd36c86::t_b5ecca7f41b4da 19-20,22,28
+  s_2a0e385cd36c86::t_c9c2ba531dab0f 182
+src/ts/settings/panes/screensaver.ts
+  s_2a0e385cd36c86::t_f93d76f1dc6fe8 100
+  s_2a0e385cd36c86::t_4b809555c753bf 11
+  s_2a0e385cd36c86::t_275fac1a525669 139
+  s_2a0e385cd36c86::t_246b799acb2c17 23
+  s_2a0e385cd36c86::t_4b7b857f15d316 87
+src/ts/settings/panes/ai.ts
+  s_2a0e385cd36c86::t_7c34fc8dff2037 886,889
+  s_2a0e385cd36c86::t_91f9cac98ceeb0 13
+  s_2a0e385cd36c86::t_8e9d810a4eb215 1127
+voice/daemon/msbc_to_pcm.py
+  s_2a0e385cd36c86::t_7f7d9ad6384b28 13-14,25
+  s_2a0e385cd36c86::t_42a4c6614f84b8 165
+scripts/disable-boot-launch.sh
+  s_2a0e385cd36c86::t_df4f7310ad1b24 4-7
+src/ts/settings/settings.ts
+  s_2a0e385cd36c86::t_e1abc08e5c02e3 119,313
+  s_2a0e385cd36c86::t_57d0f48a28b1f6 24-25
+  s_2a0e385cd36c86::t_f9cb73d0b98100 388
+  s_2a0e385cd36c86::t_7398ceb9dd86cc 7
+  s_2a0e385cd36c86::t_2bfb99861ca362 575
+src/ts/settings/panes/tools.ts
+  s_2a0e385cd36c86::t_51c4724007c085 264
+  s_2a0e385cd36c86::t_c132112b2767ff 58
+  s_2a0e385cd36c86::t_c025f814a9f366 25-27
+  s_2a0e385cd36c86::t_62fab41eb33ccf 183
+  s_2a0e385cd36c86::t_dcefe1f44dbde4 14
+  s_2a0e385cd36c86::t_688c7a601385f0 254
+scripts/brand.sh
+  s_2a0e385cd36c86::t_f59129b2df29a5 11,13
+  s_2a0e385cd36c86::t_5e1b5ad8d01acf 1-10,12,14-29
+voice/daemon/supergrok_auth.py
+  s_2a0e385cd36c86::t_b7dfa8ece7ebf0 28
+  s_2a0e385cd36c86::t_d110adfa9d6923 19-20
+src/ts/home/channels.ts
+  s_2a0e385cd36c86::t_d15162ba04b338 13
+  s_2a0e385cd36c86::t_7329762965ad74 24
+test/foreground-watcher.test.ts
+  s_2a0e385cd36c86::t_c37b604cb1f0ce 5
+  s_2a0e385cd36c86::t_7e3c930199edff 7
+scripts/generate-brand.ts
+  s_2a0e385cd36c86::t_33ccf6c31d4482 1-37
+voice/daemon/brand.py
+  s_2a0e385cd36c86::t_f59129b2df29a5 11,13
+  s_2a0e385cd36c86::t_5e1b5ad8d01acf 1-10,12,14-29
+src/ts/settings/panes/background.ts
+  s_2a0e385cd36c86::t_e08082e5bf84b8 29
+  s_2a0e385cd36c86::t_e766e5cea2de6d 270
+scripts/enable-home-watcher.sh
+  s_2a0e385cd36c86::t_3c2a9468c1effb 6-11,13-15
+  s_2a0e385cd36c86::t_2ff99c0d44f4f3 23
+scripts/voice-run.sh
+  s_2a0e385cd36c86::t_44ad8323da5d6d 186
+  s_2a0e385cd36c86::t_41a4ce068deef4 14-16,19-23
+scripts/diagnostics.sh
+  s_2a0e385cd36c86::t_d02e283e830fce 357
+  s_2a0e385cd36c86::t_54178d08154fb3 333
+  s_2a0e385cd36c86::t_fc5cce5046f8d5 99
+  s_2a0e385cd36c86::t_a6d6bf5c0539af 8-15
+src/ts/lib/brand.ts
+  s_2a0e385cd36c86::t_7312b5a069c387 1-21,24-38,41-54,57-90
+  s_2a0e385cd36c86::t_5b8b182fb95be7 39-40
+  s_2a0e385cd36c86::t_7ffe9ad51a8037 55-56
+  s_2a0e385cd36c86::t_ef5117f23ef6f8 22-23
+voice/daemon/voice_daemon.py
+  s_2a0e385cd36c86::t_67242a7294b8cb 357,440,544
+  s_2a0e385cd36c86::t_542d616bd6ac52 7277
+  s_2a0e385cd36c86::t_fdfde69e852476 218
+  s_2a0e385cd36c86::t_a722b8aa902b6a 4083-4084
+  s_2a0e385cd36c86::t_079c215e0998f1 58,63
+  s_2a0e385cd36c86::t_ecc95eca4f6147 1660
+src/ts/luna/luna.ts
+  s_2a0e385cd36c86::t_110294d50d6e97 2
+  s_2a0e385cd36c86::t_906c9bfd18f6ce 530
+  s_2a0e385cd36c86::t_1300e34c404b1b 310
+  s_2a0e385cd36c86::t_81f7b797f17bdb 279,283
+  s_2a0e385cd36c86::t_0fd4fbc17d2ba6 339-340,343,345
+test/raw.d.ts
+  s_2a0e385cd36c86::t_a31a94ce8da4f1 1-5
+docs/agents/layout.md
+  s_2a0e385cd36c86::t_8d0febc3cf4aea 54-64
+  s_2a0e385cd36c86::t_1d2f4a538f7121 100-101
+test/settings-panel.test.ts
+  s_2a0e385cd36c86::t_7781f57300d5f2 121
+  s_2a0e385cd36c86::t_39c3311ed5cc42 2
+src/ts/apps/app-catalog.ts
+  s_2a0e385cd36c86::t_bb85079c06c5f4 5
+  s_2a0e385cd36c86::t_b6ecf344c9e5c0 32
+  s_2a0e385cd36c86::t_21a0022f1b67d9 36
+src/ts/settings/panes/system.ts
+  s_2a0e385cd36c86::t_be996cc6d2047d 113
+  s_2a0e385cd36c86::t_5500a2dbc63ab3 101
+  s_2a0e385cd36c86::t_63dfab47db300f 55
+  s_2a0e385cd36c86::t_6e4e1b60373ae2 10
+  s_2a0e385cd36c86::t_df62d426645f5e 68
+scripts/enable-voice.sh
+  s_2a0e385cd36c86::t_2f91af295e9577 79
+  s_2a0e385cd36c86::t_3d87ef1480838d 122
+  s_2a0e385cd36c86::t_c5ce959b2bb78a 10-12,15-16,18-20
+  s_2a0e385cd36c86::t_30c133f91a34e3 17
+scripts/deploy.sh
+  s_2a0e385cd36c86::t_c6bb3d4f593969 139
+  s_2a0e385cd36c86::t_d255c72fd4fed3 178
+  s_2a0e385cd36c86::t_50316c19a68cb3 75
+  s_2a0e385cd36c86::t_7da5f127ca7383 180
+  s_2a0e385cd36c86::t_7f4435e6877662 35-38
+  s_2a0e385cd36c86::t_652835bc8cba96 191
+scripts/enable-boot-launch.sh
+  s_2a0e385cd36c86::t_c9bc7c7348e39a 18
+  s_2a0e385cd36c86::t_a88350bf5c0f9f 4-8,10
+install2tvfrommacos.sh
+  s_2a0e385cd36c86::t_06f815f8f10c10 374
+  s_2a0e385cd36c86::t_60ac558250465b 39-43
+  s_2a0e385cd36c86::t_458f5de9a6e3cd 396
+  s_2a0e385cd36c86::t_ceb613ab4223db 259-260
+src/ts/apps/all-apps.ts
+  s_2a0e385cd36c86::t_b253858132a9a8 11,14
+src/ts/settings/tv-check.ts
+  s_2a0e385cd36c86::t_78fbf3aabab573 69
+  s_2a0e385cd36c86::t_d80be82b00cf92 16
+  s_2a0e385cd36c86::t_aa1d9a048c744a 4
+scripts/disable-voice.sh
+  s_2a0e385cd36c86::t_4a41ac88a69b4f 7-9,11,13
+  s_2a0e385cd36c86::t_484f6245682399 12
+  s_2a0e385cd36c86::t_285fe0354e1763 21,27
+src/ts/settings/panes/look.ts
+  s_2a0e385cd36c86::t_a492bafa0257c1 306
+  s_2a0e385cd36c86::t_f40e08d25eb18d 298
+  s_2a0e385cd36c86::t_ae6c8b2d178798 12
+src/ts/home/weather.ts
+  s_2a0e385cd36c86::t_95602643b218f6 10,15
+src/ts/config/config.ts
+  s_2a0e385cd36c86::t_1a9131906916b5 3,6
+voice/daemon/luna_service.py
+  s_2a0e385cd36c86::t_01bcd07f7cfe6a 17-19,24,27
+  s_2a0e385cd36c86::t_ae62aae7d2ed1b 201
+  s_2a0e385cd36c86::t_4fab39c4f4ae09 255
+src/ts/apps/lg-home.ts
+  s_2a0e385cd36c86::t_655e79affcff2e 24-28
+  s_2a0e385cd36c86::t_a80b3d51c6d7fa 8
+src/ts/settings/settings-backup.ts
+  s_2a0e385cd36c86::t_153736a87259c5 14
+  s_2a0e385cd36c86::t_2af2e6ce8163d1 22,26
+  s_2a0e385cd36c86::t_2ba41f1b8988ad 95
+  s_2a0e385cd36c86::t_9400075a04bf74 192
+  s_2a0e385cd36c86::t_71b27174266703 169-170,173,177,180
+scripts/boot-launch.sh
+  s_2a0e385cd36c86::t_7b06e177861907 11-13
+test/launch-state.test.ts
+  s_2a0e385cd36c86::t_d182cdbc35ae13 3
+  s_2a0e385cd36c86::t_bebc8d202788c8 5
+src/ts/lib/brand-codegen.ts
+  s_2a0e385cd36c86::t_82ecb28fb8ae44 40,42
+  s_2a0e385cd36c86::t_6be2b083142843 1-39,41,43-79
+src/ts/main.ts
+  s_2a0e385cd36c86::t_0ec2d6af3361c7 102
+  s_2a0e385cd36c86::t_edcbdf9ced3b1b 104-106
+  s_2a0e385cd36c86::t_960c25a7d13bd5 1055
+  s_2a0e385cd36c86::t_b19ba798e72936 599
+  s_2a0e385cd36c86::t_9d1d58646cbf4f 1137
+  s_2a0e385cd36c86::t_4e6163af25089f 55
+  s_2a0e385cd36c86::t_77e8d91016bf7e 1214,1222-1223
+  s_2a0e385cd36c86::t_b8cac6d0910447 103
+src/ts/lib/usb.ts
+  s_2a0e385cd36c86::t_9fdd424ffdf09a 2
+  s_2a0e385cd36c86::t_14ca8b8e169184 79
+scripts/build.ts
+  s_2a0e385cd36c86::t_89353838a053ea 112
+  s_2a0e385cd36c86::t_eb98b4f28c1711 123-124
+  s_2a0e385cd36c86::t_b662425e463ebe 162-165
+  s_2a0e385cd36c86::t_2d16e81ad7f529 12-14
+  s_2a0e385cd36c86::t_0fc4bf54db6c6f 189-192,194-198
+  s_2a0e385cd36c86::t_4cf06e9c56a62a 76-79
+src/ts/music/music.ts
+  s_2a0e385cd36c86::t_d545a4bee03f75 626
+  s_2a0e385cd36c86::t_802641f3f01a9e 9
+src/ts/voice/voice-ws.ts
+  s_2a0e385cd36c86::t_ca5a37f72cb7cd 13-15
+  s_2a0e385cd36c86::t_647813dd71fa57 17
+  s_2a0e385cd36c86::t_ca4039deb41200 99
+src/ts/apps/apps.ts
+  s_2a0e385cd36c86::t_25e2f70cc5a23e 14
+  s_2a0e385cd36c86::t_78a09a97ab1871 472
+test/brand.test.ts
+  s_2a0e385cd36c86::t_df5d9f9f6eb236 1-3,6-19,34
+  s_2a0e385cd36c86::t_199d81f6fcb6f1 4-5
+  s_2a0e385cd36c86::t_59a6a2e7ff5699 20-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1aad5370cd52875f61b79c6bda3d977a81f6ad7a",
+  "prompts": {},
+  "sessions": {
+    "s_2a0e385cd36c86": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ecac1799dffeDZcGmAJfXXy0Wj",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

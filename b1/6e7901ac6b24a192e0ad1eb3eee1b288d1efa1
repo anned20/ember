@@ -1,0 +1,84 @@
+src/ts/luna/platform.ts
+  s_b42f0f7c7dc70e::t_10002866ee4068 58-59
+  s_b42f0f7c7dc70e::t_4f68d6ac801d12 3-14,17-18,54-57,60-83
+  s_b42f0f7c7dc70e::t_488488d584844e 49-53
+src/styles/main.css
+  s_b42f0f7c7dc70e::t_79602d77c455bf 2671-2730
+src/ts/main.ts
+  s_b42f0f7c7dc70e::t_7fb38819f8659b 1184-1185
+  s_b42f0f7c7dc70e::t_c4bb3f3b8ee768 45-46
+  s_b42f0f7c7dc70e::t_2d451642b44076 265-276
+  s_b42f0f7c7dc70e::t_31856fb5113142 340-350
+  s_b42f0f7c7dc70e::t_9140fe2ed2a540 1210
+  s_b42f0f7c7dc70e::t_650a972a176aed 337-339,351-373,375-379,381-403,405-446,448-468,470-474,477-525,527,529-538
+  s_b42f0f7c7dc70e::t_8904aad89fb58f 204-205,209
+  s_b42f0f7c7dc70e::t_fde4c334faf781 1174-1183
+  s_b42f0f7c7dc70e::t_e3fc5f394b3690 262-264,277
+  s_b42f0f7c7dc70e::t_9d3b1dc15e7664 1343
+src/ts/home/weather.ts
+  s_b42f0f7c7dc70e::t_bb42a66a54ee07 298
+src/ts/background/background-sources.ts
+  s_b42f0f7c7dc70e::t_ab418d077dfc49 159-162,164,168
+  s_b42f0f7c7dc70e::t_1de1662e418891 105
+voice/overlay/js/app.js
+  s_b42f0f7c7dc70e::t_4b531b918c967a 300-302,304-305
+  s_b42f0f7c7dc70e::t_ab4dd851674580 74-75,1407
+docs/adr/0001-webos-22-floor.md
+  s_b42f0f7c7dc70e::t_cddc4876060603 1-78
+src/ts/lib/usb.ts
+  s_b42f0f7c7dc70e::t_717f87c8bb0009 95
+CONTEXT.md
+  s_b42f0f7c7dc70e::t_1a605b6d118984 68-76
+scripts/enable-boot-launch.sh
+  s_b42f0f7c7dc70e::t_bcb840490ce394 23
+docs/agents/architecture.md
+  s_b42f0f7c7dc70e::t_72d7ac72c07d7e 139-151
+src/ts/background/backgrounds.ts
+  s_b42f0f7c7dc70e::t_9976b819c2037e 238-239,245
+  s_b42f0f7c7dc70e::t_25aac29ac98666 12
+scripts/build.ts
+  s_b42f0f7c7dc70e::t_0903b4291054b4 81
+tsconfig.json
+  s_b42f0f7c7dc70e::t_f8bf04a9975bcb 3
+test/main.test.ts
+  s_b42f0f7c7dc70e::t_21af252cf61cd1 1-4,16-34,51-83,85,96
+src/ts/apps/app-icons.ts
+  s_b42f0f7c7dc70e::t_2b5e32df52081e 61
+src/ts/apps/apps.ts
+  s_b42f0f7c7dc70e::t_13e7e3dd8e5b3d 327,457
+scripts/enable-home-watcher.sh
+  s_b42f0f7c7dc70e::t_86343a1c61cfda 4,24-25,32,38,63
+scripts/boot-launch.sh
+  s_b42f0f7c7dc70e::t_506298e327063e 5-7,28,51-57,62,65
+scripts/diagnostics.sh
+  s_b42f0f7c7dc70e::t_b38e76248a66dd 257
+src/ts/lib/unsupported-surface.ts
+  s_b42f0f7c7dc70e::t_53ddd8e9524278 9,61-62
+  s_b42f0f7c7dc70e::t_08c3b6dd629581 1-8,10-60,63-72
+src/ts/lib/compat.ts
+  s_b42f0f7c7dc70e::t_c235050d178fdd 1-6,10,37-39,43
+src/ts/music/music.ts
+  s_b42f0f7c7dc70e::t_82ca3977404cba 249
+README.md
+  s_b42f0f7c7dc70e::t_cc9ac33777b31d 77-85,87-91,95,98
+test/platform.test.ts
+  s_b42f0f7c7dc70e::t_812551c535213f 1-90
+scripts/home-watcher.sh
+  s_b42f0f7c7dc70e::t_22e5b808998087 10,12-14,45,55,58,62,66,78,155-156,158-159,167-170,175-180
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b16e7901ac6b24a192e0ad1eb3eee1b288d1efa1",
+  "prompts": {},
+  "sessions": {
+    "s_b42f0f7c7dc70e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ecb17fb7cffeSAYpFlwZkm32q3",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

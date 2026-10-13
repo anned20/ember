@@ -54,7 +54,10 @@ body {
   }
 }
 
-/* Aerial clips: a <video> fills the background layer, under the scrim. */
+/* Aerial clips: a <video> fills the background layer, under the scrim. It stays
+   hidden behind the host's poster (the configured gradient, painted by the
+   background controller) until the engine reveals the first frame, so a cold
+   start reads as the gradient rather than black. */
 .background-video {
   position: absolute;
   top: 0;
@@ -66,6 +69,12 @@ body {
   object-fit: cover;
   object-position: center;
   background: #0a0a0f;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.background-video.is-revealed {
+  opacity: 1;
 }
 
 #background-layer.gradient-animated {
@@ -2710,6 +2719,31 @@ body.settings-open .settings-panel .ai-provider-card.focused {
   display: none !important;
 }
 
+/* Aerial reuse: the home wallpaper's own clip is the backdrop, so the saver is
+   a transparent scrim + clock over it. Its photo layers and the wallpaper's own
+   scrim are dropped (the saver has its own scrim). */
+.custom-screensaver.reuses-wallpaper {
+  background: transparent;
+}
+
+.custom-screensaver.reuses-wallpaper .custom-screensaver-bg {
+  display: none;
+}
+
+body.reuses-wallpaper #scrim {
+  visibility: hidden;
+}
+
+/* Settings preview of an aerial saver: the settings-open rules hide the
+   background layer (and the panel is opaque), which would leave the transparent
+   saver over black. Show the wallpaper's clip above the panel, under the saver.
+   Normal Settings (no reuses-wallpaper) keeps the hide. */
+body.settings-open.reuses-wallpaper #background-layer {
+  visibility: visible !important;
+  z-index: 150 !important;
+  animation: none !important;
+}
+
 .custom-screensaver-bg {
   position: absolute;
   inset: 0;
@@ -2766,7 +2800,7 @@ body.settings-open .settings-panel .ai-provider-card.focused {
   transition: opacity 1.4s ease;
 }
 
-.custom-screensaver-video.is-visible {
+.custom-screensaver-video.is-revealed {
   opacity: 1;
 }
 

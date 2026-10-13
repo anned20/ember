@@ -40,6 +40,49 @@ function mount(config: Config): {elements: BackgroundElements; changes: unknown[
   return {elements: elements, changes: changes};
 }
 
+describe('background controller: the aerial presentation query', () => {
+  it('reports presenting an aerial only once the clip is revealed', async () => {
+    const config = aerialConfig({});
+    const mounted = mount(config);
+    expect(controller!.isPresentingAerial()).toBe(false);
+
+    await controller!.refresh();
+    const video = mounted.elements.backgroundLayer.querySelector('video');
+    expect(video).not.toBeNull();
+    expect(controller!.isPresentingAerial()).toBe(false);
+
+    video!.dispatchEvent(new Event('playing'));
+    expect(controller!.isPresentingAerial()).toBe(true);
+  });
+
+  it('reports nothing present after the clip falls back to the gradient', async () => {
+    const config = aerialConfig({});
+    const mounted = mount(config);
+    await controller!.refresh();
+
+    const video = mounted.elements.backgroundLayer.querySelector('video')!;
+    video.dispatchEvent(new Event('playing'));
+    expect(controller!.isPresentingAerial()).toBe(true);
+
+    // Single retries once, so the second failure drops to the gradient.
+    video.dispatchEvent(new Event('error'));
+    video.dispatchEvent(new Event('error'));
+    expect(controller!.isPresentingAerial()).toBe(false);
+  });
+
+  it('reports nothing present after teardown', async () => {
+    const config = aerialConfig({});
+    const mounted = mount(config);
+    await controller!.refresh();
+    mounted.elements.backgroundLayer.querySelector('video')!
+      .dispatchEvent(new Event('playing'));
+    expect(controller!.isPresentingAerial()).toBe(true);
+
+    controller!.destroy();
+    expect(controller!.isPresentingAerial()).toBe(false);
+  });
+});
+
 describe('background controller: aerial channel stepping', () => {
   it('steps the aerial catalog in Single mode, in settings order', async () => {
     const config = aerialConfig({});

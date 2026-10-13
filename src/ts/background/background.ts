@@ -19,6 +19,14 @@ export interface BackgroundElements {
 export interface BackgroundController {
   refresh(opts?: {reuse?: boolean}): Promise<void>;
   stepAerial(direction: number): AerialChange | null;
+  /**
+   * Whether the wallpaper is presenting an aerial clip right now: the clip is
+   * revealed on screen, not merely configured. False while the source is not
+   * aerial, while a clip is still loading behind its poster, and after a
+   * fallback to the gradient. The in-app saver reuses the wallpaper's clip only
+   * when this is true (see screensaver.ts).
+   */
+  isPresentingAerial(): boolean;
   destroy(): void;
 }
 
@@ -34,6 +42,9 @@ export function createBackgroundController(
   let usbBackgroundPath = '';
   let refreshGen = 0;
   let videoPlaying = false;
+  // Live "an aerial clip is on screen" flag for the saver's reuse decision,
+  // toggled by the engine's reveal (onPlaying) and release (onStop/onFallback).
+  let aerialOnScreen = false;
   // What the wallpaper on screen was made from (see refresh reuse).
   let appliedSignature = '';
 
@@ -125,6 +136,7 @@ export function createBackgroundController(
     },
     onPlaying: function () {
       videoPlaying = true;
+      aerialOnScreen = true;
       layer.classList.add('has-video');
       layer.classList.remove('has-image');
       layer.classList.remove('ken-burns');
@@ -132,6 +144,7 @@ export function createBackgroundController(
     },
     onStop: function () {
       videoPlaying = false;
+      aerialOnScreen = false;
       layer.classList.remove('has-video');
       syncMovingBackground();
     },
@@ -322,6 +335,8 @@ export function createBackgroundController(
       if (change) appliedSignature = configSignature();
       return change;
     },
+
+    isPresentingAerial: function () { return aerialOnScreen; },
 
     destroy: function () {
       clearSlideshow();

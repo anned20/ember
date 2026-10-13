@@ -384,6 +384,9 @@ export function createApp(): AppLifecycle {
   customScreensaver = createCustomScreensaver({
     rootEl: elements.customScreensaver,
     getConfig: getConfig,
+    // Aerial saver: reuse the wallpaper's already-warm clip rather than opening
+    // a second, cold decoder (see isPresentingAerial).
+    isWallpaperAerial: function () { return background.isPresentingAerial(); },
     isBlocked: function () {
       if (!visible) return true;
       // Another app or TV Settings has the remote: keys go there, so we'd count

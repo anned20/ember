@@ -25,6 +25,8 @@ interface Harness {
   engine: MediaPlayback;
   play: ReturnType<typeof vi.fn>;
   fallbacks: string[];
+  clipStarts: Array<{gradient: string; el: HTMLVideoElement}>;
+  playings: HTMLVideoElement[];
   mount: HTMLElement;
   el: HTMLVideoElement;
 }
@@ -37,15 +39,27 @@ function harness(config: Config): Harness {
   (el as unknown as {pause: unknown}).pause = vi.fn();
   (el as unknown as {load: unknown}).load = vi.fn();
   const fallbacks: string[] = [];
+  const clipStarts: Array<{gradient: string; el: HTMLVideoElement}> = [];
+  const playings: HTMLVideoElement[] = [];
   const engine = createMediaPlayback({
     mount: mount,
     getConfig: function () { return config; },
     shouldAnimate: function () { return true; },
     videoClassName: 'test-video',
     createVideo: function () { return el; },
+    onClipStart: function (gradient, video) { clipStarts.push({gradient: gradient, el: video}); },
+    onPlaying: function (video) { playings.push(video); },
     onFallback: function (gradient) { fallbacks.push(gradient); }
   });
-  return {engine: engine, play: play, fallbacks: fallbacks, mount: mount, el: el};
+  return {
+    engine: engine,
+    play: play,
+    fallbacks: fallbacks,
+    clipStarts: clipStarts,
+    playings: playings,
+    mount: mount,
+    el: el
+  };
 }
 
 describe('media playback: the aerial video state machine', () => {
@@ -69,6 +83,45 @@ describe('media playback: the aerial video state machine', () => {
     expect(h.play).toHaveBeenCalledTimes(1);
     expect(h.fallbacks).toEqual([]);
     expect(h.engine.hasFallenBack()).toBe(false);
+  });
+
+  it('keeps the clip hidden until its first frame, then reveals it', async () => {
+    const h = harness(aerialConfig({}));
+    await h.engine.play();
+
+    expect(h.el.classList.contains('is-revealed')).toBe(false);
+    expect(h.playings).toEqual([]);
+
+    h.el.dispatchEvent(new Event('playing'));
+
+    expect(h.el.classList.contains('is-revealed')).toBe(true);
+    expect(h.playings).toEqual([h.el]);
+  });
+
+  it('asks the host for its poster when a clip starts', async () => {
+    const h = harness(aerialConfig({}));
+    await h.engine.play();
+
+    expect(h.clipStarts.length).toBe(1);
+    expect(h.clipStarts[0].el).toBe(h.el);
+    expect(typeof h.clipStarts[0].gradient).toBe('string');
+    expect(h.clipStarts[0].gradient.length).toBeGreaterThan(0);
+  });
+
+  it('reveals a clip that never reports playing once the timeout expires', async () => {
+    vi.useFakeTimers();
+    try {
+      const h = harness(aerialConfig({}));
+      await h.engine.play();
+      expect(h.el.classList.contains('is-revealed')).toBe(false);
+
+      vi.advanceTimersByTime(5000);
+
+      expect(h.el.classList.contains('is-revealed')).toBe(true);
+      expect(h.playings).toEqual([h.el]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('skips a broken clip in Slideshow and plays the next without falling back', async () => {

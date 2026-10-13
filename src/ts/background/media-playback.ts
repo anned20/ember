@@ -59,6 +59,13 @@ export interface MediaPlayback {
   hasFallenBack(): boolean;
 }
 
+// The engine owns the poster-first reveal: a mounted clip stays hidden behind
+// the host's poster until it reports a frame, then fades in. A clip that never
+// fires "playing" still reveals after this long, so a silent start is never a
+// permanent black element; a clip that stalls mid-play keeps its last frame.
+const REVEAL_CLASS = 'is-revealed';
+const REVEAL_TIMEOUT_MS = 4000;
+
 function defaultCreateVideo(className: string): HTMLVideoElement {
   const v = document.createElement('video');
   v.className = className;
@@ -98,6 +105,9 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
   let videoErrorListener: (() => void) | null = null;
   let videoFellBack = false;
   let destroyed = false;
+  // Poster-first reveal: the clip is hidden on start and shown on the first
+  // frame (or the timeout). See holdVideo/revealVideo.
+  let revealTimer: ReturnType<typeof setTimeout> | null = null;
 
   function ensureVideo(): HTMLVideoElement {
     if (videoEl) return videoEl;
@@ -109,9 +119,33 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     return v;
   }
 
+  // The host's poster is up and the clip is loading: keep the element hidden.
+  // A clip that never reports "playing" still reveals on the timeout.
+  function holdVideo(): void {
+    if (revealTimer) {
+      clearTimeout(revealTimer);
+      revealTimer = null;
+    }
+    if (videoEl) videoEl.classList.remove(REVEAL_CLASS);
+    revealTimer = setTimeout(revealVideo, REVEAL_TIMEOUT_MS);
+  }
+
+  // The clip's first frame is up (or the timeout expired): reveal the element
+  // and tell the host. Idempotent, so the event and the timeout collapse to one
+  // reveal; a clip that stalled mid-play is already revealed and keeps its frame.
+  function revealVideo(): void {
+    if (revealTimer) {
+      clearTimeout(revealTimer);
+      revealTimer = null;
+    }
+    if (!videoEl || videoEl.classList.contains(REVEAL_CLASS)) return;
+    videoEl.classList.add(REVEAL_CLASS);
+    if (options.onPlaying) options.onPlaying(videoEl);
+  }
+
   function onVideoPlaying(): void {
     videoFailures = 0;
-    if (options.onPlaying && videoEl) options.onPlaying(videoEl);
+    revealVideo();
   }
 
   // Slideshow only: a clip reached its natural end, so roll onto the next one
@@ -124,6 +158,10 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
 
   // Release the decoder and the network request (source change or teardown).
   function teardownVideo(): void {
+    if (revealTimer) {
+      clearTimeout(revealTimer);
+      revealTimer = null;
+    }
     videoSlideshow = false;
     videoClips = [];
     videoIndex = 0;
@@ -201,6 +239,8 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     };
     video.addEventListener('error', videoErrorListener);
 
+    // Hide the element and let the host paint its poster until the first frame.
+    holdVideo();
     if (options.onClipStart) options.onClipStart(presetGradient(bg.preset), video);
     if (video.getAttribute('src') !== clip.url) {
       video.setAttribute('src', clip.url);
@@ -216,8 +256,8 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
       handleVideoFailure(attempt, myGen);
       return false;
     }
-    if (myGen !== gen) return false;
-    onVideoPlaying();
+    // play() resolved, but no frame is guaranteed yet: the reveal waits for the
+    // element's "playing" event (or the timeout), not for this promise.
     return true;
   }
 

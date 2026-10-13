@@ -27,6 +27,12 @@ import type {BackgroundConfig, Config, LauncherConfig} from '@lib/types.js';
 export interface CustomScreensaverOptions {
   rootEl: HTMLElement;
   getConfig: () => Config;
+  /**
+   * Whether the home wallpaper is presenting an aerial clip right now (the
+   * background controller's `isPresentingAerial`). When it is, an aerial saver
+   * reuses that warm clip instead of mounting a second, cold decoder.
+   */
+  isWallpaperAerial?: () => boolean;
   /** true while settings open / not foreground. */
   isBlocked?: () => boolean;
   onShow?: () => void;
@@ -70,6 +76,9 @@ function formatDate(date: Date, timezone: string): string {
 export function createCustomScreensaver(options: CustomScreensaverOptions): CustomScreensaver {
   const rootEl = options.rootEl;
   const getConfig = options.getConfig;
+  const isWallpaperAerial = typeof options.isWallpaperAerial === 'function'
+    ? options.isWallpaperAerial
+    : function () { return false; };
   const isBlocked = typeof options.isBlocked === 'function'
     ? options.isBlocked
     : function () { return false; };
@@ -190,14 +199,14 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
         getConfig: getConfig,
         shouldAnimate: function () { return active && saverShouldPlay(); },
         videoClassName: 'custom-screensaver-video',
-        // Reveal now rather than waiting on a "playing" event: the element's own
-        // background (dark, like the saver) covers the first-frame gap, and a
-        // clip that never reports "playing" still shows.
-        onClipStart: function (gradient, el) {
-          el.classList.add('is-visible');
+        // The engine keeps the clip hidden until its first frame; paint the
+        // configured gradient as the poster it is revealed over, so a buffering
+        // clip reads as the gradient rather than the near-black saver base.
+        onClipStart: function (gradient) {
+          showImageFrame(gradient, true);
         },
-        onFallback: function () {
-          showVideoFallback();
+        onFallback: function (gradient) {
+          showVideoFallback(gradient);
         }
       });
     }
@@ -346,20 +355,30 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     }
   }
 
+  // The transparent-over-the-wallpaper state (aerial reuse): a class on the
+  // saver root, mirrored on the body so `body.settings-open` can let the
+  // wallpaper show through the panel (main.css).
+  function setReusingWallpaper(on: boolean) {
+    rootEl.classList.toggle('reuses-wallpaper', on);
+    document.body.classList.toggle('reuses-wallpaper', on);
+  }
+
   // Release the decoder (leaving the saver, or the surface backgrounding).
   function teardownVideo() {
     if (media) media.stop();
   }
 
-  function showVideoFallback() {
+  function showVideoFallback(gradient: string) {
     teardownVideo();
     clearSlideTimer();
-    images = [{url: presetGradient('midnight'), gradient: true}];
-    showImageFrame(presetGradient('midnight'), true);
+    const fallback = gradient || presetGradient('midnight');
+    images = [{url: fallback, gradient: true}];
+    showImageFrame(fallback, true);
   }
 
   function startImageContent(list: ImageItem[]) {
     // Coming from aerials: drop the clip so it does not play over the photos.
+    setReusingWallpaper(false);
     teardownVideo();
     images = list;
     slideIndex = 0;
@@ -372,6 +391,16 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
   function startVideoContent() {
     images = [];
     clearSlideTimer();
+    // Aerial source: when the home wallpaper is already presenting the clip,
+    // reuse it (no second decoder) and render only the scrim and clock. When it
+    // is not (the aerial fell back, or the surface is not showing one), keep
+    // today's behaviour and play through the saver's own engine.
+    if (isWallpaperAerial()) {
+      teardownVideo();
+      setReusingWallpaper(true);
+      return;
+    }
+    setReusingWallpaper(false);
     mediaEngine().play();
   }
 
@@ -430,6 +459,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     dismissArmed = false;
     slideGen += 1; // drop any crossfade still waiting on a decode
     teardownVideo();
+    setReusingWallpaper(false);
     clearSlideTimer();
     clearClockTimer();
     rootEl.classList.remove('visible');

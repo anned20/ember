@@ -65,6 +65,8 @@ export interface AppGrid {
 /** An installed app as listInstalledApps reports it. */
 export interface InstalledApp extends AppRecord {
   hidden: boolean;
+  /** False for system apps the TV will not uninstall. */
+  removable: boolean;
 }
 
 /**
@@ -503,7 +505,10 @@ export async function listInstalledApps(options?: {includeHidden?: boolean}): Pr
       .map(function (app) {
         // hidden: a system or background app LG keeps off its own home screen.
         const record = (app && app.appInfo) || app || {};
-        return Object.assign(normalizeAppRecord(app, app && app.id), {hidden: record.visible === false});
+        return Object.assign(normalizeAppRecord(app, app && app.id), {
+          hidden: record.visible === false,
+          removable: record.removable !== false
+        });
       });
   } catch (err) {
     return [];

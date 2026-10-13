@@ -34,6 +34,8 @@ export interface FocusManagerHandlers {
   onVolumeMute?: () => void;
   onChannelUp?: () => void;
   onChannelDown?: () => void;
+  /** A held Select on a [data-long-press] tile: open its context menu. */
+  onLongPress?: (el: Element) => void;
 }
 
 /** Handle returned by createFocusManager. */
@@ -100,6 +102,49 @@ export function createFocusManager(
   const POINTER_REENGAGE_PX = 40;
   // Centres closer than this count as the same visual row (Left/Right).
   const SAME_ROW_PX = 24;
+  // Long press on a marked tile ([data-long-press]): hold Select this long to
+  // raise onLongPress; a tap still clicks. The router owns the gesture so no
+  // module needs its own key listener (docs/agents/architecture.md).
+  const LONG_PRESS_MS = 1500;
+  let longPressEl: FocusEl | null = null;
+  let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  // Set when a hold fired: the Select release and its key repeats are then
+  // swallowed, so opening the menu is not also a Select on its first item.
+  let longPressFired = false;
+
+  function cancelLongPress(): void {
+    if (longPressTimer) clearTimeout(longPressTimer);
+    longPressTimer = null;
+    longPressEl = null;
+  }
+
+  function startLongPress(el: FocusEl): void {
+    cancelLongPress();
+    longPressFired = false;
+    longPressEl = el;
+    longPressTimer = setTimeout(function () {
+      longPressTimer = null;
+      longPressEl = null;
+      // Focus moved away (pointer, blur): the hold was abandoned.
+      if (document.activeElement !== el) return;
+      longPressFired = true;
+      if (handlers && handlers.onLongPress) handlers.onLongPress(el);
+    }, LONG_PRESS_MS);
+  }
+
+  // A tap clicks the tile (launch); a hold already raised the menu, so its
+  // release does nothing.
+  function onKeyUp(event: KeyboardEvent): void {
+    if (!(event.key === 'Enter' || event.keyCode === REMOTE_KEY.ENTER)) return;
+    if (longPressFired) {
+      longPressFired = false;
+      return;
+    }
+    const target = longPressEl;
+    if (!target) return;
+    cancelLongPress();
+    if (document.activeElement === target) target.click();
+  }
 
   // Settings navigation: the panel owns its tab bar, header actions, sequential
   // moves, photo picker and wheel. The router delegates to it while the panel is
@@ -688,6 +733,13 @@ export function createFocusManager(
       }
     }
 
+    // Any other key ends a pending hold; the Select that started it must not
+    // cancel itself, since a held key can repeat keydown.
+    if (code !== REMOTE_KEY.ENTER) {
+      cancelLongPress();
+      longPressFired = false;
+    }
+
     // Number keys launch the home row tile at that position (1 = first).
     // While the virtual keyboard is up, or Settings / All apps is open, the
     // numbers belong to what is on screen, not the home row.
@@ -805,6 +857,12 @@ export function createFocusManager(
     }
     if (code === REMOTE_KEY.ENTER) {
       const active = document.activeElement as FocusEl | null;
+      // The release that ended a hold is not a Select; neither are the key's
+      // own repeats while it is still down.
+      if (longPressFired) {
+        event.preventDefault();
+        return;
+      }
       // Text fields: Select unlocks edit mode and opens the virtual keyboard.
       // Merely focusing via D-pad keeps them readonly so the keyboard stays down.
       if (active && isSettingsTextField(active) && active.readOnly) {
@@ -831,6 +889,13 @@ export function createFocusManager(
         settingsNav.activate(active);
         return;
       }
+      // A marked tile: hold Select for its context menu, tap to open it.
+      if (active && active.dataset && active.dataset.longPress !== undefined &&
+          handlers && handlers.onLongPress) {
+        event.preventDefault();
+        if (longPressEl !== active) startLongPress(active);
+        return;
+      }
       if (active && active.classList.contains('focusable')) {
         event.preventDefault();
         active.click();
@@ -846,6 +911,7 @@ export function createFocusManager(
   }
 
   document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keyup', onKeyUp);
   // Capture phase so we see the wheel even if a child stops bubbling.
   document.addEventListener('wheel', onWheel, {passive: false, capture: true});
   root.addEventListener('mousemove', onPointerMove);
@@ -907,6 +973,7 @@ export function createFocusManager(
     },
     destroy: function () {
       document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keyup', onKeyUp);
       document.removeEventListener('wheel', onWheel, {capture: true});
       root.removeEventListener('mousemove', onPointerMove);
     }

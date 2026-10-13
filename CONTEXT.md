@@ -18,6 +18,10 @@ backgrounds and music, all on top of the webOS Luna service bus.
 - **App grid**: the dock's row of app tiles (`apps.ts`, `createAppGrid`).
 - **All apps**: the full-screen overlay listing every installed app
   (`all-apps.ts`), opened by the All-apps tile.
+- **Long press**: holding Select (OK) on an All-apps tile for 1.5 s opens that
+  app's **context menu** (Pin/Unpin, Restart, Delete). The focus router owns the
+  gesture (a `data-long-press` marker plus the `onLongPress` handler); a tap
+  still opens the app. Delete asks first and is offered only for removable apps.
 - **Inputs row**: the HDMI and TV input tiles (`inputs.ts`).
 - **Channels**: Live TV channels. The Channels chip opens the channel strip
   above the inputs row (`channels.ts`). The setting is `favourites`, `all` or

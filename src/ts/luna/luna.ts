@@ -153,6 +153,7 @@ function normalizeListedApps(res?: LunaResponse | null): NormalizedApps {
 }
 
 const APP_MANAGER = 'luna://com.webos.applicationManager';
+const APP_INSTALL = 'luna://com.webos.appInstallService';
 
 /**
  * Read every installed app. A sandboxed web app can't call the privileged
@@ -655,6 +656,23 @@ export function closeApp(id: string) {
   return lunaRequest('luna://com.webos.applicationManager', {
     method: 'closeByAppId',
     parameters: {id: id}
+  });
+}
+
+/**
+ * Uninstall an app. A sandboxed web app is usually refused the privileged
+ * remove (`applicationinstall.management`), so the root path through Homebrew
+ * Channel is the real one; `-2 No such id` means the id is not installed.
+ */
+export function removeApp(id: string) {
+  return lunaRequest(APP_INSTALL, {
+    method: 'remove',
+    parameters: {id: id}
+  }, TIMEOUTS.appRemove).catch(function () {
+    return rootLuna(APP_INSTALL + '/remove', {id: id}, {
+      waitMs: TIMEOUTS.lunaSendWait,
+      timeoutMs: TIMEOUTS.rootAppRemove
+    });
   });
 }
 

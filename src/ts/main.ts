@@ -30,6 +30,7 @@ import {
   launchAppViaRoot,
   listApps,
   closeApp,
+  removeApp,
   enableHomeWatcher,
   disableHomeWatcher,
   enableBootLaunch,
@@ -325,6 +326,66 @@ export function createApp(): AppLifecycle {
     }
   };
 
+  // All apps -> long-press menu. Pinning writes the base config (never the
+  // active profile) and repaints, so the home row behind the overlay follows.
+  function launcherWrite(update: (launcher: LauncherConfig) => void) {
+    const config = getBaseConfig();
+    const launcher = Object.assign({}, config.launcher);
+    update(launcher);
+    setConfig(Object.assign({}, config, {launcher: launcher}));
+    saveConfig(baseConfig);
+    refreshAll();
+  }
+
+  function isAppPinned(app: AppRecord): boolean {
+    const launcher = getBaseConfig().launcher;
+    if ((launcher.pinnedApps || []).indexOf(app.id) >= 0) return true;
+    return (launcher.customApps || []).some(function (entry) {
+      return !!entry && (entry.launchId || entry.id) === app.id;
+    });
+  }
+
+  function pinApp(app: AppRecord) {
+    launcherWrite(function (launcher) {
+      if ((launcher.pinnedApps || []).indexOf(app.id) < 0) {
+        launcher.pinnedApps = (launcher.pinnedApps || []).concat([app.id]);
+      }
+    });
+  }
+
+  // Drop the app's pin and any custom tile that launches it (the same rule the
+  // Settings pinned list uses when an app is removed).
+  function unpinApp(app: AppRecord) {
+    launcherWrite(function (launcher) {
+      const dropped: string[] = [];
+      launcher.customApps = (launcher.customApps || []).filter(function (entry) {
+        if (entry && (entry.launchId || entry.id) === app.id) {
+          dropped.push(entry.id);
+          return false;
+        }
+        return true;
+      });
+      launcher.pinnedApps = (launcher.pinnedApps || []).filter(function (id) {
+        return id !== app.id && dropped.indexOf(id) < 0;
+      });
+    });
+  }
+
+  function restartApp(app: AppRecord) {
+    allApps.hide();
+    // Best-effort close: a stopped app errors "app is not running".
+    closeApp(app.id).catch(function () { /* not running */ }).then(function () {
+      return apps.launchApp(app);
+    });
+  }
+
+  function deleteApp(app: AppRecord): Promise<void> {
+    return removeApp(app.id).then(function () {
+      unpinApp(app);
+      showToast('Deleted ' + app.title);
+    });
+  }
+
   // HDMI / input switch or a TV channel — raise TV volume like launching an app.
   function beforeInputLaunch() {
     applyAppLaunchVolume();
@@ -484,6 +545,8 @@ export function createApp(): AppLifecycle {
       },
       onBack: function () {
         if (allApps.isOpen()) {
+          // The menu unwinds first (its confirm, then itself), then the overlay.
+          if (allApps.handleBack()) return;
           allApps.hide();
           return;
         }
@@ -529,6 +592,9 @@ export function createApp(): AppLifecycle {
       },
       onChannelDown: function () {
         stepAerialBackground(-1);
+      },
+      onLongPress: function (el: Element) {
+        allApps.openMenu(el);
       }
     });
 
@@ -539,7 +605,14 @@ export function createApp(): AppLifecycle {
       launch: function (app: AppRecord) {
         allApps.hide();
         apps.launchApp(app);
-      }
+      },
+      // Long-press menu actions (all-apps.js); the config and Luna live here.
+      isPinned: isAppPinned,
+      pin: function (app) { pinApp(app); showToast('Pinned ' + app.title); },
+      unpin: function (app) { unpinApp(app); showToast('Unpinned ' + app.title); },
+      restart: restartApp,
+      remove: deleteApp,
+      onToast: showToast
     });
   }
 
@@ -942,8 +1015,9 @@ export function createApp(): AppLifecycle {
     await music.loadTracks({reuse: resume});
     // After a return the remote is already on the tile it was on (handleResume).
     // Otherwise (start-up, after Save): where the remote was on the home screen,
-    // else the first tile. Not while Settings is still open.
-    if (!resume && !settings.isVisible()) focus.focusHomeDock();
+    // else the first tile. Not while Settings or All apps is open: a config
+    // write from the All apps menu must not pull focus out of its menu.
+    if (!resume && !settings.isVisible() && !allApps.isOpen()) focus.focusHomeDock();
   }
 
   // Reclaim system keyboard/pointer focus and re-select a dock tile.

@@ -88,6 +88,11 @@ unwinds All apps, then the channels strip, then Settings. Add a key by extending
 the manager's options and wiring it in `main.ts`, not by adding a document
 listener.
 
+Tiles marked `data-long-press` get a second gesture: Select keydown starts a
+1.5 s timer and the tile clicks on keyup (a tap opens the app), while the timer
+firing calls `onLongPress(el)` and swallows the release (All apps opens that
+app's context menu). Unmarked controls keep clicking on keydown.
+
 ## Lifecycle
 
 - `start()` calls `init()`, guarded so it runs once.

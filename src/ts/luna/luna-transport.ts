@@ -22,6 +22,7 @@ export const TIMEOUTS = {
   // Luna request round-trips.
   launch: 5000,
   appInfo: 4000,
+  appRemove: 6000,
   foreground: 4000,
   subscribeListApps: 5000,
   subscribeListLaunchPoints: 5000,
@@ -33,6 +34,7 @@ export const TIMEOUTS = {
   rootListLaunchPoints: 8000,
   rootForeground: 5000,
   rootLaunch: 5000,
+  rootAppRemove: 15000,
   rootInputs: 7000,
   rootHomeWatcher: 20000,
   rootHomeWatcherProbe: 5000,

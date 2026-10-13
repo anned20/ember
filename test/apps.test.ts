@@ -178,3 +178,115 @@ describe('cold-boot dock shell', () => {
     expect(container.querySelector('.app-tile[data-app-id="gone.app"]')).toBeNull();
   });
 });
+
+describe('All apps context menu', () => {
+  function buildMenu(opts: Partial<Parameters<typeof createAllApps>[0]>) {
+    const mount = document.createElement('div');
+    document.body.appendChild(mount);
+    const focus = {focusWithin: vi.fn(), focusElement: vi.fn(() => true)};
+    const allApps = createAllApps(Object.assign({mount, focus, launch: vi.fn()}, opts));
+    return {mount, allApps};
+  }
+
+  function openOnFirst(mount: HTMLElement, allApps: ReturnType<typeof createAllApps>) {
+    allApps.openMenu(mount.querySelector<HTMLElement>('.all-apps-tile')!);
+  }
+
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('opens the menu on a long press, naming the app and offering the actions', async () => {
+    vi.mocked(listApps).mockResolvedValue({apps: [{id: 'demo.app', title: 'Demo'}]});
+    const {mount, allApps} = buildMenu({isPinned: () => false});
+    await allApps.show();
+
+    openOnFirst(mount, allApps);
+
+    expect(mount.querySelector('.all-apps-menu')).not.toBeNull();
+    expect(mount.querySelector('.all-apps-menu-head h3')!.textContent).toBe('Demo');
+    expect(mount.querySelector('.all-apps-menu-id')!.textContent).toBe('demo.app');
+    expect(mount.querySelector('.all-apps-menu-state')!.textContent).toBe('Not on the home row');
+    expect(mount.querySelector('[data-action="pin"]')).not.toBeNull();
+    expect(mount.querySelector('[data-action="restart"]')).not.toBeNull();
+    expect(mount.querySelector('[data-action="delete"]')).not.toBeNull();
+  });
+
+  it('shows Unpin for a pinned app and calls the unpin callback', async () => {
+    vi.mocked(listApps).mockResolvedValue({apps: [{id: 'demo.app', title: 'Demo'}]});
+    const unpin = vi.fn<(app: {id: string}) => void>();
+    const {mount, allApps} = buildMenu({isPinned: () => true, unpin});
+    await allApps.show();
+
+    openOnFirst(mount, allApps);
+    expect(mount.querySelector('[data-action="unpin"]')!.textContent).toBe('Unpin');
+    (mount.querySelector('[data-action="unpin"]') as HTMLElement).click();
+
+    expect(unpin).toHaveBeenCalledTimes(1);
+    expect(unpin.mock.calls[0][0].id).toBe('demo.app');
+    expect(mount.querySelector('.all-apps-menu')).toBeNull();
+  });
+
+  it('hides Delete for a non-removable app', async () => {
+    vi.mocked(listApps).mockResolvedValue({
+      apps: [{id: 'com.webos.app.browser', title: 'Browser', removable: false}]
+    });
+    const {mount, allApps} = buildMenu({isPinned: () => false});
+    await allApps.show();
+
+    openOnFirst(mount, allApps);
+    expect(mount.querySelector('[data-action="delete"]')).toBeNull();
+    expect(mount.querySelector('[data-action="restart"]')).not.toBeNull();
+  });
+
+  it('asks before deleting, then removes the app and drops its tile', async () => {
+    vi.mocked(listApps).mockResolvedValue({
+      apps: [{id: 'a.app', title: 'Alpha'}, {id: 'b.app', title: 'Beta'}]
+    });
+    const remove = vi.fn<(app: {id: string}) => Promise<void>>(async () => {});
+    const {mount, allApps} = buildMenu({isPinned: () => false, remove});
+    await allApps.show();
+
+    openOnFirst(mount, allApps);
+    (mount.querySelector('[data-action="delete"]') as HTMLElement).click();
+    expect(remove).not.toHaveBeenCalled();
+    expect(mount.querySelector('[data-action="delete-confirm"]')).not.toBeNull();
+
+    (mount.querySelector('[data-action="delete-confirm"]') as HTMLElement).click();
+    await flush();
+
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(remove.mock.calls[0][0].id).toBe('a.app');
+    expect(mount.querySelectorAll('.all-apps-tile').length).toBe(1);
+    expect(mount.querySelector('.all-apps-menu')).toBeNull();
+  });
+
+  it('keeps the confirm up and toasts when a delete fails', async () => {
+    vi.mocked(listApps).mockResolvedValue({apps: [{id: 'demo.app', title: 'Demo'}]});
+    const onToast = vi.fn();
+    const remove = vi.fn<(app: {id: string}) => Promise<void>>(async () => { throw new Error('needs root'); });
+    const {mount, allApps} = buildMenu({isPinned: () => false, remove, onToast});
+    await allApps.show();
+
+    openOnFirst(mount, allApps);
+    (mount.querySelector('[data-action="delete"]') as HTMLElement).click();
+    (mount.querySelector('[data-action="delete-confirm"]') as HTMLElement).click();
+    await flush();
+
+    expect(onToast).toHaveBeenCalledWith('needs root');
+    expect(mount.querySelector('[data-action="delete-confirm"]')).not.toBeNull();
+  });
+
+  it('unwinds the confirm, then the menu, on Back', async () => {
+    vi.mocked(listApps).mockResolvedValue({apps: [{id: 'demo.app', title: 'Demo'}]});
+    const {mount, allApps} = buildMenu({isPinned: () => false});
+    await allApps.show();
+
+    openOnFirst(mount, allApps);
+    (mount.querySelector('[data-action="delete"]') as HTMLElement).click();
+
+    expect(allApps.handleBack()).toBe(true); // confirm -> menu
+    expect(mount.querySelector('[data-action="pin"]')).not.toBeNull();
+    expect(allApps.handleBack()).toBe(true); // menu -> closed
+    expect(mount.querySelector('.all-apps-menu')).toBeNull();
+    expect(allApps.handleBack()).toBe(false);
+  });
+});

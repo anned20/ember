@@ -1,8 +1,7 @@
 /**
  * All apps: every app on the TV in one grid, opened from the All apps tile on
- * the home row. OK opens an app, Back closes. Opening an app that isn't on
- * the home row used to mean pinning it in Settings, opening it, and removing
- * it again.
+ * the home row. OK opens an app, Back closes. Holding OK (see focus.ts) opens
+ * that app's context menu: pin/unpin, restart and delete.
  */
 
 import {listInstalledApps} from './apps.js';
@@ -14,9 +13,14 @@ import type {AppRecord} from '@lib/types.js';
 const EMBER_ID = BRAND.appId;
 // Apps are rarely installed while Ember runs: list them again after this.
 const LIST_MAX_AGE_MS = 10 * 60 * 1000;
+// The menu's focus indices sit above the grid's (indexBase 5000 + tile count).
+const MENU_INDEX_OFFSET = 900;
 
-/** One app as listInstalledApps reports it (with its hidden flag). */
-type ListedApp = Awaited<ReturnType<typeof listInstalledApps>>[number];
+/** The error a failed remove rejects with. */
+type ErrorLike = {message?: unknown} | null | undefined;
+
+/** One app as listInstalledApps reports it (with its hidden / removable flags). */
+export type ListedApp = Awaited<ReturnType<typeof listInstalledApps>>[number];
 
 /** The focus manager calls the All apps overlay makes. */
 interface AllAppsFocus {
@@ -30,6 +34,15 @@ export interface AllAppsOptions {
   mount: HTMLElement;
   focus: AllAppsFocus;
   launch(app: AppRecord): void;
+  /** Whether the app is on the home row (pinned, or a custom tile for it). */
+  isPinned?(app: ListedApp): boolean;
+  pin?(app: ListedApp): void;
+  unpin?(app: ListedApp): void;
+  /** Close the app if it is running, then open it again. */
+  restart?(app: ListedApp): void;
+  /** Uninstall the app; rejects with the TV's reason. */
+  remove?(app: ListedApp): Promise<void> | void;
+  onToast?(message: string): void;
 }
 
 /** The handle returned by createAllApps. */
@@ -38,6 +51,10 @@ export interface AllApps {
   hide(): void;
   isOpen(): boolean;
   refocus(): void;
+  /** A held Select on a tile: open that app's context menu. */
+  openMenu(tile: Element): void;
+  /** Close the menu or its confirm; false when neither is open. */
+  handleBack(): boolean;
 }
 
 /**
@@ -52,6 +69,13 @@ export function createAllApps(options: AllAppsOptions): AllApps {
   let listedAt = 0;
   let loadGen = 0;
 
+  // Each tile's app, for the long-press menu (the tile only carries its title).
+  const tileApps = new WeakMap<HTMLElement, ListedApp>();
+  let menu: HTMLElement | null = null;
+  let menuApp: ListedApp | null = null;
+  let menuOrigin: HTMLElement | null = null;
+  let confirming = false;
+
   function build() {
     panel = document.createElement('div');
     panel.className = 'all-apps';
@@ -65,7 +89,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     title.textContent = 'All apps';
     const hint = document.createElement('span');
     hint.className = 'all-apps-hint';
-    hint.textContent = 'OK opens an app · Back closes';
+    hint.textContent = 'OK opens an app · Hold OK for options · Back closes';
     head.appendChild(title);
     head.appendChild(hint);
 
@@ -89,6 +113,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     button.type = 'button';
     button.className = 'app-tile all-apps-tile focusable';
     button.dataset.focusIndex = String(indexInRow('all-apps', index));
+    button.dataset.longPress = '';
     button.setAttribute('aria-label', app.title);
 
     const label = document.createElement('span');
@@ -110,6 +135,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     }
     button.appendChild(label);
 
+    tileApps.set(button, app);
     button.addEventListener('click', function () {
       options.launch(app);
     });
@@ -142,6 +168,167 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     return apps;
   }
 
+  // While the menu is open only its items are focusable, so Up/Down cannot
+  // wander back into the grid (see collect() in focus.ts).
+  function setTilesEnabled(enabled: boolean) {
+    if (!grid) return;
+    grid.querySelectorAll<HTMLButtonElement>('.all-apps-tile').forEach(function (tileEl) {
+      tileEl.disabled = !enabled;
+    });
+  }
+
+  function menuButton(label: string, action: string, index: number): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'all-apps-menu-item focusable';
+    button.dataset.action = action;
+    button.dataset.focusIndex = String(indexInRow('all-apps', MENU_INDEX_OFFSET + index));
+    button.textContent = label;
+    return button;
+  }
+
+  function closeMenu() {
+    if (!menu) return;
+    menu.remove();
+    menu = null;
+    menuApp = null;
+    confirming = false;
+    setTilesEnabled(true);
+  }
+
+  // Back on the tile the menu was opened from, or the first tile after it went.
+  function focusOrigin() {
+    const origin = menuOrigin;
+    if (origin && options.focus.focusElement && options.focus.focusElement(origin)) return;
+    options.focus.focusWithin('.all-apps');
+  }
+
+  function renderMenu() {
+    const app = menuApp;
+    if (!app || !menu) return;
+    confirming = false;
+    menu.innerHTML = '';
+    menu.appendChild(menuCard(app));
+  }
+
+  function menuCard(app: ListedApp): HTMLElement {
+    const card = document.createElement('div');
+    card.className = 'all-apps-menu-card';
+
+    const head = document.createElement('div');
+    head.className = 'all-apps-menu-head';
+    const title = document.createElement('h3');
+    title.textContent = app.title;
+    const id = document.createElement('span');
+    id.className = 'all-apps-menu-id';
+    id.textContent = app.id;
+    const pinned = !!(options.isPinned && options.isPinned(app));
+    const state = document.createElement('span');
+    state.className = 'all-apps-menu-state';
+    state.textContent = pinned ? 'On the home row' : 'Not on the home row';
+    head.appendChild(title);
+    head.appendChild(id);
+    head.appendChild(state);
+    card.appendChild(head);
+
+    const pin = menuButton(pinned ? 'Unpin' : 'Pin', pinned ? 'unpin' : 'pin', 0);
+    pin.addEventListener('click', function () {
+      const toggle = pinned ? options.unpin : options.pin;
+      if (toggle) toggle(app);
+      closeMenu();
+      focusOrigin();
+    });
+    card.appendChild(pin);
+
+    const restart = menuButton('Restart', 'restart', 1);
+    restart.addEventListener('click', function () {
+      // The host hides the overlay; if it doesn't, close the menu here.
+      if (options.restart) options.restart(app);
+      else closeMenu();
+    });
+    card.appendChild(restart);
+
+    if (app.removable !== false) {
+      const remove = menuButton('Delete', 'delete', 2);
+      remove.addEventListener('click', function () {
+        renderConfirm(app);
+      });
+      card.appendChild(remove);
+    }
+    return card;
+  }
+
+  function renderConfirm(app: ListedApp) {
+    if (!menu) return;
+    confirming = true;
+    menu.innerHTML = '';
+
+    const card = document.createElement('div');
+    card.className = 'all-apps-menu-card';
+    const question = document.createElement('p');
+    question.className = 'all-apps-menu-question';
+    question.textContent = 'Delete ' + app.title + '? This can’t be undone.';
+    card.appendChild(question);
+
+    const confirm = menuButton('Delete', 'delete-confirm', 0);
+    confirm.addEventListener('click', function () {
+      if (!options.remove) return;
+      Promise.resolve(options.remove(app)).then(function () {
+        if (listed) {
+          listed = listed.filter(function (entry) { return entry.id !== app.id; });
+        }
+        closeMenu();
+        render(listed || []);
+        focusOrigin();
+      }, function (err: ErrorLike) {
+        if (options.onToast) {
+          const reason = err && err.message ? String(err.message) : '';
+          options.onToast(reason || 'Could not delete ' + app.title);
+        }
+      });
+    });
+    card.appendChild(confirm);
+
+    const cancel = menuButton('Cancel', 'cancel', 1);
+    cancel.addEventListener('click', function () {
+      renderMenu();
+      options.focus.focusWithin('.all-apps-menu');
+    });
+    card.appendChild(cancel);
+
+    menu.appendChild(card);
+    options.focus.focusWithin('.all-apps-menu');
+  }
+
+  function openMenu(tileEl: Element) {
+    const app = tileEl instanceof HTMLElement ? tileApps.get(tileEl) : undefined;
+    if (!open || !app || !panel) return;
+    closeMenu();
+    menuApp = app;
+    menuOrigin = tileEl as HTMLElement;
+    menu = document.createElement('div');
+    menu.className = 'all-apps-menu';
+    menu.setAttribute('role', 'dialog');
+    menu.setAttribute('aria-label', app.title + ' options');
+    panel.appendChild(menu);
+    setTilesEnabled(false);
+    renderMenu();
+    options.focus.focusWithin('.all-apps-menu');
+  }
+
+  function handleBack(): boolean {
+    if (!menu) return false;
+    if (confirming) {
+      // In the confirm: Back steps back to the menu, not out of All apps.
+      renderMenu();
+      options.focus.focusWithin('.all-apps-menu');
+      return true;
+    }
+    closeMenu();
+    focusOrigin();
+    return true;
+  }
+
   async function show(): Promise<void> {
     if (!panel) build();
     open = true;
@@ -170,6 +357,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
 
   function hide() {
     if (!panel || !open) return;
+    closeMenu();
     open = false;
     loadGen += 1;
     panel.hidden = true;
@@ -185,6 +373,8 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     show: show,
     hide: hide,
     isOpen: function () { return open; },
+    openMenu: openMenu,
+    handleBack: handleBack,
     /** After Ember regains input: stay on the app the remote was on. */
     refocus: function () {
       const active = document.activeElement;

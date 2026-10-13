@@ -1,0 +1,49 @@
+src/ts/background/background.ts
+  s_86d6d222e60b68::t_944d87866e6d95 339-340
+  s_86d6d222e60b68::t_742ef13306c316 45-47
+  s_86d6d222e60b68::t_c80a0d22499b03 22-29
+  s_86d6d222e60b68::t_6403bbf10a2003 139,147
+src/ts/background/media-playback.ts
+  s_86d6d222e60b68::t_85d944df1b8ece 108-110,122-145,148
+  s_86d6d222e60b68::t_8644acbcf58fd6 161-164
+  s_86d6d222e60b68::t_7d91d2d1973418 242-243,259-260
+  s_86d6d222e60b68::t_7afe7d0a36e2bf 62-68
+src/ts/background/screensaver.ts
+  s_86d6d222e60b68::t_0c785aede7f519 361-365,371,374-376,381,394-403
+  s_86d6d222e60b68::t_d61c617c99c8d4 202-206,208-209
+  s_86d6d222e60b68::t_e0543a60fcec84 358-360
+  s_86d6d222e60b68::t_d13f4af070a43a 79-81
+  s_86d6d222e60b68::t_e498e594c39fff 30-35
+  s_86d6d222e60b68::t_4be5f8aa4d928c 462
+src/ts/main.ts
+  s_86d6d222e60b68::t_2e44618f7f5803 387-389
+test/screensaver.test.ts
+  s_86d6d222e60b68::t_75d8c0543d024a 1-80,82-87
+  s_86d6d222e60b68::t_373c34eac2d8a2 81
+src/styles/main.css
+  s_86d6d222e60b68::t_1b7095c4824bb3 2722-2746
+  s_86d6d222e60b68::t_6502918cbc350a 2803
+  s_86d6d222e60b68::t_67b281d324a88e 57-60,72-77
+test/background.test.ts
+  s_86d6d222e60b68::t_3f452d42f24361 43-57,59-60,81-85
+  s_86d6d222e60b68::t_c91e7b174f725c 58,61-80
+test/media-playback.test.ts
+  s_86d6d222e60b68::t_8ae5bfbf740504 28-29,42-43,50-51,54-62
+  s_86d6d222e60b68::t_2ef0b075cb2413 88-126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c8481486c7601709a390ca6cdca3c911dff8d843",
+  "prompts": {},
+  "sessions": {
+    "s_86d6d222e60b68": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ecb7418c1ffeABiKl0PDLwjLpJ",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

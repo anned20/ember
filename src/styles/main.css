@@ -2925,10 +2925,13 @@ body.settings-open.reuses-wallpaper #background-layer {
   15%, 40% { opacity: 0.7; }
 }
 
-/* Hide home chrome while the in-app saver is up (overlay already covers it). */
+/* Hide home chrome while the in-app saver is up (overlay already covers it).
+   All apps too: with an aerial background the saver root is transparent, so an
+   open grid would otherwise show through under the clock. */
 body.custom-screensaver-active .top-bar,
 body.custom-screensaver-active .launcher,
 body.custom-screensaver-active .music-bar,
+body.custom-screensaver-active .all-apps,
 body.custom-screensaver-active #toast {
   visibility: hidden;
 }

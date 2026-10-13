@@ -1,0 +1,93 @@
+src/ts/lib/types.ts
+  s_2a0e385cd36c86::t_825508988edf37 236
+  s_2a0e385cd36c86::t_259b0f73886559 1,5
+scripts/diagnostics.sh
+  s_2a0e385cd36c86::t_97d83aaef27d92 4,6
+  s_2a0e385cd36c86::t_26375da8c7272e 2-3
+  s_2a0e385cd36c86::t_a43ef58c18c3d3 98
+  s_2a0e385cd36c86::t_2cc86e6374d4b5 86
+voice/daemon/config_store.py
+  s_2a0e385cd36c86::t_f9bab012dae3e3 22,25,28
+scripts/enable-boot-launch.sh
+  s_2a0e385cd36c86::t_8448378fa11227 17-20
+scripts/boot-launch.sh
+  s_2a0e385cd36c86::t_f6b5e46784b89f 9
+src/ts/luna/luna.ts
+  s_2a0e385cd36c86::t_c6b45ad4ceb122 337-338
+  s_2a0e385cd36c86::t_508a9892411733 416
+  s_2a0e385cd36c86::t_bd5b357df90e80 432
+voice/daemon/luna_service.py
+  s_2a0e385cd36c86::t_6afc51282f15b5 1151
+scripts/disable-voice.sh
+  s_2a0e385cd36c86::t_54120bf9f3869a 9
+src/ts/lib/brand.ts
+  s_2a0e385cd36c86::t_e9804bdb927594 14,16
+  s_2a0e385cd36c86::t_3e8595f85ab6c2 72-74,77-85,89
+  s_2a0e385cd36c86::t_623b43e94cdba8 44
+src/ts/lib/version.ts
+  s_2a0e385cd36c86::t_c15cbf2a8de9df 1
+src/ts/lib/usb.ts
+  s_2a0e385cd36c86::t_df12fe856ed0f7 15
+voice/daemon/brand.py
+  s_2a0e385cd36c86::t_569ab539cfc475 10,14-15,17-26
+scripts/enable-voice.sh
+  s_2a0e385cd36c86::t_5b31a44b437ac3 12
+  s_2a0e385cd36c86::t_512dc963925c1f 103
+  s_2a0e385cd36c86::t_ba846b2d179150 97-100
+  s_2a0e385cd36c86::t_fb7393c4744078 78-94
+install2tvfrommacos.sh
+  s_2a0e385cd36c86::t_b3ba03fef5fb4b 258
+scripts/disable-home-watcher.sh
+  s_2a0e385cd36c86::t_1ca7cebd485035 27
+  s_2a0e385cd36c86::t_fbe1ffd75d9b0c 8-11,14
+scripts/brand.sh
+  s_2a0e385cd36c86::t_569ab539cfc475 10,14-15,17-29
+voice/daemon/supergrok_auth.py
+  s_2a0e385cd36c86::t_173f6d5e1b2d3d 5
+  s_2a0e385cd36c86::t_f9bab012dae3e3 28,31
+voice/daemon/voice_daemon.py
+  s_2a0e385cd36c86::t_f9bab012dae3e3 611
+scripts/enable-home-watcher.sh
+  s_2a0e385cd36c86::t_81d3266dc838a5 52
+  s_2a0e385cd36c86::t_59e03d70bfabc6 67
+  s_2a0e385cd36c86::t_0d5e20aaca65c4 12-18,27-30
+  s_2a0e385cd36c86::t_c298696aea0fec 96-98
+test/settings/panes/music.test.ts
+  s_2a0e385cd36c86::t_d87d2cd7a509d0 177,182
+src/ts/lib/brand-codegen.ts
+  s_2a0e385cd36c86::t_c8ff95f09be05c 26-27
+  s_2a0e385cd36c86::t_d50fc40622c52f 57-60
+  s_2a0e385cd36c86::t_8bf6245b64860e 76-78
+  s_2a0e385cd36c86::t_6f7a966fb25cf4 79
+src/ts/main.ts
+  s_2a0e385cd36c86::t_60f35a4d447ff5 193,195
+scripts/build.ts
+  s_2a0e385cd36c86::t_af716c71075445 93
+  s_2a0e385cd36c86::t_285a88844845ba 183
+scripts/home-watcher.sh
+  s_2a0e385cd36c86::t_0a9a44796aa90f 10
+vitest.config.mjs
+  s_2a0e385cd36c86::t_b041aaf606afad 26
+scripts/disable-boot-launch.sh
+  s_2a0e385cd36c86::t_2758f15b1a49f4 8
+scripts/voice-run.sh
+  s_2a0e385cd36c86::t_00ce5a2b42dd0a 10-11,16
+src/ts/settings/panes/music.ts
+  s_2a0e385cd36c86::t_3b90c1e19911b5 153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c63e0a2ff59fa2a440a47fd3f14d1038e5bb3532",
+  "prompts": {},
+  "sessions": {
+    "s_2a0e385cd36c86": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ecac1799dffeDZcGmAJfXXy0Wj",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+src/ts/lib/brand.ts
+  s_2a0e385cd36c86::t_92b26db1534d94 72-74
+src/ts/main.ts
+  s_2a0e385cd36c86::t_8e12d185abf4b3 1130,1132
+test/config.test.ts
+  s_2a0e385cd36c86::t_3bb3a82169b6d1 100
+  s_2a0e385cd36c86::t_847814e4fc3d17 107-108
+src/ts/settings/settings-backup.ts
+  s_2a0e385cd36c86::t_908593e795aed8 224,230
+src/ts/lib/usb.ts
+  s_2a0e385cd36c86::t_b2aade18fc7ad1 232
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "53b415226641a3d481830ef2c363c9ce56d35e14",
+  "prompts": {},
+  "sessions": {
+    "s_2a0e385cd36c86": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ecac1799dffeDZcGmAJfXXy0Wj",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

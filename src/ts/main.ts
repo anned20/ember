@@ -1,7 +1,6 @@
 import {setClockTime} from '@lib/clock-format.js';
 import {createAllApps} from '@apps/all-apps.js';
 import type {AllApps} from '@apps/all-apps.js';
-import '@lib/compat.js';
 import {loadConfig, saveConfig, applyUsbConfig, readStoredConfigText} from '@config/config.js';
 import {applyActiveProfile} from '@config/profiles.js';
 import {resolveLoungePaths} from '@lib/usb.js';
@@ -43,6 +42,8 @@ import {
 } from '@luna/luna.js';
 import {createForegroundWatcher, shouldInterceptHome} from '@lib/foreground-watcher.js';
 import type {ForegroundWatcher} from '@lib/foreground-watcher.js';
+import {getSdkVersion, isSupportedPlatform} from '@luna/platform.js';
+import {describeDetectedPlatform, renderUnsupportedSurface} from '@lib/unsupported-surface.js';
 import {isTerminalAppId, getAppIdCandidates} from '@apps/app-icons.js';
 import {setPreferBundledIcons} from '@apps/app-catalog.js';
 import {setLiteImages} from '@background/background-sources.js';
@@ -199,23 +200,13 @@ function launchParamsWantPreview() {
       return true;
     }
   } catch (err) { /* ignore */ }
-  const candidates: string[] = [];
   try {
-    if (window.PalmSystem && window.PalmSystem.launchParams) {
-      candidates.push(window.PalmSystem.launchParams);
-    }
-  } catch (err2) { /* ignore */ }
-  try {
-    if (window.webOSSystem && window.webOSSystem.launchParams) {
-      candidates.push(window.webOSSystem.launchParams);
-    }
-  } catch (err3) { /* ignore */ }
-  for (let i = 0; i < candidates.length; i += 1) {
-    const p = parseLaunchParamsObject(candidates[i]);
+    const raw = window.webOSSystem && window.webOSSystem.launchParams;
+    const p = parseLaunchParamsObject(raw);
     if (p && isTrueFlag(p.previewSs)) {
       return true;
     }
-  }
+  } catch (err3) { /* ignore */ }
   return false;
 }
 
@@ -268,17 +259,22 @@ export function createApp(): AppLifecycle {
     weatherPanel: document.getElementById('weather-panel')
   };
 
-  // Modules are wired here in dependency order. The few genuinely cyclic edges
-  // (focus <-> settings/apps, settings <-> screensaver) go through these
-  // forward-declared handles, which are assigned before any callback can run.
-  let focus: FocusManager;
-  let settings: SettingsPanelHandle;
-  let customScreensaver: CustomScreensaver;
-  let channelStrip: ChannelStripHandle;
-  let inputs: InputRowHandle;
-  let apps: AppGrid;
-  let allApps: AllApps;
-  let foregroundWatcher: ForegroundWatcher;
+  // Modules are built by buildModules() after the platform gate has passed, so
+  // an unsupported TV never constructs them (some subscribe to the Luna bus on
+  // construction). The handles are assigned before any callback can run.
+  let voiceIndicator!: VoiceIndicator;
+  let weather!: WeatherPanelHandle;
+  let background!: BackgroundController;
+  let music!: MusicPlayer;
+  let focus!: FocusManager;
+  let settings!: SettingsPanelHandle;
+  let customScreensaver!: CustomScreensaver;
+  let channelStrip!: ChannelStripHandle;
+  let inputs!: InputRowHandle;
+  let apps!: AppGrid;
+  let allApps!: AllApps;
+  let foregroundWatcher!: ForegroundWatcher;
+  let built = false;
 
   function getBaseConfig(): Config {
     return baseConfig;
@@ -323,18 +319,6 @@ export function createApp(): AppLifecycle {
     }
   };
 
-  // --- leaf modules: no collaborators beyond config and the DOM ---
-  const voiceIndicator: VoiceIndicator = createVoiceIndicator(elements.voiceIndicator);
-  const weather: WeatherPanelHandle = createWeatherPanel(elements.weatherPanel, getConfig, {
-    isVisible: function () { return visible; }
-  });
-  const background: BackgroundController =
-    createBackgroundController(elements, getConfig);
-  const music: MusicPlayer = createMusicPlayer(getConfig, Object.assign({}, elements, {
-    onToast: showToast,
-    onBarChange: function () { updateMusicBarClearance(); }
-  }));
-
   // HDMI / input switch or a TV channel — raise TV volume like launching an app.
   function beforeInputLaunch() {
     applyAppLaunchVolume();
@@ -350,193 +334,208 @@ export function createApp(): AppLifecycle {
     return row.querySelector('[data-channels-chip]');
   }
 
-  // Live TV channels above the inputs row (Channels chip; channels.js).
-  channelStrip = createChannelStrip(elements.channelStrip, getConfig, {
-    onToast: showToast,
-    onBeforeLaunch: beforeInputLaunch,
-    focusControl: function (el: Element | null) {
-      return focus.focusElement(el);
-    },
-    // Mark the chip open/closed in place: redrawing the row would drop focus.
-    onToggle: function (isOpen: boolean) {
-      const chip = channelsChip();
-      if (!chip) return;
-      chip.classList.toggle('active', isOpen);
-      chip.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      // Closing took the focused channel away (a pick that didn't switch, or
-      // Back): land on the Channels chip rather than on nothing.
-      const active = document.activeElement;
-      if (!isOpen && (!active || active === document.body)) focus.focusElement(chip);
-    },
-    // The chip appears once channels are found (or goes if they are gone).
-    onAvailabilityChange: function () {
-      inputs.render();
-    }
-  });
+  // Build the modules once the platform gate has passed. Some subscribe to
+  // the Luna bus on construction, so this must not run on an unsupported TV.
+  function buildModules() {
+    // Leaf modules: no collaborators beyond config and the DOM.
+    voiceIndicator = createVoiceIndicator(elements.voiceIndicator);
+    weather = createWeatherPanel(elements.weatherPanel, getConfig, {
+      isVisible: function () { return visible; }
+    });
+    background = createBackgroundController(elements, getConfig);
+    music = createMusicPlayer(getConfig, Object.assign({}, elements, {
+      onToast: showToast,
+      onBarChange: function () { updateMusicBarClearance(); }
+    }));
 
-  inputs = createInputRow(elements.inputRow, getConfig, {
-    onToast: showToast,
-    onBeforeLaunch: beforeInputLaunch,
-    channels: channelStrip
-  });
-
-  // In-app photo/clock screensaver after idle.
-  customScreensaver = createCustomScreensaver({
-    rootEl: elements.customScreensaver,
-    getConfig: getConfig,
-    // Aerial saver: reuse the wallpaper's already-warm clip rather than opening
-    // a second, cold decoder (see isPresentingAerial).
-    isWallpaperAerial: function () { return background.isPresentingAerial(); },
-    isBlocked: function () {
-      if (!visible) return true;
-      // Another app or TV Settings has the remote: keys go there, so we'd count
-      // as idle and start a 4K slideshow underneath it.
-      if (document.body.classList.contains('app-inactive')) return true;
-      if (settings.isVisible()) return true;
-      if (foregroundWatcher.isPending()) return true;
-      return false;
-    },
-    onShow: function () {
-      // Ambient music keeps playing under the saver.
-    },
-    onHide: function () {
-      reclaimInput();
-    }
-  });
-
-  settings = createSettingsPanel(elements.settingsPanel as HTMLElement, getBaseConfig, {
-    onOpen: function () {
-      music.fadeInAndResume();
-      customScreensaver.hide();
-    },
-    onRendered: function () {
-      // Land focus inside the panel so wheel / arrows navigate options immediately.
-      focus.focusWithin('#settings-panel');
-    },
-    onSave: function (savedConfig: Config) {
-      setConfig(savedConfig);
-      applyHomeVolume();
-      applyScreensaverSetting();
-      customScreensaver.applyConfig();
-      refreshAll();
-      syncRootHooks(savedConfig);
-    },
-    onClose: function () {
-      // Back on the home control Settings was opened from (the gear).
-      focus.focusHomeDock();
-      customScreensaver.resetIdle();
-    },
-    onPreviewScreensaver: function () {
-      // Shown over the still-open panel; dismissing it hands focus back to
-      // Settings via reclaimInput().
-      customScreensaver.preview();
-    },
-    // Settings -> AI Voice turned the voice assistant on/off (already applied
-    // and saved there).
-    onVoiceEnabledChange: function (on: boolean) {
-      setVoiceWsEnabled(on);
-    },
-    // Inputs list: offer Live TV when the TV has channels tuned.
-    hasTvChannels: function () {
-      return channelStrip.hasChannels();
-    },
-    // Re-focus a control after Settings redraws it (e.g. the pinned-apps list).
-    focusControl: function (el: Element | null) {
-      return focus.focusElement(el);
-    },
-    onToast: showToast
-  });
-
-  apps = createAppGrid(elements.appGrid, getConfig, {
-    onBeforeLaunch: function () {
-      foregroundWatcher.poke();
-      customScreensaver.hide();
-      const config = getConfig();
-      if (config.music && config.music.pauseOnLaunch) {
-        music.fadeOutAndPause();
+    // Live TV channels above the inputs row (Channels chip; channels.js).
+    channelStrip = createChannelStrip(elements.channelStrip, getConfig, {
+      onToast: showToast,
+      onBeforeLaunch: beforeInputLaunch,
+      focusControl: function (el: Element | null) {
+        return focus.focusElement(el);
+      },
+      // Mark the chip open/closed in place: redrawing the row would drop focus.
+      onToggle: function (isOpen: boolean) {
+        const chip = channelsChip();
+        if (!chip) return;
+        chip.classList.toggle('active', isOpen);
+        chip.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        // Closing took the focused channel away (a pick that didn't switch, or
+        // Back): land on the Channels chip rather than on nothing.
+        const active = document.activeElement;
+        if (!isOpen && (!active || active === document.body)) focus.focusElement(chip);
+      },
+      // The chip appears once channels are found (or goes if they are gone).
+      onAvailabilityChange: function () {
+        inputs.render();
       }
-      applyAppLaunchVolume();
-    },
-    onOpenSettings: function () {
-      settings.show();
-    },
-    onOpenTvSettings: function () {
-      openTvSettings();
-    },
-    onOpenAllApps: function () {
-      allApps.show();
-    },
-    onToast: showToast
-  });
+    });
 
-  focus = createFocusManager(document.getElementById('app') as HTMLElement, {
-    onNumber: function (n: number) {
-      // While the screensaver is showing, a key press dismisses it (screensaver.js)
-      // rather than opening an app behind it.
-      if (customScreensaver.isActive()) {
-        return;
+    inputs = createInputRow(elements.inputRow, getConfig, {
+      onToast: showToast,
+      onBeforeLaunch: beforeInputLaunch,
+      channels: channelStrip
+    });
+
+    // In-app photo/clock screensaver after idle.
+    customScreensaver = createCustomScreensaver({
+      rootEl: elements.customScreensaver,
+      getConfig: getConfig,
+      // Aerial saver: reuse the wallpaper's already-warm clip rather than opening
+      // a second, cold decoder (see isPresentingAerial).
+      isWallpaperAerial: function () { return background.isPresentingAerial(); },
+      isBlocked: function () {
+        if (!visible) return true;
+        // Another app or TV Settings has the remote: keys go there, so we'd count
+        // as idle and start a 4K slideshow underneath it.
+        if (document.body.classList.contains('app-inactive')) return true;
+        if (settings.isVisible()) return true;
+        if (foregroundWatcher.isPending()) return true;
+        return false;
+      },
+      onShow: function () {
+        // Ambient music keeps playing under the saver.
+      },
+      onHide: function () {
+        reclaimInput();
       }
-      apps.launchByNumber(n);
-    },
-    onBack: function () {
-      if (allApps.isOpen()) {
-        allApps.hide();
-        return;
-      }
-      if (channelStrip.isOpen()) {
-        channelStrip.close();
-        return;
-      }
-      if (settings.isVisible()) {
-        if (settings.handleBack()) {
+    });
+
+    settings = createSettingsPanel(elements.settingsPanel as HTMLElement, getBaseConfig, {
+      onOpen: function () {
+        music.fadeInAndResume();
+        customScreensaver.hide();
+      },
+      onRendered: function () {
+        // Land focus inside the panel so wheel / arrows navigate options immediately.
+        focus.focusWithin('#settings-panel');
+      },
+      onSave: function (savedConfig: Config) {
+        setConfig(savedConfig);
+        applyHomeVolume();
+        applyScreensaverSetting();
+        customScreensaver.applyConfig();
+        refreshAll();
+        syncRootHooks(savedConfig);
+      },
+      onClose: function () {
+        // Back on the home control Settings was opened from (the gear).
+        focus.focusHomeDock();
+        customScreensaver.resetIdle();
+      },
+      onPreviewScreensaver: function () {
+        // Shown over the still-open panel; dismissing it hands focus back to
+        // Settings via reclaimInput().
+        customScreensaver.preview();
+      },
+      // Settings -> AI Voice turned the voice assistant on/off (already applied
+      // and saved there).
+      onVoiceEnabledChange: function (on: boolean) {
+        setVoiceWsEnabled(on);
+      },
+      // Inputs list: offer Live TV when the TV has channels tuned.
+      hasTvChannels: function () {
+        return channelStrip.hasChannels();
+      },
+      // Re-focus a control after Settings redraws it (e.g. the pinned-apps list).
+      focusControl: function (el: Element | null) {
+        return focus.focusElement(el);
+      },
+      onToast: showToast
+    });
+
+    apps = createAppGrid(elements.appGrid, getConfig, {
+      onBeforeLaunch: function () {
+        foregroundWatcher.poke();
+        customScreensaver.hide();
+        const config = getConfig();
+        if (config.music && config.music.pauseOnLaunch) {
+          music.fadeOutAndPause();
+        }
+        applyAppLaunchVolume();
+      },
+      onOpenSettings: function () {
+        settings.show();
+      },
+      onOpenTvSettings: function () {
+        openTvSettings();
+      },
+      onOpenAllApps: function () {
+        allApps.show();
+      },
+      onToast: showToast
+    });
+
+    focus = createFocusManager(document.getElementById('app') as HTMLElement, {
+      onNumber: function (n: number) {
+        // While the screensaver is showing, a key press dismisses it (screensaver.js)
+        // rather than opening an app behind it.
+        if (customScreensaver.isActive()) {
           return;
         }
-        settings.hide();
-        return;
+        apps.launchByNumber(n);
+      },
+      onBack: function () {
+        if (allApps.isOpen()) {
+          allApps.hide();
+          return;
+        }
+        if (channelStrip.isOpen()) {
+          channelStrip.close();
+          return;
+        }
+        if (settings.isVisible()) {
+          if (settings.handleBack()) {
+            return;
+          }
+          settings.hide();
+          return;
+        }
+      },
+      onRed: function () {
+        if (settings.isVisible()) return;
+        // Red also unlocks autoplay if the TV blocked silent start.
+        music.unlockAutoplay();
+        music.togglePause();
+      },
+      onGreen: function () {
+        if (settings.isVisible()) return;
+        music.nextTrack();
+      },
+      onVolumeUp: function () {
+        if (settings.isVisible()) return;
+        music.nudgeVolume(5);
+      },
+      onVolumeDown: function () {
+        if (settings.isVisible()) return;
+        music.nudgeVolume(-5);
+      },
+      onVolumeMute: function () {
+        if (settings.isVisible()) return;
+        elements.muteBtn.click();
+      },
+      onBlue: function () {
+        stepAerialBackground(1);
+      },
+      onChannelUp: function () {
+        stepAerialBackground(1);
+      },
+      onChannelDown: function () {
+        stepAerialBackground(-1);
       }
-    },
-    onRed: function () {
-      if (settings.isVisible()) return;
-      // Red also unlocks autoplay if the TV blocked silent start.
-      music.unlockAutoplay();
-      music.togglePause();
-    },
-    onGreen: function () {
-      if (settings.isVisible()) return;
-      music.nextTrack();
-    },
-    onVolumeUp: function () {
-      if (settings.isVisible()) return;
-      music.nudgeVolume(5);
-    },
-    onVolumeDown: function () {
-      if (settings.isVisible()) return;
-      music.nudgeVolume(-5);
-    },
-    onVolumeMute: function () {
-      if (settings.isVisible()) return;
-      elements.muteBtn.click();
-    },
-    onBlue: function () {
-      stepAerialBackground(1);
-    },
-    onChannelUp: function () {
-      stepAerialBackground(1);
-    },
-    onChannelDown: function () {
-      stepAerialBackground(-1);
-    }
-  });
+    });
 
-  // All apps: the grid of every app on the TV, from the All apps tile.
-  allApps = createAllApps({
-    mount: document.getElementById('app')!,
-    focus: focus,
-    launch: function (app: AppRecord) {
-      allApps.hide();
-      apps.launchApp(app);
-    }
-  });
+    // All apps: the grid of every app on the TV, from the All apps tile.
+    allApps = createAllApps({
+      mount: document.getElementById('app')!,
+      focus: focus,
+      launch: function (app: AppRecord) {
+        allApps.hide();
+        apps.launchApp(app);
+      }
+    });
+  }
 
   // Blue (and Channel Up / Channel Down where the remote delivers them) steps the
   // aerial wallpaper to the next clip. They do nothing — like today — when an open
@@ -1172,6 +1171,18 @@ export function createApp(): AppLifecycle {
   }
 
   async function init() {
+    // Platform gate, step 0: an unsupported TV never starts a module, the
+    // Luna ladder, root hooks or the foreground watcher. Fail closed, visibly.
+    const sdkVersion = await getSdkVersion();
+    if (stopped) return;
+    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    if (!isSupportedPlatform(sdkVersion, userAgent)) {
+      renderUnsupportedSurface(describeDetectedPlatform(sdkVersion));
+      return;
+    }
+
+    buildModules();
+    built = true;
     setVoiceWsEnabled(!!(baseConfig.launcher && baseConfig.launcher.voiceEnabled));
 
     await applyUsbOverrides();
@@ -1196,7 +1207,7 @@ export function createApp(): AppLifecycle {
     // In-app photo/clock screensaver after idle.
     customScreensaver.start();
 
-    // One-shot force preview: URL, PalmSystem launch params, webOSRelaunch,
+    // One-shot force preview: URL, webOSSystem launch params, webOSRelaunch,
     // or root flag file /tmp/launch-home-preview-ss (written by install/SSH).
     if (launchParamsWantPreview()) {
       laterTracked(function () { triggerScreensaverPreview('launchParams'); }, 900);
@@ -1329,6 +1340,7 @@ export function createApp(): AppLifecycle {
 
   function stop() {
     stopped = true;
+    if (!built) return;
     if (clockTimer !== null) {
       clearInterval(clockTimer);
       clockTimer = null;

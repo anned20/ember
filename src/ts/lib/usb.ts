@@ -1,4 +1,3 @@
-import {compatFetch} from './compat.js';
 import {getStorageDevices} from '@luna/luna.js';
 import type {Config, UsbTrack} from './types.js';
 
@@ -93,7 +92,7 @@ export function joinPath(base: string, part: string): string {
 }
 
 export async function fetchText(url: string): Promise<string> {
-  const res = await compatFetch(url);
+  const res = await fetch(url);
   if (!res.ok) throw new Error('HTTP ' + res.status);
   return res.text();
 }

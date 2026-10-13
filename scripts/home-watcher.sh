@@ -7,10 +7,11 @@
 # Home even though Launch Home is painted on top — dock appears dead).
 #
 # Start detached only:
-#   setsid nohup home-watcher.sh >/tmp/launch-home-watcher.log 2>&1 </dev/null &
+#   setsid home-watcher.sh >/tmp/launch-home-watcher.log 2>&1 </dev/null &
 #
-# Hardened for webOS 4.x+: luna-send -w / setsid may be missing; subscribe can
-# die after boot; we fall back to polling and auto-restart the subscribe loop.
+# Supported floor: webOS 22+. The foreground subscription is durable, so there
+# is no poll-and-restart loop; polling is only a last resort when the
+# subscription cannot be opened at all.
 
 APP_ID="org.webosbrew.lounge.launcher"
 PIDFILE="/tmp/launch-home-watcher.pid"
@@ -41,7 +42,7 @@ trap 'rm -f "$PIDFILE"; log "exit"; exit 0' INT TERM HUP
 is_home() {
   case "$1" in
     com.webos.app.home|com.webos.app.launcher|com.webos.app.homelauncher|\
-    com.webos.app.homeupdater|com.webos.app.dashboard|com.palm.app.home|\
+    com.webos.app.homeupdater|com.webos.app.dashboard|\
     com.webos.app.gamehome|com.webos.app.seniorhome)
       return 0
       ;;
@@ -50,44 +51,19 @@ is_home() {
 }
 
 extract_app_id() {
-  # Prefer top-level "appId"; fall back to foregroundAppInfo[0].appId (some
-  # older webOS builds only fill the array form).
   raw=$(printf '%s' "$1" | tr '\n' ' ')
-  id=$(printf '%s' "$raw" | sed -n 's/.*"appId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
-  if [ -n "$id" ]; then
-    printf '%s' "$id"
-    return 0
-  fi
-  printf '%s' "$raw" | sed -n 's/.*"foregroundAppInfo"[^[]*\[[^]{]*{[^}]*"appId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1
+  printf '%s' "$raw" | sed -n 's/.*"appId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1
 }
 
-# One-shot luna-send with webOS 4-compatible fallbacks (-w / -i may be missing).
+# The one supported luna-send idiom: interactive, one reply, hard timeout.
 luna_once() {
   uri=$1
   payload=$2
-  out=$(luna-send -i -n 1 -w 3000 -f "$uri" "$payload" 2>/dev/null) && {
-    printf '%s' "$out"
-    return 0
-  }
-  out=$(luna-send -i -n 1 -f "$uri" "$payload" 2>/dev/null) && {
-    printf '%s' "$out"
-    return 0
-  }
-  out=$(luna-send -n 1 -f "$uri" "$payload" 2>/dev/null) && {
-    printf '%s' "$out"
-    return 0
-  }
-  return 1
+  luna-send -i -n 1 -w 3000 -f "$uri" "$payload" 2>/dev/null
 }
 
 subscribe_fg() {
-  # Prefer interactive subscribe; fall back if -i is unavailable.
-  if luna-send -i \
-    'luna://com.webos.applicationManager/getForegroundAppInfo' \
-    '{"subscribe":true}' 2>/dev/null; then
-    return 0
-  fi
-  luna-send \
+  luna-send -i \
     'luna://com.webos.applicationManager/getForegroundAppInfo' \
     '{"subscribe":true}' 2>/dev/null
 }
@@ -99,7 +75,7 @@ launch_app() {
 
 close_home() {
   for id in com.webos.app.home com.webos.app.launcher com.webos.app.homelauncher \
-            com.webos.app.dashboard com.palm.app.home; do
+            com.webos.app.dashboard; do
     luna_once 'luna://com.webos.applicationManager/closeByAppId' "{\"id\":\"${id}\"}" >/dev/null 2>&1 || true
   done
 }
@@ -174,14 +150,13 @@ run_subscribe() {
     esac
   done
   log "subscribe ended"
-  return 0
 }
 
-# Wait briefly for LS2 after cold boot (webOS 4 init.d can start us early).
+# A cold boot can start us before LS2 answers; wait (up to ~60s) before opening
+# the subscription.
 boot_wait=0
-while [ "$boot_wait" -lt 30 ]; do
-  probe=$(luna_once 'luna://com.webos.applicationManager/getForegroundAppInfo' '{"subscribe":true}' 2>/dev/null)
-  if [ -n "$probe" ]; then
+while [ "$boot_wait" -lt 60 ]; do
+  if luna_once 'luna://com.webos.applicationManager/getForegroundAppInfo' '{"subscribe":true}' >/dev/null 2>&1; then
     log "ls2 ready after ${boot_wait}s"
     break
   fi
@@ -189,23 +164,18 @@ while [ "$boot_wait" -lt 30 ]; do
   sleep 1
 done
 
-while true; do
-  sub_start=$(now_sec)
-  run_subscribe
-  sub_lasted=$(( $(now_sec) - sub_start ))
-  # Polling fallback while subscribe is down / between restarts. Every poll
-  # spawns luna-send plus sed, so poll once a second, and when the subscribe
-  # died at once (it isn't coming back soon) poll a minute before retrying it
-  # instead of hammering both.
-  polls=10
-  if [ "$sub_lasted" -lt 5 ]; then
-    polls=60
-  fi
-  i=0
-  while [ "$i" -lt "$polls" ]; do
+# The subscription cannot be opened at all: fall back to polling.
+if ! luna_once 'luna://com.webos.applicationManager/getForegroundAppInfo' '{"subscribe":true}' >/dev/null 2>&1; then
+  log "subscribe unavailable — polling fallback"
+  while true; do
     raw=$(luna_once 'luna://com.webos.applicationManager/getForegroundAppInfo' '{"subscribe":true}')
     handle_fg "$(extract_app_id "$raw")"
-    i=$((i + 1))
     sleep 1
   done
+fi
+
+# Durable subscription: when the bus drops us, reopen it (no polling).
+while true; do
+  run_subscribe
+  sleep 1
 done

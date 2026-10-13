@@ -45,7 +45,6 @@ export const HOME_APP_IDS = [
   'com.webos.app.launcher',
   'com.webos.app.homeupdater',
   'com.webos.app.dashboard',
-  'com.palm.app.home',
   'com.webos.app.homelauncher',
   'com.webos.app.gamehome',
   'com.webos.app.seniorhome'

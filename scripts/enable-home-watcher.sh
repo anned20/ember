@@ -1,7 +1,7 @@
 #!/bin/sh
 # Enable Launch Home button watcher (run as root via hbchannel exec).
 # Packaged next to home-watcher.sh in the app directory.
-# Hardened for webOS 4.x (setsid may be missing; boot must wait for LS2).
+# Requires setsid on the supported floor (webOS 22+).
 
 WATCH="/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher/home-watcher.sh"
 PIDF="/tmp/launch-home-watcher.pid"
@@ -21,28 +21,21 @@ chmod 755 "$WATCH"
 mkdir -p /var/lib/webosbrew/init.d
 rm -f "$OLD_INITD"
 
-# Boot hook — detach with setsid when available, else nohup, else plain &.
-# Wait for applicationManager so we do not exit/fail on cold boot (webOS 4).
+# Boot hook — detach with setsid. Wait for applicationManager so the watcher
+# does not start before LS2 answers on a cold boot.
 cat >"$INITD" <<EOF
 #!/bin/sh
 LOG="$LOG"
 WATCH="$WATCH"
 i=0
 while [ "\$i" -lt 60 ]; do
-  if luna-send -n 1 -f 'luna://com.webos.applicationManager/getForegroundAppInfo' '{"subscribe":true}' >/dev/null 2>&1 \\
-     || luna-send -i -n 1 -f 'luna://com.webos.applicationManager/getForegroundAppInfo' '{"subscribe":true}' >/dev/null 2>&1; then
+  if luna-send -i -n 1 -f 'luna://com.webos.applicationManager/getForegroundAppInfo' '{"subscribe":true}' >/dev/null 2>&1; then
     break
   fi
   i=\$((i + 1))
   sleep 2
 done
-if command -v setsid >/dev/null 2>&1; then
-  setsid nohup "\$WATCH" >>"\$LOG" 2>&1 </dev/null &
-elif command -v nohup >/dev/null 2>&1; then
-  nohup "\$WATCH" >>"\$LOG" 2>&1 </dev/null &
-else
-  "\$WATCH" >>"\$LOG" 2>&1 </dev/null &
-fi
+setsid "\$WATCH" >>"\$LOG" 2>&1 </dev/null &
 exit 0
 EOF
 chmod 755 "$INITD"
@@ -67,13 +60,7 @@ rm -f "$PIDF" "$OLD_PIDF"
 sleep 1
 
 start_watcher() {
-  if command -v setsid >/dev/null 2>&1; then
-    setsid nohup "$WATCH" >>"$LOG" 2>&1 </dev/null &
-  elif command -v nohup >/dev/null 2>&1; then
-    nohup "$WATCH" >>"$LOG" 2>&1 </dev/null &
-  else
-    "$WATCH" >>"$LOG" 2>&1 </dev/null &
-  fi
+  setsid "$WATCH" >>"$LOG" 2>&1 </dev/null &
 }
 
 start_watcher

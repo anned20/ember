@@ -2668,6 +2668,66 @@ body.settings-open .settings-panel .ai-provider-card.focused {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Unsupported-TV gate: a full-screen surface shown when the TV is below the
+   webOS 22 floor. It fails closed and visibly instead of running degraded. */
+.unsupported-tv {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: radial-gradient(120% 120% at 50% 0%, #201426 0%, #08080c 70%);
+  color: #f4f0eb;
+  text-align: center;
+}
+
+.unsupported-tv-card {
+  max-width: 760px;
+  padding: 56px 64px;
+  border-radius: 20px;
+  border: 1px solid rgba(var(--glass-edge-rgb), var(--glass-edge));
+  background: linear-gradient(160deg,
+    rgba(var(--glass-rgb), var(--glass-top)),
+    rgba(var(--glass-rgb), var(--glass-bottom)));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.unsupported-tv-brand {
+  font-size: 20px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.unsupported-tv-title {
+  margin: 18px 0 20px;
+  font-size: 52px;
+  font-weight: 600;
+}
+
+.unsupported-tv-body {
+  margin: 0 0 16px;
+  font-size: 24px;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.unsupported-tv-detected {
+  font-weight: 600;
+}
+
+.unsupported-tv-requirement {
+  margin: 0;
+  font-size: 20px;
+  opacity: 0.65;
+}
+
 /* Performance mode: when a user on a weaker TV enables it, the glassmorphic blur
    and animated background are disabled for smoother rendering, while the layout
    stays intact. Strips GPU-heavy effects for low-spec TVs (e.g. LG B4). */

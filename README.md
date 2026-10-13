@@ -74,28 +74,28 @@ Launch Home is young and its settings still change between versions, so a backup
 
 ## Compatibility
 
-| webOS version | Status | Notes |
+Launch Home requires **webOS 22 or later** (Chromium 87+). On an older TV it
+shows a "This TV is too old" message and refuses to start: no home screen, no
+root hooks and no Home-button watcher are installed. The check runs at startup,
+reads the TV's `sdkVersion` (webOS 22 reports `7`), and falls back to the
+Chromium major in the user agent when the TV does not answer. The floor and the
+sdk-to-year mapping are recorded in
+[docs/adr/0001-webos-22-floor.md](docs/adr/0001-webos-22-floor.md).
+
+| webOS version | sdkVersion | Status |
 | --- | --- | --- |
-| webOS 25 (sdk ~10) | Working | Primary test platform — LG OLED55C56LB |
-| webOS 6–9 / 22–24 | Expected working | Same Luna APIs as 25; not fully regression-tested here |
-| webOS 5.x | Expected working | Use project-local `@webos-tools/cli` for packaging (epoch tar fix) |
-| webOS 4.x | Working (reported) | Home watcher + boot-on-start use webOS 4–safe `luna-send` fallbacks; backgrounds viewable on device (see below) |
+| webOS 25 | ~10 | Supported — primary test platform (LG OLED55C56LB) |
+| webOS 24 | 9 | Supported |
+| webOS 23 | 8 | Supported |
+| webOS 22 | 7 | Supported — the floor |
+| webOS 6 and earlier | ≤ 6 | Unsupported (blocked at startup) |
 
 **Requirements:** rooted TV with [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) and SSH. Root elevation is required for full app scanning, Home-button intercept, and boot-on-start.
 
-### webOS 4.x notes
-
-- **Background JPEGs on device.** Built-in scenic images ship inside the app package. On webOS 4 you can browse them directly under:
-
-  ```text
-  /media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher/assets/backgrounds/
-  ```
-
-  (Some file managers list this as `…/assets/background`.)
-
-- **Online backgrounds.** Settings → Background → **Online URL (nature + anime)** opens a thumbnail gallery of curated Unsplash nature photos plus popular free anime-style wallpapers (or paste your own https image URL). Photos load over the network so the package stays small. See [docs/background-sources.md](docs/background-sources.md).
+### Notes
 
 - **Home button / Boot on start.** Both install hooks under `/var/lib/webosbrew/init.d/` via the elevated Homebrew Channel service. Toggle the setting **off → Save → on → Save** after an update if either stops working. Confirm Homebrew startup is installed (see [Running elevated as root](#running-elevated-as-root-required-for-app-scanning)).
+- **Online backgrounds.** Settings → Background → **Online URL (nature + anime)** opens a thumbnail gallery of curated Unsplash nature photos plus popular free anime-style wallpapers (or paste your own https image URL). Photos load over the network so the package stays small. See [docs/background-sources.md](docs/background-sources.md).
 
 ## Install
 

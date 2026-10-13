@@ -71,8 +71,8 @@
 
   function getLaunchParams() {
     try {
-      if (window.PalmSystem && window.PalmSystem.launchParams) {
-        var raw = window.PalmSystem.launchParams;
+      if (window.webOSSystem && window.webOSSystem.launchParams) {
+        var raw = window.webOSSystem.launchParams;
         if (typeof raw === 'string' && raw.length) {
           return JSON.parse(raw);
         }
@@ -297,12 +297,12 @@
 
   function stageReady() {
     try {
-      if (window.PalmSystem) {
-        if (typeof window.PalmSystem.stageReady === 'function') {
-          window.PalmSystem.stageReady();
+      if (window.webOSSystem) {
+        if (typeof window.webOSSystem.stageReady === 'function') {
+          window.webOSSystem.stageReady();
         }
-        if (typeof window.PalmSystem.activate === 'function') {
-          window.PalmSystem.activate();
+        if (typeof window.webOSSystem.activate === 'function') {
+          window.webOSSystem.activate();
         }
       }
     } catch (e) {
@@ -1404,7 +1404,7 @@
     closeApp();
   }
   stageReady();
-  // PalmSystem.launchParams can arrive slightly after first paint on webOS.
+  // webOSSystem.launchParams can arrive slightly after first paint on webOS.
   setTimeout(recoverVisibleUi, 200);
   setTimeout(recoverVisibleUi, 800);
 })();

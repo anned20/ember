@@ -324,7 +324,7 @@ export function createAppGrid(
   function appendChromeTiles(tiles: HTMLElement[], p: DockParams, cat: AppCatalog) {
     let settingsIcon = '';
     if (!prefersBundledIcons()) {
-      const settingsApp = cat['com.webos.app.settings'] || cat['com.palm.app.settings'];
+      const settingsApp = cat['com.webos.app.settings'];
       settingsIcon = (settingsApp && settingsApp.icon) || '';
     }
     if (p.allAppsTile) tiles.push(makeAllAppsTile(p.pinned.length));
@@ -454,7 +454,7 @@ export function createAppGrid(
     // The Settings tile is only in the shell with the bundled icon; swap in the
     // TV's own when the user prefers it.
     if (!prefersBundledIcons()) {
-      const settingsApp = catalog['com.webos.app.settings'] || catalog['com.palm.app.settings'];
+      const settingsApp = catalog['com.webos.app.settings'];
       const iconUrl = (settingsApp && settingsApp.icon) || '';
       const img = container.querySelector<HTMLImageElement>('.settings-tile .app-icon');
       if (iconUrl && img) setIconSrc(img, iconUrl);

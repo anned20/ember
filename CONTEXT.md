@@ -65,6 +65,15 @@ backgrounds and music, all on top of the webOS Luna service bus.
   returns, closes, reclaims, foreground ids), shown under Settings → Tools →
   TV check (`activity.ts`).
 
+## Platform
+
+- **Supported platform floor**: webOS 22 (Chromium 87), expressed as
+  `sdkVersion >= 7` (`MIN_WEBOS_SDK`) in `luna/platform.ts`. The composition
+  root enforces it at startup; below the floor it shows the **unsupported
+  surface** and starts nothing. See `docs/adr/0001-webos-22-floor.md`.
+- **sdkVersion**: the TV's platform number. `6` = webOS 6, `7` = 22, `8` = 23,
+  `9` = 24, `10` = 25.
+
 ## Luna
 
 - **Luna**: the webOS service bus. A **Luna request** is a call to a service

@@ -7,7 +7,6 @@
 
 import {AERIAL_BACKGROUNDS} from './aerials.js';
 import {
-  builtinImageCandidates,
   builtinImageUrl,
   findRemoteBackgroundById,
   getRemoteBackgroundUrls,
@@ -103,7 +102,7 @@ function liteCopiesReachable(sampleUrl: string): Promise<boolean> {
 
 /**
  * Performance mode for built-ins. A single photo gets the 1920px download
- * first and its packaged 4K forms as fallbacks (the background controller
+ * first and its packaged 4K copy as a fallback (the background controller
  * tries them in order). A photo list (slideshow, screensaver) has no per-image
  * fallback, so it switches to the downloads only once they're known to load.
  */
@@ -156,26 +155,17 @@ const presetSource: BackgroundSource = {resolve: presetDescriptor, catalog: pres
 
 async function builtinUrls(bg: BackgroundConfig, full: boolean): Promise<string[]> {
   const manifest = await loadBuiltinManifest();
-  const urls: string[] = [];
   if (full || bg.mode === 'slideshow') {
-    // One preferred URL per photo (absolute file:// when possible).
-    manifest.forEach(function (entry) {
-      const url = builtinImageUrl(entry.file);
-      if (url) urls.push(url);
-    });
-    return urls;
+    // One URL per photo (absolute file:// when possible).
+    return manifest
+      .map(function (entry) { return builtinImageUrl(entry.file); })
+      .filter(Boolean);
   }
-  // Multiple path forms for the selected photo so the controller can try
-  // absolute file://, relative, then versioned relative on webOS 4.x.
+  // The selected photo, in its single URL form.
   const entry = manifest.find(function (item) {
     return item.id === bg.builtin;
   }) || manifest[0];
-  if (entry) {
-    builtinImageCandidates(entry.file).forEach(function (url) {
-      urls.push(url);
-    });
-  }
-  return urls;
+  return entry ? [builtinImageUrl(entry.file)].filter(Boolean) : [];
 }
 
 const builtinSource: BackgroundSource = {

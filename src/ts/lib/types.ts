@@ -227,10 +227,6 @@ export interface WebOS {
   deviceInfo?: (cb: (info: LunaResponse) => void) => void;
 }
 
-export interface PalmSystem {
-  launchParams?: string;
-}
-
 export interface WebOSSystem {
   launchParams?: string;
 }
@@ -241,7 +237,6 @@ declare global {
 
   interface Window {
     webOS?: WebOS;
-    PalmSystem?: PalmSystem;
     webOSSystem?: WebOSSystem;
   }
 }

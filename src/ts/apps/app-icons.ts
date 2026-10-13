@@ -1,5 +1,4 @@
 const BUILTIN_APP_ICONS: Record<string, string> = {
-  'com.palm.app.settings': 'assets/app-icons/tv-settings.png',
   'com.webos.app.settings': 'assets/app-icons/tv-settings.png',
   'org.webosbrew.hbchannel': 'assets/app-icons/homebrew.png',
   'com.apple.appletv': 'assets/app-icons/apple-tv.png',
@@ -30,7 +29,6 @@ const BUILTIN_APP_ICONS: Record<string, string> = {
 };
 
 const BUILTIN_APP_TITLES: Record<string, string> = {
-  'com.palm.app.settings': 'TV Settings',
   'com.webos.app.settings': 'TV Settings',
   'org.webosbrew.hbchannel': 'Homebrew',
   'com.apple.appletv': 'Apple TV',
@@ -60,10 +58,8 @@ const BUILTIN_APP_TITLES: Record<string, string> = {
   'com.webos.app.terminal': 'Terminal'
 };
 
-/** Same app, different IDs across webOS 6 vs current TVs. */
+/** Same app, different IDs across current webOS releases. */
 export const APP_ID_ALIASES: Record<string, string[]> = {
-  'com.palm.app.settings': ['com.webos.app.settings'],
-  'com.webos.app.settings': ['com.palm.app.settings'],
   'youtube.leanback.v4': ['com.google.android.youtube.tv'],
   'netflix': ['com.netflix.ninja'],
   // Prime Video: older webOS used amazon.html; current OLEDs use native "amazon".

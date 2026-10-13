@@ -9,7 +9,7 @@ const BUILTIN_BASE = 'assets/backgrounds/';
 
 /**
  * Hard-coded list matching assets/backgrounds/manifest.json.
- * Used when XHR/fetch of the manifest fails (common on webOS 4.x local files).
+ * Used when the manifest fetch fails (no USB / packaged asset unavailable).
  */
 const BUILTIN_BACKGROUNDS_FALLBACK: BuiltinBackground[] = [
   {id: 'azure-cove', title: 'Azure Cove', file: 'azure-cove.jpg'},
@@ -235,31 +235,14 @@ export async function loadBuiltinManifest(): Promise<BuiltinBackground[]> {
 }
 
 /**
- * URL candidates for a packaged background image (first usually wins).
- * Absolute file:// first (most reliable on webOS 4); relative as fallback.
+ * The one URL for a packaged background image: absolute `file://` when it can
+ * be resolved, versioned so WAM does not keep a stale copy after an update.
  */
 export function builtinImageUrl(file: string): string {
   if (!file) return '';
   const rel = joinPath(BUILTIN_BASE, file);
   const absolute = resolveAppUrl(rel);
-  // Prefer absolute file:// without query string (webOS 4-safe).
-  if (absolute && absolute !== rel) return absolute;
-  return withAssetVersion(rel, APP_VERSION);
-}
-
-/** All URL forms to try for a builtin file (absolute, relative, versioned). */
-export function builtinImageCandidates(file: string): string[] {
-  if (!file) return [];
-  const rel = joinPath(BUILTIN_BASE, file);
-  const absolute = resolveAppUrl(rel);
-  const out: string[] = [];
-  function push(u: string): void {
-    if (u && out.indexOf(u) < 0) out.push(u);
-  }
-  push(absolute);
-  push(rel);
-  push(withAssetVersion(rel, APP_VERSION));
-  return out;
+  return withAssetVersion(absolute || rel, APP_VERSION);
 }
 
 export function getBuiltinImageUrl(id: string, manifest?: BuiltinBackground[] | null): string {

@@ -246,7 +246,7 @@ export function createMusicPlayer(
       }
 
       function invokePlay(useMuted: boolean) {
-        let result: Promise<void> | undefined;
+        let result!: Promise<void>;
         const prevMuted = audio.muted;
         try {
           if (useMuted) audio.muted = true;
@@ -261,26 +261,6 @@ export function createMusicPlayer(
             return;
           }
           afterPlayAttempt(false);
-          return;
-        }
-
-        // Legacy: play() returns undefined — check paused after a tick.
-        if (result == null || typeof result.then !== 'function') {
-          setTimeout(function () {
-            if (!audio.paused) {
-              afterPlayAttempt(true);
-              return;
-            }
-            if (useMuted) {
-              try { audio.muted = prevMuted; } catch (e2) { /* ignore */ }
-              // Try again unmuted in case muted path failed silently.
-              invokePlay(false);
-              return;
-            }
-            pendingAutoplay = true;
-            updateNowPlaying();
-            afterPlayAttempt(false);
-          }, 100);
           return;
         }
 

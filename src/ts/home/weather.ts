@@ -7,7 +7,6 @@
  * (WeatherMapper.geocodingToLocation) and City of London default.
  */
 
-import {compatFetch} from '@lib/compat.js';
 import type {Config, WeatherConfig, WeatherLocation} from '@lib/types.js';
 
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -296,7 +295,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 function getJson(url: string): Promise<any> {
-  return withTimeout(compatFetch(url), FETCH_TIMEOUT_MS).then(function (res) {
+  return withTimeout(fetch(url), FETCH_TIMEOUT_MS).then(function (res) {
     if (!res || !res.ok) throw new Error('HTTP ' + (res && res.status));
     return res.text();
   }).then(function (text) {

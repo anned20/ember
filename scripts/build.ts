@@ -78,7 +78,7 @@ async function build() {
     outfile: path.join(dist, 'main.js'),
     bundle: true,
     format: 'iife',
-    target: ['es2015'],
+    target: ['es2020'],
     minify: true,
     legalComments: 'none',
     alias: tsAliases,

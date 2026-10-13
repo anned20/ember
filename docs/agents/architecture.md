@@ -136,8 +136,16 @@ work to the poll that could block it.
 
 ## Platform compatibility
 
-`lib/compat.ts` is the only module that patches built-in prototypes, and
-`main.ts` imports it once at the top. Luna calls go through
-`luna/luna-transport.ts`, which walks the ladder of fallbacks for each request.
-Treat the `any` and casts in these two files as deliberate, and do not weaken
-checks elsewhere to work around an old TV.
+Launch Home supports **webOS 22 or later** ([ADR-0001](../adr/0001-webos-22-floor.md)).
+`luna/platform.ts` is the one place the contract is decided: `getSdkVersion`
+reads the TV, `isSupportedPlatform` folds in the Chromium-87 user-agent
+fallback, and `main.ts`'s `init()` runs the gate as its first step — before
+`buildModules()`, so an unsupported TV gets no Luna subscriptions, root hooks or
+foreground watcher. `lib/unsupported-surface.ts` renders the full-screen
+message.
+
+There are no prototype polyfills: the floor guarantees native `fetch`,
+`Array.find`, `Object.assign` and `String.endsWith/padStart`. Luna calls go
+through `luna/luna-transport.ts`, which walks the ladder of fallbacks for each
+request. Do not reintroduce old-webOS branches; if a platform fact is uncertain,
+the ADR's "verify on device" note is the place to record it.

@@ -2,8 +2,9 @@ import {afterEach, describe, expect, it, vi} from 'vitest';
 import {createForegroundWatcher, shouldInterceptHome} from '@lib/foreground-watcher.js';
 import type {ForegroundWatcherOptions} from '@lib/foreground-watcher.js';
 import type {LauncherConfig} from '@lib/types.js';
+import {BRAND} from '@lib/brand.js';
 
-const SELF = 'org.webosbrew.lounge.launcher';
+const SELF: string = BRAND.appId;
 
 function makeHarness(overrides: Partial<ForegroundWatcherOptions> = {}) {
   let visible = true;

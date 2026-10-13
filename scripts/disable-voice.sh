@@ -4,11 +4,13 @@
 # voice button back to LG. Settings and the SuperGrok sign-in are kept.
 # Another voice assistant (VoxRelay) is never stopped or changed.
 
-APPDIR="${LH_APPDIR:-/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher}"
+. "$(dirname "$0")/brand.sh"
+
+APPDIR="${LH_APPDIR:-$APP_DIR}"
 RUN="$APPDIR/voice-run.sh"
-CARD_ID=org.webosbrew.lounge.voice
-CARD_DIR=/media/developer/apps/usr/palm/applications/$CARD_ID
-INITD=/var/lib/webosbrew/init.d/45-launch-home-voice
+CARD_ID="$VOICE_APP_ID"
+CARD_DIR="$VOICE_CARD_DIR"
+INITD="$INITD_DIR/$HOOK_VOICE"
 
 rm -f "$INITD"
 
@@ -16,13 +18,13 @@ if [ -f "$RUN" ]; then
   sh "$RUN" stop >/dev/null 2>&1
 else
   # Launch Home files already gone: stop by pidfile.
-  for pf in /tmp/launch-home-voice-run.pid /tmp/launch-home-voice.pid; do
+  for pf in $TMP_PREFIX-voice-run.pid $TMP_PREFIX-voice.pid; do
     p=$(cat "$pf" 2>/dev/null)
     if [ -n "$p" ]; then
       kill -TERM -"$p" 2>/dev/null || kill -TERM "$p" 2>/dev/null
     fi
   done
-  rm -f /tmp/launch-home-voice-run.pid /tmp/launch-home-voice.pid /tmp/launch-home-voice.ver
+  rm -f $TMP_PREFIX-voice-run.pid $TMP_PREFIX-voice.pid $TMP_PREFIX-voice.ver
 fi
 
 luna-send -n 1 -w 3000 -f luna://com.webos.applicationManager/closeByAppId \

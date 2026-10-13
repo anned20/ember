@@ -32,6 +32,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# The brand values (app id, name, /tmp prefixes): generated from
+# src/ts/lib/brand.ts into brand.sh.
+. "$SCRIPT_DIR/brand.sh"
+
 ARES_DEVICE="${ARES_DEVICE:-}"
 LAUNCH="${LAUNCH:-1}"
 NOTIFY="${NOTIFY:-1}"
@@ -47,7 +51,6 @@ for arg in "$@"; do
 	esac
 done
 
-APP_ID="org.webosbrew.lounge.launcher"
 REMOTE_TMP="/media/developer/temp"
 
 c_grn() { printf '\033[32m%s\033[0m' "$*"; }
@@ -69,7 +72,7 @@ notify_tv() {
 }
 
 die() {
-	notify_tv "Launch Home deploy failed"
+	notify_tv "$BRAND_NAME deploy failed"
 	printf "%s\n" "$(c_red "error: $*")" >&2
 	exit 1
 }
@@ -111,7 +114,6 @@ VERSION="$(node "$SCRIPT_DIR/read-version.ts")"
 IPK="$ROOT_DIR/dist/${APP_ID}_${VERSION}_all.ipk"
 [[ -f "$IPK" ]] || die "Missing package: $IPK"
 REMOTE_IPK="$REMOTE_TMP/$(basename "$IPK")"
-APP_DIR="/media/developer/apps/usr/palm/applications/$APP_ID"
 
 # ── Install over SSH ─────────────────────────────────────────────────────────
 section "Installing to TV"
@@ -134,7 +136,7 @@ payload="$(printf '{"id":"com.ares.defaultName","ipkUrl":"%s","subscribe":true}'
 # the TV means one SSH call instead of a round-trip every second.
 remote_install() {
 	cat <<REMOTE
-log=/tmp/launch-home-install.log
+log=$TMP_PREFIX-install.log
 rm -f "\$log"
 uri='luna://com.webos.appInstallService/dev/install'
 payload='${payload}'
@@ -173,9 +175,9 @@ remote_icon_bytes="$(ssh_tv "wc -c <'${APP_DIR}/assets/icon-80-v8.png'" 2>/dev/n
 [[ "$remote_icon_bytes" == "$local_icon_bytes" ]] \
 	|| die "Install reported success but assets were not replaced (icon: ${remote_icon_bytes:-missing} vs ${local_icon_bytes} bytes)."
 printf "  %s\n" "$(c_grn "Installed ${APP_ID} ${VERSION}")"
-notify_tv "Launch Home ${VERSION} installed"
+notify_tv "$BRAND_NAME ${VERSION} installed"
 
-ssh_tv "rm -f '${REMOTE_IPK}' /tmp/launch-home-install.log; /usr/sbin/ls-control scan-services" >/dev/null 2>&1 || true
+ssh_tv "rm -f '${REMOTE_IPK}' $TMP_PREFIX-install.log; /usr/sbin/ls-control scan-services" >/dev/null 2>&1 || true
 
 # ── Launch ───────────────────────────────────────────────────────────────────
 if [[ "$LAUNCH" == "1" ]]; then
@@ -186,4 +188,4 @@ if [[ "$LAUNCH" == "1" ]]; then
 	printf "  %s\n" "$(c_grn "Launched ${APP_ID}")"
 fi
 
-printf "\n  %s\n" "$(c_grn "Launch Home is on your TV")"
+printf "\n  %s\n" "$(c_grn "$BRAND_NAME is on your TV")"

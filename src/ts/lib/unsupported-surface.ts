@@ -7,6 +7,7 @@
  * card) rather than a framework.
  */
 import {MIN_CHROMIUM_MAJOR, MIN_WEBOS_SDK} from '@luna/platform.js';
+import {BRAND} from '@lib/brand.js';
 
 const SURFACE_ID = 'unsupported-tv';
 
@@ -39,7 +40,7 @@ export function renderUnsupportedSurface(
 
   const brand = document.createElement('div');
   brand.className = 'unsupported-tv-brand';
-  brand.textContent = 'Launch Home';
+  brand.textContent = BRAND.name;
 
   const title = document.createElement('h1');
   title.id = 'unsupported-tv-title';
@@ -48,7 +49,7 @@ export function renderUnsupportedSurface(
 
   const body = document.createElement('p');
   body.className = 'unsupported-tv-body';
-  body.appendChild(document.createTextNode('Launch Home needs webOS 22 or later. This TV reports '));
+  body.appendChild(document.createTextNode(BRAND.name + ' needs webOS 22 or later. This TV reports '));
   const detectedEl = document.createElement('span');
   detectedEl.className = 'unsupported-tv-detected';
   detectedEl.textContent = detected;

@@ -7,6 +7,7 @@ import {
 } from '@settings/components/index.js';
 import type {StepperOption} from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
+import {BRAND} from '@lib/brand.js';
 
 // TV system volume levels (0–100), separate from ambient music slider.
 // '' = "Don't change": leave whatever the remote set (stored as null).
@@ -51,7 +52,7 @@ export function createSystemPane(): PaneHandle {
         parse: volumeLevelParse,
         binder: ctx.binder
       });
-      section.appendChild(labeledControl('Volume in Launch Home', volumeAtHomeSelect));
+      section.appendChild(labeledControl('Volume in ' + BRAND.name, volumeAtHomeSelect));
 
       const volumeOnAppValue = volumeLevelValue(ctx.rawConfig.launcher.volumeOnAppLaunch);
       const volumeOnAppSelect = createOptionStepper({
@@ -64,7 +65,7 @@ export function createSystemPane(): PaneHandle {
       section.appendChild(labeledControl('Volume when apps launch', volumeOnAppSelect));
 
       section.appendChild(createHint(
-        'TV system volume (0–100). “Don’t change” keeps whatever you set with the remote. Otherwise Launch Home switches to the first level when you return home, and the second when Netflix / HDMI / other apps launch.'
+        'TV system volume (0–100). “Don’t change” keeps whatever you set with the remote. Otherwise ' + BRAND.name + ' switches to the first level when you return home, and the second when Netflix / HDMI / other apps launch.'
       ));
 
       const perfModeField = createToggle({
@@ -97,7 +98,7 @@ export function createSystemPane(): PaneHandle {
       });
 
       section.appendChild(createHint(
-        'When enabled, a root service opens Launch Home whenever stock Home appears. A brief flash of the LG home screen is normal (the TV opens Home first; we cannot block the key without a separate input-hook app). Requires rooted TV + Homebrew Channel. Toggle off/on and Save after updates if it stops working.'
+        'When enabled, a root service opens ' + BRAND.name + ' whenever stock Home appears. A brief flash of the LG home screen is normal (the TV opens Home first; we cannot block the key without a separate input-hook app). Requires rooted TV + Homebrew Channel. Toggle off/on and Save after updates if it stops working.'
       ));
 
       const bootField = createToggle({
@@ -109,7 +110,7 @@ export function createSystemPane(): PaneHandle {
       section.appendChild(bootField.row);
 
       section.appendChild(createHint(
-        'When enabled, a root init.d script launches Launch Home after the TV powers on. Requires rooted TV + Homebrew Channel (same as Home button). A short delay on boot is normal while webOS starts. With Quick Start+ on, the TV only wakes from standby and this doesn’t run; turn it off under General → Devices → TV Management.'
+        'When enabled, a root init.d script launches ' + BRAND.name + ' after the TV powers on. Requires rooted TV + Homebrew Channel (same as Home button). A short delay on boot is normal while webOS starts. With Quick Start+ on, the TV only wakes from standby and this doesn’t run; turn it off under General → Devices → TV Management.'
       ));
 
       ctx.panes.system.appendChild(section);

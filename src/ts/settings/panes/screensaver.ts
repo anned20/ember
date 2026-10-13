@@ -8,6 +8,7 @@ import {
   labeledControl
 } from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
+import {BRAND} from '@lib/brand.js';
 
 /**
  * The Screensaver pane: the in-app photo slideshow (on/off, idle delay, slide
@@ -19,7 +20,7 @@ export function createScreensaverPane(): PaneHandle {
       const section = createSection('Screensaver');
 
       const customSsField = createToggle({
-        label: 'Launch Home screensaver',
+        label: BRAND.name + ' screensaver',
         focusIndex: '990',
         path: 'launcher.customScreensaver',
         binder: ctx.binder
@@ -83,7 +84,7 @@ export function createScreensaverPane(): PaneHandle {
       section.appendChild(customSsDateField.row);
 
       section.appendChild(createHint(
-        'Full-screen photo slideshow from your Launch Home wallpapers while this app is open. Any remote button wakes. Uses Ken Burns motion for OLED care.'
+        'Full-screen photo slideshow from your ' + BRAND.name + ' wallpapers while this app is open. Any remote button wakes. Uses Ken Burns motion for OLED care.'
       ));
 
       // Preview over the open panel. Closing Settings first threw away any
@@ -96,7 +97,7 @@ export function createScreensaverPane(): PaneHandle {
           if (ctx.options.onPreviewScreensaver) {
             ctx.options.onPreviewScreensaver();
           } else if (ctx.options.onToast) {
-            ctx.options.onToast('Save & reopen Launch Home to preview');
+            ctx.options.onToast('Save & reopen ' + BRAND.name + ' to preview');
           }
         }
       }));
@@ -135,7 +136,7 @@ export function createScreensaverPane(): PaneHandle {
       section.appendChild(labeledControl('TV system screensaver', screensaverSelect));
 
       section.appendChild(createHint(
-        'LG system gallery timeout (3/10/20/30 min only). When Launch Home screensaver is on, leave this at 30 so the TV does not interrupt first. Requires rooted TV.'
+        'LG system gallery timeout (3/10/20/30 min only). When ' + BRAND.name + ' screensaver is on, leave this at 30 so the TV does not interrupt first. Requires rooted TV.'
       ));
 
       ctx.panes.screensaver.appendChild(section);

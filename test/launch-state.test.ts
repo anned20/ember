@@ -1,7 +1,8 @@
 import {describe, expect, it} from 'vitest';
 import {createLaunchState} from '@lib/launch-state.js';
+import {BRAND} from '@lib/brand.js';
 
-const SELF = 'org.webosbrew.lounge.launcher';
+const SELF: string = BRAND.appId;
 
 function obs(overrides: Partial<Parameters<ReturnType<typeof createLaunchState>['observeForeground']>[0]> = {}) {
   return Object.assign(

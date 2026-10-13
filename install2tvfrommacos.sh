@@ -35,8 +35,12 @@ LAUNCH="${LAUNCH:-1}"
 SETUP_DEVICE="${SETUP_DEVICE:-1}"
 SSH_ONLY="${SSH_ONLY:-0}"
 
-APP_ID="org.webosbrew.lounge.launcher"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# The brand values (app id, name, /tmp prefixes): generated from
+# src/ts/lib/brand.ts into scripts/brand.sh.
+. "$SCRIPT_DIR/scripts/brand.sh"
+
 SSH_KEY_PATH="$HOME/.ssh/$SSH_KEY"
 NODE_MAJOR="${NODE_MAJOR:-20}"
 
@@ -252,8 +256,8 @@ install_ipk_ssh() {
 	remote_dir="/media/developer/temp"
 	remote_ipk="${remote_dir}/${base}"
 	log_file="/tmp/lounge-install-${base}.log"
-	appinfo_path="/media/developer/apps/usr/palm/applications/${APP_ID}/appinfo.json"
-	icon_path="/media/developer/apps/usr/palm/applications/${APP_ID}/assets/icon.png"
+	appinfo_path="$APPS_DIR/${APP_ID}/appinfo.json"
+	icon_path="$APPS_DIR/${APP_ID}/assets/icon.png"
 	version="$(read_version)"
 	# Byte size of the icon we are shipping — used to confirm the install actually
 	# overwrote assets (same-version reinstalls can leave old files in place).
@@ -367,7 +371,7 @@ launch_app() {
 }
 
 main() {
-	section "Launch Home installer"
+	section "$BRAND_NAME installer"
 	printf "  TV: %s\n" "$TV_IP"
 	printf "  Device: %s\n" "$DEVICE"
 
@@ -389,7 +393,7 @@ main() {
 	[[ "$LAUNCH" == "1" ]] && launch_app
 
 	section "Done"
-	printf "  %s\n" "$(c_grn "Launch Home is on your TV")"
+	printf "  %s\n" "$(c_grn "$BRAND_NAME is on your TV")"
 }
 
 main "$@"

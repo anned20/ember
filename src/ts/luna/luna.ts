@@ -1,4 +1,5 @@
 import type { LunaResponse, WebOSServiceHandle } from '@lib/types.js';
+import { BRAND } from '@lib/brand.js';
 import {
   execRoot,
   hasWebOS,
@@ -275,13 +276,11 @@ export function launchAppViaRoot(id: string) {
   });
 }
 
-const LOUNGE_APP_ID = 'org.webosbrew.lounge.launcher';
-const HOME_WATCHER_APP_DIR =
-  '/media/developer/apps/usr/palm/applications/' + LOUNGE_APP_ID;
+const HOME_WATCHER_APP_DIR = BRAND.appDir;
 const HOME_WATCHER_APP_PATH = HOME_WATCHER_APP_DIR + '/home-watcher.sh';
 const HOME_WATCHER_ENABLE = HOME_WATCHER_APP_DIR + '/enable-home-watcher.sh';
 const HOME_WATCHER_DISABLE = HOME_WATCHER_APP_DIR + '/disable-home-watcher.sh';
-const HOME_WATCHER_PIDFILE = '/tmp/launch-home-watcher.pid';
+const HOME_WATCHER_PIDFILE = BRAND.tmpPrefix + '-watcher.pid';
 const BOOT_LAUNCH_SCRIPT = HOME_WATCHER_APP_DIR + '/boot-launch.sh';
 const DIAGNOSTICS_SCRIPT = HOME_WATCHER_APP_DIR + '/diagnostics.sh';
 const BOOT_LAUNCH_ENABLE = HOME_WATCHER_APP_DIR + '/enable-boot-launch.sh';
@@ -308,7 +307,7 @@ export function enableHomeWatcher() {
       throw new Error('home-watcher.sh not installed on TV');
     }
     if (out.indexOf('start_failed') >= 0) {
-      throw new Error('watcher did not start (see /tmp/launch-home-watcher.log)');
+      throw new Error('watcher did not start (see ' + BRAND.tmpPrefix + '-watcher.log)');
     }
     if (out.indexOf('enabled') < 0) {
       throw new Error(out.split('\n')[0] || 'home watcher failed to start');
@@ -337,13 +336,13 @@ export function runTvCheck(appLine: string) {
 // Settings -> Backup & restore. The TV copy is outside the app folder, so it
 // survives reinstalling Launch Home; a USB drive gets one in its lounge folder
 // (not config.json there, which Launch Home applies at every start).
-const SETTINGS_BACKUP_FILE = '/home/root/.config/launch-home/settings-backup.json';
-const USB_SETTINGS_BACKUP_NAME = 'launch-home-settings.json';
+const SETTINGS_BACKUP_FILE = BRAND.configDir + '/settings-backup.json';
+const USB_SETTINGS_BACKUP_NAME = BRAND.usbSettingsFile;
 // Copies Launch Home keeps by itself: before each restore (one, replaced each
 // time) and before each update (the newest few).
-const SETTINGS_AUTO_DIR = '/home/root/.config/launch-home/auto';
+const SETTINGS_AUTO_DIR = BRAND.configDir + '/auto';
 const AUTO_UPDATE_COPIES = 3;
-const FILE_MARK = '@@launch-home-file@@';
+const FILE_MARK = BRAND.fileMark;
 
 function shQuote(text: unknown): string {
   return "'" + String(text).replace(/'/g, "'\\''") + "'";
@@ -528,7 +527,7 @@ export function enableVoice(): Promise<VoiceEnableResult> {
     VOICE_ENABLE + '"';
   return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootVoiceEnable)).then(function (out) {
     if (out.indexOf('missing_voice') >= 0) {
-      throw new Error('voice files are missing from Launch Home');
+      throw new Error('voice files are missing from ' + BRAND.name);
     }
     if (out.indexOf('missing_python') >= 0) {
       throw new Error('this TV has no Python 3');

@@ -52,9 +52,8 @@ import {resolveVoiceLaunch} from '@voice/voice-launch.js';
 import {activity, noteForeground} from '@lib/activity.js';
 import {settingsBackupText} from '@settings/settings-backup.js';
 import {APP_VERSION} from '@lib/version.js';
+import {BRAND} from '@lib/brand.js';
 import type {Config, LauncherConfig, AppRecord, LunaResponse} from '@lib/types.js';
-
-const APP_ID = 'org.webosbrew.lounge.launcher';
 
 type ErrorLike = {message?: unknown} | null | undefined;
 
@@ -100,7 +99,11 @@ const SYSTEM_APP_ROOT_AFTER_MS = 1200;
 // settings as the previous version stored them (auto/before-update-to-<this
 // version>.json), so going back to that version can restore them unchanged.
 // Needs root; skipped quietly without it.
-const LAST_RUN_VERSION_KEY = 'lounge.lastRunVersion';
+const LAST_RUN_VERSION_KEY = BRAND.storage.lastRunVersion;
+
+// Root-written flag file that force-starts the in-app screensaver preview
+// (written by install/SSH).
+const PREVIEW_FLAG_FILE = BRAND.tmpPrefix + '-preview-ss';
 
 // When a user on a weaker TV enables Performance mode, the glassmorphic blur and
 // animated background are disabled for smoother rendering, while the layout stays
@@ -593,7 +596,7 @@ export function createApp(): AppLifecycle {
       (config.launcher.launchOnHome || config.launcher.returnOnAppExit));
     const apply = on ? enableHomeWatcher : disableHomeWatcher;
     return apply().then(function () {
-      if (on && !quiet) showToast('Home button → Launch Home is active');
+      if (on && !quiet) showToast('Home button → ' + BRAND.name + ' is active');
     }).catch(function (err: ErrorLike) {
       console.error(err);
       if (on) {
@@ -1049,7 +1052,7 @@ export function createApp(): AppLifecycle {
   // launch recovery and the home intercept. The poll loop, its state and its
   // cadence live in lib/foreground-watcher.js; every side effect is injected.
   foregroundWatcher = createForegroundWatcher({
-    selfAppId: APP_ID,
+    selfAppId: BRAND.appId,
     getForegroundApp: getForegroundApp,
     launchApp: launchApp,
     launchAppViaRoot: launchAppViaRoot,
@@ -1131,7 +1134,7 @@ export function createApp(): AppLifecycle {
   }
 
   function triggerScreensaverPreview(reason: string) {
-    console.log('[launch-home] screensaver preview:', reason || '');
+    console.log('[' + BRAND.slug + '] screensaver preview:', reason || '');
     customScreensaver.preview();
   }
 
@@ -1208,7 +1211,7 @@ export function createApp(): AppLifecycle {
     customScreensaver.start();
 
     // One-shot force preview: URL, webOSSystem launch params, webOSRelaunch,
-    // or root flag file /tmp/launch-home-preview-ss (written by install/SSH).
+    // or root flag file PREVIEW_FLAG_FILE (written by install/SSH).
     if (launchParamsWantPreview()) {
       laterTracked(function () { triggerScreensaverPreview('launchParams'); }, 900);
       laterTracked(function () { triggerScreensaverPreview('launchParams-retry'); }, 2500);
@@ -1216,7 +1219,8 @@ export function createApp(): AppLifecycle {
     // Root-written flag: reliable on TV even when launch params are dropped.
     try {
       execRoot(
-        'if [ -f /tmp/launch-home-preview-ss ]; then cat /tmp/launch-home-preview-ss; rm -f /tmp/launch-home-preview-ss; fi'
+        'if [ -f ' + PREVIEW_FLAG_FILE + ' ]; then cat ' + PREVIEW_FLAG_FILE +
+        '; rm -f ' + PREVIEW_FLAG_FILE + '; fi'
       ).then(function (res: LunaResponse) {
         let text = (res && res.stdoutString ? String(res.stdoutString) : '').trim();
         if (!text && res && res.stdoutBytes) {

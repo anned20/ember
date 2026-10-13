@@ -10,11 +10,12 @@
  * and settings.
  */
 
-const WS_URI = 'ws://127.0.0.1:8678';
-const SERVICE_NAME = 'launch-home-voice';
-const HELLO_ID = 'lh-hello';
-
+import {BRAND} from '@lib/brand.js';
 import type {VoiceListener} from '@lib/types.js';
+
+const WS_URI = 'ws://127.0.0.1:8678';
+const SERVICE_NAME = BRAND.voiceServiceName;
+const HELLO_ID = 'lh-hello';
 
 let socket: WebSocket | null = null;
 let opening: Promise<WebSocket> | null = null;
@@ -95,7 +96,7 @@ function connect() {
       if (!verified) {
         if (data.event !== 'configResult' || data.id !== HELLO_ID) return;
         if (!data.ok || !data.result || data.result.service !== SERVICE_NAME) {
-          fail('Port 8678 is not Launch Home\'s voice service');
+          fail('Port 8678 is not ' + BRAND.name + '\'s voice service');
           return;
         }
         verified = true;

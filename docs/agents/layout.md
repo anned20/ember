@@ -51,6 +51,17 @@ aliases are defined in three places that must stay in sync:
 Add a new alias in all three. `boot.ts` and `main.ts` sit at the `src/ts/` root
 and have no alias, so refer to them relatively.
 
+## Brand
+
+The app's identity — display names, tagline, vendor, app ids, storage keys, TV
+paths and root-hook names — lives in one place: `src/ts/lib/brand.ts`. The
+TypeScript modules import it; `scripts/build.ts` stamps the app manifests, the
+`index.html` titles and the voice card from it; and `scripts/generate-brand.ts`
+(`npm run brand`) renders it into `scripts/brand.sh` and `voice/daemon/brand.py`
+for the shipped shell scripts and the Python daemon. Those two files are
+generated and committed: never edit them by hand, run `npm run brand` after
+changing `brand.ts`, and `test/brand.test.ts` fails if they drift.
+
 ## `test/`
 
 Vitest with the jsdom environment (`vitest.config.mjs`). Tests mirror `src/ts/`:
@@ -86,6 +97,8 @@ current `-v8` set ships.
 ## Commands
 
 - `npm run typecheck` runs `tsc --noEmit` for the app and for `scripts/`.
+- `npm run brand` re-renders `scripts/brand.sh` and `voice/daemon/brand.py` from
+  `src/ts/lib/brand.ts`.
 - `npm test` runs Vitest.
 - `npm run build` bundles to `dist/`. `npm run pack` also produces the IPK.
 - `npm run deploy` builds and installs on the TV.

@@ -4,6 +4,7 @@ import {indexInRow} from '@focus/focus-row.js';
 import {whoAmI} from '@luna/luna.js';
 import {attachInputScrollHelpers} from './text-gate.js';
 import {APP_VERSION} from '@lib/version.js';
+import {BRAND} from '@lib/brand.js';
 import {createWeatherPane} from './panes/weather.js';
 import {createInputsPane} from './panes/inputs.js';
 import {createMusicPane} from './panes/music.js';
@@ -19,6 +20,8 @@ export type {SettingsPanelOptions} from './pane.js';
 import {createHint} from './components/index.js';
 import {createBinder} from './settings-binding.js';
 import type {Config} from '@lib/types.js';
+
+const HEADER_TITLE = BRAND.name + ' - "' + BRAND.tagline + '"';
 
 // How long a pane's asynchronous fill may take before it is abandoned.
 const PANE_LOAD_MS = 8000;
@@ -113,7 +116,7 @@ export function createSettingsPanel(
     const headerTitleWrap = document.createElement('div');
     headerTitleWrap.className = 'settings-header-title';
     const headerTitle = document.createElement('h2');
-    headerTitle.textContent = 'Launch Home - "Come home to what you love"';
+    headerTitle.textContent = HEADER_TITLE;
     headerTitleWrap.appendChild(headerTitle);
 
     const headerActions = document.createElement('div');
@@ -307,7 +310,7 @@ export function createSettingsPanel(
     headerTitleWrap.className = 'settings-header-title';
 
     const headerTitle = document.createElement('h2');
-    headerTitle.textContent = 'Launch Home - "Come home to what you love"';
+    headerTitle.textContent = HEADER_TITLE;
 
     const versionLabel = document.createElement('p');
     versionLabel.className = 'settings-version';
@@ -382,7 +385,7 @@ export function createSettingsPanel(
     const CATEGORIES = [
       {id: 'look', label: 'Look', sub: 'Profile, wallpaper, clock, icons'},
       {id: 'music', label: 'Music', sub: 'Ambient music and its volume'},
-      {id: 'screensaver', label: 'Screensaver', sub: 'Launch Home and TV screensavers'},
+      {id: 'screensaver', label: 'Screensaver', sub: BRAND.name + ' and TV screensavers'},
       {id: 'apps', label: 'Apps', sub: 'Pinned apps, add or import apps'},
       {id: 'inputs', label: 'Inputs & channels', sub: 'HDMI inputs, Live TV channels'},
       {id: 'weather', label: 'Weather', sub: 'Forecast and location'},
@@ -569,7 +572,7 @@ export function createSettingsPanel(
       saveConfig(config);
       if (options.onSave) options.onSave(config);
       if (config.launcher.launchOnHome && options.onToast) {
-        options.onToast('Enabling Home → Launch Home watcher…');
+        options.onToast('Enabling Home → ' + BRAND.name + ' watcher…');
       } else if (config.launcher.bootOnStart && options.onToast) {
         options.onToast('Enabling boot on TV start…');
       }

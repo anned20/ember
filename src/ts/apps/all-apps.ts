@@ -8,9 +8,10 @@
 import {listInstalledApps} from './apps.js';
 import {indexInRow} from '@focus/focus-row.js';
 import {lazyLoadIcon} from './app-catalog.js';
+import {BRAND} from '@lib/brand.js';
 import type {AppRecord} from '@lib/types.js';
 
-const LAUNCH_HOME_ID = 'org.webosbrew.lounge.launcher';
+const LAUNCH_HOME_ID = BRAND.appId;
 // Apps are rarely installed while Launch Home runs: list them again after this.
 const LIST_MAX_AGE_MS = 10 * 60 * 1000;
 

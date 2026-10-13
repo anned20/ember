@@ -2,6 +2,7 @@ import {getAppInfo, listApps, readFileAsDataUrl} from '@luna/luna.js';
 import {getAppIdCandidates, getBuiltinAppIcon, getBuiltinAppTitle} from './app-icons.js';
 import {withAssetVersion} from '@lib/compat.js';
 import {APP_VERSION} from '@lib/version.js';
+import {BRAND} from '@lib/brand.js';
 import type {AppCatalog, AppRecord, LunaResponse} from '@lib/types.js';
 
 /** A remembered app title/icon pair in localStorage. */
@@ -28,11 +29,11 @@ const nativeIconCache = new Map<string, string>();
 // the TV can't be asked (root through Homebrew Channel not answering, Luna
 // late after power-on) a tile keeps its real name and icon instead of a name
 // made from its id and two letters.
-const APP_MEMORY_KEY = 'lounge.apps.v1';
+const APP_MEMORY_KEY = BRAND.storage.apps;
 // Home row icons the TV has (read as root), kept as images: they show without
 // root, and without a root file read per icon at every start. Capped, since
 // this shares the page's storage with the settings.
-const ICON_MEMORY_KEY = 'lounge.appIcons.v1';
+const ICON_MEMORY_KEY = BRAND.storage.appIcons;
 const ICON_MEMORY_MAX = 400000; // characters, all kept icons
 const ICON_MAX = 60000; // characters, one icon
 const ICON_RECHECK_MS = 7 * 24 * 60 * 60 * 1000;

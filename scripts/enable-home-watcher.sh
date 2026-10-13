@@ -3,14 +3,16 @@
 # Packaged next to home-watcher.sh in the app directory.
 # Requires setsid on the supported floor (webOS 22+).
 
-WATCH="/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher/home-watcher.sh"
-PIDF="/tmp/launch-home-watcher.pid"
-LOG="/tmp/launch-home-watcher.log"
-INITD="/var/lib/webosbrew/init.d/40-launch-home-watcher"
+. "$(dirname "$0")/brand.sh"
+
+WATCH="$APP_DIR/home-watcher.sh"
+PIDF="$TMP_PREFIX-watcher.pid"
+LOG="$TMP_PREFIX-watcher.log"
+INITD="$INITD_DIR/$HOOK_HOME_WATCHER"
 # Legacy names from "Lounge Launcher" branding.
-OLD_INITD="/var/lib/webosbrew/init.d/40-lounge-home"
-OLD_PIDF="/tmp/lounge-home-watcher.pid"
-OLD_LOG="/tmp/lounge-home-watcher.log"
+OLD_INITD="$INITD_DIR/$LEGACY_HOOK_HOME"
+OLD_PIDF="$LEGACY_TMP_PREFIX-watcher.pid"
+OLD_LOG="$LEGACY_TMP_PREFIX-watcher.log"
 
 if [ ! -f "$WATCH" ]; then
   echo missing_watcher
@@ -18,7 +20,7 @@ if [ ! -f "$WATCH" ]; then
 fi
 
 chmod 755 "$WATCH"
-mkdir -p /var/lib/webosbrew/init.d
+mkdir -p "$INITD_DIR"
 rm -f "$OLD_INITD"
 
 # Boot hook — detach with setsid. Wait for applicationManager so the watcher

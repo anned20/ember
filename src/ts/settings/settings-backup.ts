@@ -11,6 +11,7 @@
 
 import {CONFIG_SCHEMA_VERSION} from '@config/config.js';
 import {APP_VERSION} from '@lib/version.js';
+import {BRAND} from '@lib/brand.js';
 import type {BackupFitResult, Config} from '@lib/types.js';
 
 // Layout of the backup file itself. Bump only if the wrapper changes (not for
@@ -18,11 +19,11 @@ import type {BackupFitResult, Config} from '@lib/types.js';
 // formats in parseBackup().
 export const BACKUP_FORMAT = 1;
 
-const APP_ID = 'org.webosbrew.lounge.launcher';
+const APP_ID = BRAND.appId;
 
 // When and where the last backup went, shown under the buttons (a small note
 // of its own, not part of the settings).
-export const LAST_BACKUP_KEY = 'lounge.backup.last';
+export const LAST_BACKUP_KEY = BRAND.storage.backupLast;
 
 export interface SettingsBackupOptions {
   reason?: string;
@@ -91,7 +92,7 @@ export function settingsBackupText(config: Config, opts?: SettingsBackupOptions)
   const o = opts || {};
   const text = JSON.stringify({
     app: APP_ID,
-    kind: 'launch-home-settings',
+    kind: BRAND.backupKind,
     format: BACKUP_FORMAT,
     appVersion: o.appVersion === undefined ? APP_VERSION : o.appVersion,
     schema: config && typeof config.version === 'number' ? config.version : null,
@@ -165,18 +166,18 @@ function madeBy(b: ParsedBackup): string {
 /** How a backup relates to this version of Launch Home, in words. */
 export function compatibilityNote(b: ParsedBackup): string {
   if (!b.readable) {
-    return 'Made by a newer Launch Home' + madeBy(b) + ' in a format this version can’t ' +
-      'read. Update Launch Home to restore it.';
+    return 'Made by a newer ' + BRAND.name + madeBy(b) + ' in a format this version can’t ' +
+      'read. Update ' + BRAND.name + ' to restore it.';
   }
   if (b.schema > CONFIG_SCHEMA_VERSION) {
-    return 'Made by a newer Launch Home' + madeBy(b) + '. Settings this version doesn’t ' +
+    return 'Made by a newer ' + BRAND.name + madeBy(b) + '. Settings this version doesn’t ' +
       'have are kept but not used.';
   }
   if (b.schema < CONFIG_SCHEMA_VERSION) {
-    return 'Made by an older Launch Home' + madeBy(b) + '. Its settings are updated for ' +
+    return 'Made by an older ' + BRAND.name + madeBy(b) + '. Its settings are updated for ' +
       'this version.';
   }
-  return 'Made by Launch Home' + (b.appVersion ? ' ' + b.appVersion : '') +
+  return 'Made by ' + BRAND.name + (b.appVersion ? ' ' + b.appVersion : '') +
     ', with the same settings as this version.';
 }
 
@@ -188,7 +189,7 @@ function listSome(paths: string[]): string {
 export function restoreReport(b: ParsedBackup, result: BackupFitResult): string {
   let text = 'Restored the settings from ' + backupWhen(b.data.savedAt || '') + ' (' + backupKind(b) +
     ', ' + (b.where === 'USB' ? 'USB drive' : 'TV') +
-    (b.appVersion ? ', Launch Home ' + b.appVersion : '') + ').';
+    (b.appVersion ? ', ' + BRAND.name + ' ' + b.appVersion : '') + ').';
   const kept = result.skipped.filter(function (s) { return s.why === 'type'; })
     .map(function (s) { return s.path; });
   const unused = result.skipped.filter(function (s) { return s.why === 'newer'; })

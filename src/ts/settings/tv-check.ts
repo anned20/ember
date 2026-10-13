@@ -1,6 +1,7 @@
 import {normalizeBackgroundConfig} from '@background/backgrounds.js';
 import {applyActiveProfile} from '@config/profiles.js';
 import {APP_VERSION} from '@lib/version.js';
+import {BRAND} from '@lib/brand.js';
 import {activity} from '@lib/activity.js';
 import type {Config} from '@lib/types.js';
 
@@ -12,7 +13,7 @@ export function tvCheckHead(config: Config): string {
   const launcher = (config && config.launcher) || ({} as Config['launcher']);
   const bg = normalizeBackgroundConfig(applyActiveProfile(config).background);
   const chrome = (String(navigator.userAgent).match(/Chrome\/(\d+)/) || [])[1] || '?';
-  return 'Launch Home ' + APP_VERSION +
+  return BRAND.name + ' ' + APP_VERSION +
     ' | perf ' + (launcher.perfMode ? 'on' : 'off') +
     ' | wallpaper ' + bg.source + (bg.kenBurns ? ' + slow zoom' : '') +
     ' | profile ' + ((config && config.profile) || 'default') +
@@ -65,7 +66,7 @@ export function startLauncherProbe() {
           Math.round(100 * awayPaused / away) + '%, animations up to ' + awayAnims +
           ', ' + Math.round(awayFrames / (away / 2)) + ' frames/s'
         : 'never lost focus to TV Settings';
-      return 'Launch Home during the check: ' + counts + ' | ' + under +
+      return BRAND.name + ' during the check: ' + counts + ' | ' + under +
         ' | foreground seen: ' + seen + ' (' + Math.round((Date.now() - t0) / 1000) + ' s)';
     }
   };

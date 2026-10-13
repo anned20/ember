@@ -7,15 +7,17 @@
 # when another voice assistant is also on this TV (it is left alone), or an
 # error word: missing_voice, missing_python, card_install_failed.
 
-APPDIR="${LH_APPDIR:-/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher}"
+. "$(dirname "$0")/brand.sh"
+
+APPDIR="${LH_APPDIR:-$APP_DIR}"
 VOICE="$APPDIR/voice"
 RUN="$APPDIR/voice-run.sh"
-CONF_DIR=/home/root/.config/launch-home-voice
-CARD_ID=org.webosbrew.lounge.voice
-CARD_DIR=/media/developer/apps/usr/palm/applications/$CARD_ID
-CARD_TMP=/tmp/launch-home-voice-card.ipk
-INSTALL_LOG=/tmp/launch-home-voice-install.log
-INITD=/var/lib/webosbrew/init.d/45-launch-home-voice
+CONF_DIR="$VOICE_CONFIG_DIR"
+CARD_ID="$VOICE_APP_ID"
+CARD_DIR="$VOICE_CARD_DIR"
+CARD_TMP=$TMP_PREFIX-voice-card.ipk
+INSTALL_LOG=$TMP_PREFIX-voice-install.log
+INITD="$INITD_DIR/$HOOK_VOICE"
 # 8678 in /proc/net/tcp notation, listening.
 PORT_LISTEN=':21E6 00000000:0000 0A'
 
@@ -74,7 +76,7 @@ if [ -n "$want" ] && [ "$have" != "$want" ]; then
 fi
 
 # Start at power-on.
-mkdir -p /var/lib/webosbrew/init.d
+mkdir -p "$INITD_DIR"
 cat >"$INITD" <<EOF
 #!/bin/sh
 # Launch Home voice assistant (turned on in Launch Home Settings > AI Voice).
@@ -117,7 +119,7 @@ fi
 i=0
 while [ "$i" -lt 40 ]; do
   if grep -q "$PORT_LISTEN" /proc/net/tcp 2>/dev/null; then
-    echo "enabled listening pid=$(cat /tmp/launch-home-voice.pid 2>/dev/null)"
+    echo "enabled listening pid=$(cat $TMP_PREFIX-voice.pid 2>/dev/null)"
     exit 0
   fi
   sleep 0.5

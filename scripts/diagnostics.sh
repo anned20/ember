@@ -5,10 +5,14 @@
 # Prints a short summary (shown on the TV and in its QR code), then details.
 # The full report is also saved to /tmp/launch-home-diagnostics.txt.
 
-OUT=/tmp/launch-home-diagnostics.txt
-TOPTMP=/tmp/launch-home-diag-top.txt
-SPAWNTMP=/tmp/launch-home-diag-spawn.txt
-LOGTMP=/tmp/launch-home-diag-log.txt
+# The brand values (app id, /tmp prefixes): generated from src/ts/lib/brand.ts
+# into brand.sh, shipped next to this script.
+. "$(dirname "$0")/brand.sh"
+
+OUT=$TMP_PREFIX-diagnostics.txt
+TOPTMP=$TMP_PREFIX-diag-top.txt
+SPAWNTMP=$TMP_PREFIX-diag-spawn.txt
+LOGTMP=$TMP_PREFIX-diag-log.txt
 SYSLOG=/var/log/messages
 OPEN_SETTINGS=0
 APP_LINE=""
@@ -92,7 +96,7 @@ close_settings() {
           "{\"processId\":\"$cpid\"}" >/dev/null
         ;;
       launch-home)
-        luna 'luna://com.webos.applicationManager/launch' '{"id":"org.webosbrew.lounge.launcher"}' >/dev/null
+        luna 'luna://com.webos.applicationManager/launch' "{\"id\":\"$APP_ID\"}" >/dev/null
         ;;
     esac
     i=0
@@ -326,7 +330,7 @@ report() {
   apps=$(ls /media/developer/apps/usr/palm/applications 2>/dev/null | tr '\n' ' ')
   services=$(ls /media/developer/apps/usr/palm/services 2>/dev/null | tr '\n' ' ')
   watcher="off"
-  if [ -f /tmp/launch-home-watcher.pid ] && kill -0 "$(cat /tmp/launch-home-watcher.pid)" 2>/dev/null; then
+  if [ -f $TMP_PREFIX-watcher.pid ] && kill -0 "$(cat $TMP_PREFIX-watcher.pid)" 2>/dev/null; then
     watcher="running"
   fi
 
@@ -350,7 +354,7 @@ report() {
   echo "$spawners" | sed 's/^ */  /'
   echo "Startup hooks: ${hooks:-none}"
   echo "=== details ==="
-  echo "Launch Home: ${APP_LINE:-not given}"
+  echo "$BRAND_NAME: ${APP_LINE:-not given}"
   [ -n "$settings_closed" ] && echo "TV Settings closed by: $settings_closed"
   echo "Inputs the TV reports: ${inputs:-none}"
   echo "Home button watcher: $watcher"

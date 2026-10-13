@@ -1,11 +1,13 @@
 #!/bin/sh
 # Enable Launch Home boot-on-start via Homebrew init.d (run as root via hbchannel exec).
 
-LAUNCH="/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher/boot-launch.sh"
-LOG="/tmp/launch-home-boot.log"
-INITD="/var/lib/webosbrew/init.d/50-launch-home-boot"
+. "$(dirname "$0")/brand.sh"
+
+LAUNCH="$APP_DIR/boot-launch.sh"
+LOG="$TMP_PREFIX-boot.log"
+INITD="$INITD_DIR/$HOOK_BOOT"
 # Legacy name from when the app was branded "Lounge Launcher".
-OLD_INITD="/var/lib/webosbrew/init.d/50-lounge-boot"
+OLD_INITD="$INITD_DIR/$LEGACY_HOOK_BOOT"
 
 if [ ! -f "$LAUNCH" ]; then
   echo missing_boot_script
@@ -13,7 +15,7 @@ if [ ! -f "$LAUNCH" ]; then
 fi
 
 chmod 755 "$LAUNCH"
-mkdir -p /var/lib/webosbrew/init.d
+mkdir -p "$INITD_DIR"
 rm -f "$OLD_INITD"
 
 cat >"$INITD" <<EOF

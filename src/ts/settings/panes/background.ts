@@ -26,6 +26,7 @@ import {
 import type {GalleryEntry, OptionStepperElement} from '@settings/components/index.js';
 import {beginSettingsTextEdit} from '@settings/text-gate.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
+import {BRAND} from '@lib/brand.js';
 import type {BuiltinBackground, Config} from '@lib/types.js';
 
 // How long the packaged-photo manifest may take to arrive before it is abandoned.
@@ -266,7 +267,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       ));
       section.appendChild(builtinRow);
 
-      const usbHint = createHint('USB path: lounge/backgrounds/ with images.json. For a single file, enter the filename below.');
+      const usbHint = createHint('USB path: ' + BRAND.usbFolder + '/backgrounds/ with images.json. For a single file, enter the filename below.');
       section.appendChild(usbHint);
 
       const usbField = createTextField({

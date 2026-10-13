@@ -10,6 +10,7 @@ import {
   importSuperGrokAuth
 } from '@voice/voice-config.js';
 import {qrSvgMarkup} from '@lib/qr-svg.js';
+import {BRAND} from '@lib/brand.js';
 import {
   labeledControl,
   createHint,
@@ -882,10 +883,10 @@ export function createAiPane(): AiPaneHandle {
       aiOtherVoice.hidden = !state;
       aiOtherVoice.textContent = state === 'running'
         ? 'VoxRelay is also running on this TV. Both answer the Voice button, so ' +
-          'answers can clash. Launch Home leaves it alone: turn one of them off.'
+          'answers can clash. ' + BRAND.name + ' leaves it alone: turn one of them off.'
         : (state === 'installed'
           ? 'VoxRelay is also installed on this TV. If it runs, both answer the Voice ' +
-            'button. Launch Home leaves it alone.'
+            'button. ' + BRAND.name + ' leaves it alone.'
           : '');
     }
 
@@ -1123,7 +1124,7 @@ export function createAiPane(): AiPaneHandle {
             return;
           }
           aiStatusLabel.textContent = 'The voice assistant is not answering. Turn it off and on ' +
-            'again; its log is /tmp/launch-home-voice.log on the TV.';
+            'again; its log is ' + BRAND.tmpPrefix + '-voice.log on the TV.';
           aiStatusLabel.className = 'settings-hint ai-status-line ai-status-err';
           return;
         }

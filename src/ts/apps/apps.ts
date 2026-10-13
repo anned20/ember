@@ -11,6 +11,7 @@ import {
 } from './app-catalog.js';
 import {getAppIdCandidates, getBuiltinAppIcon} from './app-icons.js';
 import {indexInRow} from '@focus/focus-row.js';
+import {BRAND} from '@lib/brand.js';
 import type {AppCatalog, AppRecord, Config, CustomApp} from '@lib/types.js';
 
 const BUNDLED_SETTINGS_ICON = 'assets/app-icons/tv-settings.png';
@@ -93,8 +94,6 @@ export async function launchAppCandidates(ids?: string[] | null): Promise<string
   }
   return '';
 }
-
-const APP_ID = 'org.webosbrew.lounge.launcher';
 
 export function createAppGrid(
   container: HTMLElement,
@@ -470,7 +469,7 @@ export function createAppGrid(
     refresh: refresh,
     renderShell: renderShell,
     isLoungeApp: function (id: string) {
-      return id === APP_ID;
+      return id === BRAND.appId;
     },
     launchApp: openApp,
     /**

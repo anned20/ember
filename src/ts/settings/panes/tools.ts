@@ -11,6 +11,7 @@ import {
 } from '@luna/luna.js';
 import {findLoungeRoots} from '@lib/usb.js';
 import {qrSvgMarkup} from '@lib/qr-svg.js';
+import {BRAND} from '@lib/brand.js';
 import {
   LAST_BACKUP_KEY, backupLabel, backupWhen, compatibilityNote, lastBackupNote, listBackups,
   restoreReport, settingsBackupText
@@ -20,6 +21,9 @@ import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 
 /** How long the TV's backup roots may take to arrive before it is abandoned. */
 const ROOTS_DEADLINE_MS = 4000;
+
+/** Where diagnostics.sh saves its full report on the TV. */
+const DIAGNOSTICS_FILE = BRAND.tmpPrefix + '-diagnostics.txt';
 
 /** A Launch Home backup file as parsed by settings-backup.js. */
 interface BackupRecord {
@@ -51,7 +55,7 @@ export function createToolsPane(): PaneHandle {
       // restore and each update. Backups from other versions restore as far as
       // they fit (config.js, configFromBackup). Needs root (Homebrew Channel).
       const backupSection = createSection('Backup & restore');
-      backupSection.appendChild(createHint('Saves all your Launch Home settings: apps, wallpaper, music, clock, weather and profiles. The copy on the TV is kept if you reinstall Launch Home. A plugged-in USB drive gets a copy too (lounge/launch-home-settings.json), to move your settings to another TV. Launch Home also keeps a copy by itself before each restore and each update. Backups made by other versions of Launch Home can be restored too: you’re told what fitted. Voice keys and sign-in aren’t included; they stay on the TV.'));
+      backupSection.appendChild(createHint('Saves all your ' + BRAND.name + ' settings: apps, wallpaper, music, clock, weather and profiles. The copy on the TV is kept if you reinstall ' + BRAND.name + '. A plugged-in USB drive gets a copy too (' + BRAND.usbFolder + '/' + BRAND.usbSettingsFile + '), to move your settings to another TV. ' + BRAND.name + ' also keeps a copy by itself before each restore and each update. Backups made by other versions of ' + BRAND.name + ' can be restored too: you’re told what fitted. Voice keys and sign-in aren’t included; they stay on the TV.'));
       const backupActions = document.createElement('div');
       backupActions.className = 'settings-backup-actions';
       const backupBtn = createMiniButton({
@@ -176,7 +180,7 @@ export function createToolsPane(): PaneHandle {
           const result = configFromBackup(chosen.data.config, ctx.rawConfig);
           if (!result) {
             restoreBtn.textContent = 'Restore this backup';
-            backupStatus.textContent = 'That backup has no Launch Home settings in it.';
+            backupStatus.textContent = 'That backup has no ' + BRAND.name + ' settings in it.';
             return;
           }
           saveConfig(result.config);
@@ -247,7 +251,7 @@ export function createToolsPane(): PaneHandle {
           const summary = tvCheckSummary(report, head) + '\n' + probeLine;
           // Also into the saved report, which is what people usually send.
           execRoot('printf \'%s\\n\' \'' + probeLine.replace(/'/g, '') +
-            '\' >> /tmp/launch-home-diagnostics.txt').catch(function () { /* optional */ });
+            '\' >> ' + DIAGNOSTICS_FILE).catch(function () { /* optional */ });
           tvCheckText.textContent = summary;
           tvCheckQr.innerHTML = qrSvgMarkup(summary);
           tvCheckResult.hidden = false;
@@ -257,7 +261,7 @@ export function createToolsPane(): PaneHandle {
             ? 'Done, but TV Settings didn\u2019t close by itself on this TV: press Exit or Back ' +
               'to close it. '
             : 'Done. ') + 'Scan the code to copy this text. The full report is in ' +
-            '/tmp/launch-home-diagnostics.txt on the TV.';
+            DIAGNOSTICS_FILE + ' on the TV.';
           ctx.focusNow(tvCheckResult);
         } catch (err: any) {
           tvCheckStatus.textContent = 'TV check failed: ' +

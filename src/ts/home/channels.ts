@@ -10,6 +10,7 @@
 
 import {getTvChannelNow, getTvChannels, launchApp, launchAppViaRoot, openTvChannel} from '@luna/luna.js';
 import {indexInRow} from '@focus/focus-row.js';
+import {BRAND} from '@lib/brand.js';
 import type {TvChannel} from '@luna/luna.js';
 import type {Config, LauncherConfig} from '@lib/types.js';
 
@@ -20,7 +21,7 @@ const LIST_MAX_AGE_MS = 30 * 60 * 1000;
 const RETRY_AFTER_FAIL_MS = 60 * 1000;
 // The last list read, kept across restarts: reading it needs root, and the
 // Channels chip and Live TV input shouldn't vanish when root doesn't answer.
-const KEPT_KEY = 'lounge.channels.v1';
+const KEPT_KEY = BRAND.storage.channels;
 
 export interface ChannelStripOptions {
   onToast?: (message: string) => void;

@@ -1,4 +1,5 @@
 import {getStorageDevices} from '@luna/luna.js';
+import {BRAND} from './brand.js';
 import type {Config, UsbTrack} from './types.js';
 
 const AUDIO_EXT = ['.mp3', '.aac', '.flac', '.ogg', '.m4a', '.wav'];
@@ -75,7 +76,7 @@ export async function findLoungeRoots(): Promise<string[]> {
       const drives = device.storageDriveList || [];
       for (const drive of drives) {
         if (!drive.isMounted || !drive.mountName) continue;
-        roots.push(joinPath(drive.mountName, 'lounge'));
+        roots.push(joinPath(drive.mountName, BRAND.usbFolder));
       }
     }
   } catch (err) {

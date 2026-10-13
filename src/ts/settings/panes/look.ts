@@ -9,6 +9,7 @@ import {
   createOptionStepper
 } from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
+import {BRAND} from '@lib/brand.js';
 
 /**
  * The Background pane, as the Look pane uses it: mounted between the Profile
@@ -294,7 +295,7 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
       clockSection.appendChild(labeledControl('Icons per row (scroll mode)', iconsPerRowSelect));
 
       const bundledIconsField = createToggle({
-        label: 'Use Launch Home app icons',
+        label: 'Use ' + BRAND.name + ' app icons',
         focusIndex: '1008',
         path: 'launcher.bundledIcons',
         binder: ctx.binder
@@ -302,7 +303,7 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
       clockSection.appendChild(bundledIconsField.row);
 
       clockSection.appendChild(createHint(
-        'Off = each app’s own icon from the TV (Netflix, YouTube, TV Settings, …). Reading the TV’s icons needs root; apps without one keep the Launch Home icon.'
+        'Off = each app’s own icon from the TV (Netflix, YouTube, TV Settings, …). Reading the TV’s icons needs root; apps without one keep the ' + BRAND.name + ' icon.'
       ));
       ctx.panes.look.appendChild(clockSection);
     }

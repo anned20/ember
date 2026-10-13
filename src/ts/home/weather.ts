@@ -7,11 +7,12 @@
  * (WeatherMapper.geocodingToLocation) and City of London default.
  */
 
+import {BRAND} from '@lib/brand.js';
 import type {Config, WeatherConfig, WeatherLocation} from '@lib/types.js';
 
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
-const CACHE_KEY = 'lounge.weather.v1';
+const CACHE_KEY = BRAND.storage.weather;
 // Same staleness window as the Android app's cache.
 const STALE_MS = 15 * 60 * 1000;
 const CHECK_MS = 5 * 60 * 1000;

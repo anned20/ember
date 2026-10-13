@@ -10,6 +10,8 @@ import threading
 from queue import Empty, Queue
 from typing import Iterable, Iterator, Optional
 
+import brand
+
 PCM_CHUNK_BYTES = 3200  # 100 ms @ 16 kHz mono s16le
 
 
@@ -20,7 +22,7 @@ def find_ffmpeg(explicit: Optional[str] = None) -> str:
     if found:
         return found
     for candidate in (
-        "/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher/voice/bin/ffmpeg",
+        brand.APP_DIR + "/voice/bin/ffmpeg",
         "/usr/bin/ffmpeg",
         "/bin/ffmpeg",
     ):
@@ -160,7 +162,7 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description="Decode .msbc file to raw PCM")
     parser.add_argument("input")
-    parser.add_argument("-o", "--output", default="/tmp/launch-home-voice.pcm")
+    parser.add_argument("-o", "--output", default=brand.TMP_PREFIX + "-voice.pcm")
     parser.add_argument("--ffmpeg", default=None)
     args = parser.parse_args()
 

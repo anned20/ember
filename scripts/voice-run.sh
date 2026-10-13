@@ -11,14 +11,16 @@
 # /home/root/.config/launch-home-voice). Another voice assistant on the TV,
 # such as VoxRelay, is never stopped or changed.
 
-APPDIR="${LH_APPDIR:-/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher}"
+. "$(dirname "$0")/brand.sh"
+
+APPDIR="${LH_APPDIR:-$APP_DIR}"
 RUN="$APPDIR/voice-run.sh"
 DAEMON="$APPDIR/voice/daemon/voice_daemon.py"
-RUNPID=/tmp/launch-home-voice-run.pid
-PIDF=/tmp/launch-home-voice.pid
-STOP=/tmp/launch-home-voice.stop
-VER=/tmp/launch-home-voice.ver
-LOG=/tmp/launch-home-voice.log
+RUNPID=$TMP_PREFIX-voice-run.pid
+PIDF=$TMP_PREFIX-voice.pid
+STOP=$TMP_PREFIX-voice.stop
+VER=$TMP_PREFIX-voice.ver
+LOG=$TMP_PREFIX-voice.log
 
 log() {
   echo "[voice-run] $(date '+%H:%M:%S') $*" >>"$LOG"
@@ -181,7 +183,7 @@ while [ ! -f "$STOP" ] && [ -f "$DAEMON" ]; do
   started=$(date +%s)
   # The daemon makes itself a process-group leader (os.setsid), so its
   # helpers stop with it. Bytecode goes to /tmp, not into the app folder.
-  PYTHONUNBUFFERED=1 PYTHONPYCACHEPREFIX=/tmp/launch-home-voice-pycache \
+  PYTHONUNBUFFERED=1 PYTHONPYCACHEPREFIX=$TMP_PREFIX-voice-pycache \
     python3 "$DAEMON" </dev/null >/dev/null 2>&1 &
   child=$!
   echo "$child" >"$PIDF"

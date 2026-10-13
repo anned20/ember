@@ -5,6 +5,7 @@
  */
 
 import {getAppIdCandidates} from './app-icons.js';
+import {BRAND_ID_NAMESPACE} from '@lib/brand.js';
 import type {CustomApp} from '@lib/types.js';
 
 /** A launch point as returned by luna.js listLaunchPoints. */
@@ -20,7 +21,11 @@ export interface LaunchPoint {
 
 // Not for the dock: Launch Home itself (and its voice card), inputs and Live TV
 // (Launch Home's inputs row has those), and TV Settings (it has its own tile).
-const NOT_FOR_DOCK = /^(org\.webosbrew\.lounge\.|com\.webos\.app\.(hdmi|externalinput|livetv$|inputcommon$|component|scart|av\d*$|rgb)|com\.palm\.app\.settings$|com\.webos\.app\.settings$)/;
+const NOT_FOR_DOCK = new RegExp(
+  '^(' + BRAND_ID_NAMESPACE.replace(/\./g, '\\.') +
+  '|com\\.webos\\.app\\.(hdmi|externalinput|livetv$|inputcommon$|component|scart|av\\d*$|rgb)' +
+  '|com\\.palm\\.app\\.settings$|com\\.webos\\.app\\.settings$)'
+);
 
 /**
  * App ids from `points` to add, in LG's order: shown apps (not hidden, and not

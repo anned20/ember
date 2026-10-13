@@ -16,6 +16,8 @@ import urllib.parse
 import urllib.request
 from typing import Any, Optional
 
+import brand
+
 CLIENT_ID = "b1a00492-073a-47ea-816f-4c329264a828"
 DEVICE_CODE_URL = "https://auth.x.ai/oauth2/device/code"
 TOKEN_URL = "https://auth.x.ai/oauth2/token"
@@ -23,7 +25,7 @@ SCOPE = "openid profile email offline_access api:access grok-cli:access"
 DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 
 CONFIG_DIR = os.environ.get(
-    "LH_VOICE_CONFIG_DIR", "/home/root/.config/launch-home-voice"
+    "LH_VOICE_CONFIG_DIR", brand.VOICE_CONFIG_DIR
 )
 OAUTH_PATH = os.environ.get(
     "LH_VOICE_OAUTH", os.path.join(CONFIG_DIR, "oauth.json")

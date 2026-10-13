@@ -6,6 +6,7 @@ import {
 } from './builtin-music.js';
 import {discoverMusicTracks, isAudioFile} from '@lib/usb.js';
 import {subscribeVolume} from '@luna/luna.js';
+import {BRAND} from '@lib/brand.js';
 import type {Config, MusicTrack} from '@lib/types.js';
 
 export interface MusicPlayerElements {
@@ -622,7 +623,7 @@ export function createMusicPlayer(
       pendingAutoplay = false;
       updateNowPlaying();
       // Should be unreachable with hard-coded fallback; keep quiet if it isn't.
-      console.error('Launch Home: music playlist empty after fallbacks');
+      console.error(BRAND.name + ': music playlist empty after fallbacks');
     }
   }
 

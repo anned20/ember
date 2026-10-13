@@ -9,6 +9,9 @@ const {execSync} = require('child_process');
 
 const {readVersion} = require('./read-version.ts') as {readVersion: (filePath?: string) => string};
 const {verifyIpk} = require('./verify-ipk.ts') as {verifyIpk: (ipkPath: string) => string};
+const {BRAND} = require('../src/ts/lib/brand.ts') as {
+  BRAND: typeof import('../src/ts/lib/brand.ts').BRAND;
+};
 
 const root = path.join(__dirname, '..');
 const dist = path.join(root, 'dist');
@@ -70,6 +73,10 @@ function copyRecursive(src: string, dest: string) {
 async function build() {
   const version = readVersion();
 
+  // Keep the generated brand modules (scripts/brand.sh, voice/daemon/brand.py)
+  // in step with src/ts/lib/brand.ts before they are copied below.
+  require('./generate-brand.ts');
+
   fs.rmSync(dist, {recursive: true, force: true});
   fs.mkdirSync(dist, {recursive: true});
 
@@ -102,6 +109,7 @@ async function build() {
   const indexPath = path.join(dist, 'index.html');
   let indexHtml = fs.readFileSync(indexPath, 'utf8');
   indexHtml = indexHtml
+    .replace(/<title>[^<]*<\/title>/, '<title>' + BRAND.name + '</title>')
     .replace('href="styles/main.css"', 'href="styles/main.css?v=' + cacheTag(path.join(root, 'src/styles/main.css')) + '"')
     .replace('src="webOS.js"', 'src="webOS.js?v=' + cacheTag(webosLibSrc) + '"')
     .replace('src="main.js"', 'src="main.js?v=' + cacheTag(path.join(dist, 'main.js')) + '"');
@@ -112,6 +120,8 @@ async function build() {
 
   // Root Home-button watcher + boot-on-start helpers (started via settings / init.d).
   [
+    // Generated from src/ts/lib/brand.ts; the shipped scripts below source it.
+    'brand.sh',
     'home-watcher.sh',
     'enable-home-watcher.sh',
     'disable-home-watcher.sh',
@@ -149,6 +159,10 @@ async function build() {
 
   const appinfo = JSON.parse(fs.readFileSync(path.join(root, 'appinfo.json'), 'utf8'));
   appinfo.version = version;
+  appinfo.id = BRAND.appId;
+  appinfo.title = BRAND.name;
+  appinfo.vendor = BRAND.vendor;
+  appinfo.appDescription = BRAND.tagline + '.';
   fs.writeFileSync(path.join(dist, 'appinfo.json'), JSON.stringify(appinfo, null, 2) + '\n');
 
   const webosLib = path.join(root, 'node_modules/@procot/webostv/webOSTV/index.js');
@@ -172,7 +186,16 @@ function packVoiceCard(aresPackage: string, version: string) {
     copyRecursive(path.join(root, 'voice/overlay'), stage);
     const cardInfo = JSON.parse(fs.readFileSync(path.join(stage, 'appinfo.json'), 'utf8'));
     cardInfo.version = version;
+    cardInfo.id = BRAND.voiceAppId;
+    cardInfo.title = BRAND.voiceName;
+    cardInfo.vendor = BRAND.vendor;
+    cardInfo.appDescription = BRAND.voiceTagline;
     fs.writeFileSync(path.join(stage, 'appinfo.json'), JSON.stringify(cardInfo, null, 2) + '\n');
+    const cardIndex = path.join(stage, 'index.html');
+    if (fs.existsSync(cardIndex)) {
+      fs.writeFileSync(cardIndex, fs.readFileSync(cardIndex, 'utf8')
+        .replace(/<title>[^<]*<\/title>/, '<title>' + BRAND.voiceName + '</title>'));
+    }
     fs.copyFileSync(path.join(root, 'assets/icon-80-v8.png'), path.join(stage, 'icon.png'));
     const out = path.join(work, 'out');
     fs.mkdirSync(out);

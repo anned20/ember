@@ -16,14 +16,16 @@ import os
 import time
 from typing import Any, Optional
 
+import brand
+
 CONFIG_DIR = os.environ.get(
-    "LH_VOICE_CONFIG_DIR", "/home/root/.config/launch-home-voice"
+    "LH_VOICE_CONFIG_DIR", brand.VOICE_CONFIG_DIR
 )
 CONFIG_PATH = os.environ.get(
     "LH_VOICE_CONFIG", os.path.join(CONFIG_DIR, "config.json")
 )
 EXAMPLE_PATH = os.environ.get(
-    "LH_VOICE_CONFIG_EXAMPLE", "/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher/voice/config.example.json"
+    "LH_VOICE_CONFIG_EXAMPLE", brand.APP_DIR + "/voice/config.example.json"
 )
 
 PLACEHOLDER_KEY = "xai-..."
@@ -46,7 +48,7 @@ DEFAULTS: dict[str, Any] = {
     "overlay_auto_dismiss_sec": 10,
     "close_native_aiplatform": True,
     "hidraw_device": "/dev/hidraw0",
-    "overlay_app_id": "org.webosbrew.lounge.voice",
+    "overlay_app_id": brand.VOICE_APP_ID,
     "ffmpeg_path": "ffmpeg",
     "button_idle_release_sec": 3.0,
     "native_aiplatform_close_poll_sec": 12,
@@ -177,7 +179,7 @@ _VOICE_MODEL_ALIASES = {
 }
 
 
-XAI_ERROR_PATH = "/tmp/launch-home-voice-xai-error.json"
+XAI_ERROR_PATH = brand.TMP_PREFIX + "-voice-xai-error.json"
 
 
 def save_last_xai_error(kind: str, message: str) -> None:

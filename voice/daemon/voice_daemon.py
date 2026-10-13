@@ -55,11 +55,12 @@ import supergrok_auth
 from hidraw_stream import HidrawVoiceStream
 from luna_service import LunaBridge, VOICE_RESULT_APP_IDS
 from msbc_to_pcm import MsbcDecoder, PCM_CHUNK_BYTES
+import brand
 import config_store
 import tv_control
 import weather
 
-DEFAULT_CONFIG_PATH = "/home/root/.config/launch-home-voice/config.json"
+DEFAULT_CONFIG_PATH = brand.VOICE_CONFIG_DIR + "/config.json"
 FALLBACK_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.json"
 
 # Sentence-boundary TTS only. Soft mid-phrase cuts ("…unit of an" | "element…")
@@ -214,7 +215,7 @@ DEFAULT_NATIVE_VOICE_SERVICES = ["voiceconductor.service"]
 # setInputEvent forwarding from trigger.alexa / trigger.thinq into voiceconductor.
 NATIVE_SET_INPUT_EVENT_DISABLE_FILE = "/tmp/voiceinput_disable_set_input_event"
 # Launch Home's voice card (voice/overlay), installed by enable-voice.sh.
-OVERLAY_APP_ID = "org.webosbrew.lounge.voice"
+OVERLAY_APP_ID = brand.VOICE_APP_ID
 
 # Bluetooth remote mic, exposed as an ALSA capture PCM on this TV.
 DEFAULT_CAPTURE_DEVICE = "plughw:1,4"
@@ -353,7 +354,7 @@ class AlsaCapture:
     def arm(self) -> None:
         self._q.clear()
         try:
-            self._dbg = open("/tmp/launch-home-voice-capture.raw", "wb")
+            self._dbg = open(brand.TMP_PREFIX + "-voice-capture.raw", "wb")
         except Exception:
             self._dbg = None
         self._armed = True
@@ -436,7 +437,7 @@ class OneshotAlsaCapture:
 
     def arm(self) -> None:
         try:
-            self._dbg = open("/tmp/launch-home-voice-capture.raw", "wb")
+            self._dbg = open(brand.TMP_PREFIX + "-voice-capture.raw", "wb")
         except Exception:
             self._dbg = None
 
@@ -540,7 +541,7 @@ class SocketUnixCapture:
 
     def arm(self) -> None:
         try:
-            self._dbg = open("/tmp/launch-home-voice-capture.raw", "wb")
+            self._dbg = open(brand.TMP_PREFIX + "-voice-capture.raw", "wb")
         except Exception:
             self._dbg = None
 
@@ -1656,7 +1657,7 @@ class GrokVoiceDaemon:
     def _replace_file(path: str, text: str) -> None:
         """Write `path` in one step: a power cut leaves the old or the new file,
         never half of one. Keeps the file's permissions."""
-        tmp = path + ".launch-home-tmp"
+        tmp = path + "." + brand.SLUG + "-tmp"
         mode = None
         try:
             mode = os.stat(path).st_mode & 0o7777
@@ -4079,8 +4080,8 @@ class GrokVoiceDaemon:
         blob = b"".join(c for c in chunks if c)
         if not blob:
             return
-        raw_path = "/tmp/launch-home-voice-last-capture.raw"
-        wav_path = "/tmp/launch-home-voice-last-capture.wav"
+        raw_path = brand.TMP_PREFIX + "-voice-last-capture.raw"
+        wav_path = brand.TMP_PREFIX + "-voice-last-capture.wav"
         with open(raw_path, "wb") as fh:
             fh.write(blob)
         # Minimal WAV header (16 kHz mono s16le).
@@ -7273,7 +7274,7 @@ def _rotate_log(path: str) -> None:
             pass
 
 
-def _setup_file_logging(path: str = "/tmp/launch-home-voice.log") -> None:
+def _setup_file_logging(path: str = brand.TMP_PREFIX + "-voice.log") -> None:
     """Tee stdout/stderr to a file; rotate when large so /tmp (RAM) cannot fill."""
     try:
         if os.path.isfile(path) and os.path.getsize(path) > _LOG_MAX_BYTES:

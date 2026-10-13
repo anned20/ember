@@ -13,9 +13,12 @@
 # is no poll-and-restart loop; polling is only a last resort when the
 # subscription cannot be opened at all.
 
-APP_ID="org.webosbrew.lounge.launcher"
-PIDFILE="/tmp/launch-home-watcher.pid"
-LOG="/tmp/launch-home-watcher.log"
+# The brand values (app id, /tmp prefixes): generated from src/ts/lib/brand.ts
+# into brand.sh, shipped next to this script.
+. "$(dirname "$0")/brand.sh"
+
+PIDFILE="$TMP_PREFIX-watcher.pid"
+LOG="$TMP_PREFIX-watcher.log"
 COOLDOWN_SEC=1
 
 log() {

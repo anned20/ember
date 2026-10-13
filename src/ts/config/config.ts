@@ -1,8 +1,9 @@
 import {normalizeBackgroundConfig} from '@background/backgrounds.js';
 import {normalizeMusicConfig} from '@music/builtin-music.js';
+import {BRAND} from '@lib/brand.js';
 import type {BackgroundConfig, BackupFitResult, BackupSkip, Config, MusicConfig} from '@lib/types.js';
 
-const STORAGE_KEY = 'lounge.config.v1';
+const STORAGE_KEY = BRAND.storage.config;
 
 // Layout version of the settings (config.version). Changing what a setting
 // means, its type or its name? Bump this and add an entry to CONFIG_MIGRATIONS

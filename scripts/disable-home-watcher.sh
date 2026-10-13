@@ -1,11 +1,13 @@
 #!/bin/sh
 # Disable Launch Home button watcher (run as root via hbchannel exec).
 
-WATCH="/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher/home-watcher.sh"
-PIDF="/tmp/launch-home-watcher.pid"
-OLD_PIDF="/tmp/lounge-home-watcher.pid"
-INITD="/var/lib/webosbrew/init.d/40-launch-home-watcher"
-OLD_INITD="/var/lib/webosbrew/init.d/40-lounge-home"
+. "$(dirname "$0")/brand.sh"
+
+WATCH="$APP_DIR/home-watcher.sh"
+PIDF="$TMP_PREFIX-watcher.pid"
+OLD_PIDF="$LEGACY_TMP_PREFIX-watcher.pid"
+INITD="$INITD_DIR/$HOOK_HOME_WATCHER"
+OLD_INITD="$INITD_DIR/$LEGACY_HOOK_HOME"
 
 for pf in "$PIDF" "$OLD_PIDF"; do
   if [ -f "$pf" ]; then

@@ -14,15 +14,17 @@ import threading
 import time
 from typing import Any, Optional
 
-SOCKET_PATH = "/var/run/launch-home-voice.sock"
+import brand
+
+SOCKET_PATH = brand.VOICE_SOCKET
 WS_HOST = "127.0.0.1"
 WS_PORT = 8678
 # Name returned to a "hello" request: Launch Home only talks to a socket that
 # identifies as its own voice service (never to another project on a port).
-SERVICE_NAME = "launch-home-voice"
+SERVICE_NAME = brand.VOICE_SERVICE_NAME
 # Flag file clients may poll for an instant mic badge without waiting
 # for WebSocket delivery. Written on every listening enter/exit.
-VOICE_STATE_PATH = "/tmp/launch-home-voice-state.json"
+VOICE_STATE_PATH = brand.TMP_PREFIX + "-voice-state.json"
 # Upper bound on concurrent unix event subscribers. Only the single Luna bridge
 # should ever be connected; anything beyond this is a reconnect leak, so we
 # evict the oldest to protect the daemon's thread budget.
@@ -196,7 +198,7 @@ BROWSER_CLOSE_IDS = frozenset(
 )
 
 # Launch Home itself: a voice turn started over it hands the screen back to it.
-LAUNCHER_APP_ID = "org.webosbrew.lounge.launcher"
+LAUNCHER_APP_ID = brand.APP_ID
 
 VOICE_RESULT_APP_IDS = frozenset(
     {
@@ -250,7 +252,7 @@ class LunaBridge:
 
     def __init__(
         self,
-        overlay_app_id: str = "org.webosbrew.lounge.voice",
+        overlay_app_id: str = brand.VOICE_APP_ID,
         *,
         close_native: bool = True,
         native_close_poll_sec: float = 3.0,

@@ -19,6 +19,8 @@ from dataclasses import dataclass, field
 from typing import Callable, Iterator, Optional
 from urllib.parse import quote, urlencode
 
+import brand
+
 PCM_CHUNK_BYTES = 3200
 STT_HOST = "api.x.ai"
 
@@ -481,7 +483,7 @@ def pcm16le_to_mp3(
         for cand in (
             "/usr/bin/ffmpeg",
             "/bin/ffmpeg",
-            "/media/developer/apps/usr/palm/applications/org.webosbrew.lounge.launcher/voice/bin/ffmpeg",
+            brand.APP_DIR + "/voice/bin/ffmpeg",
         ):
             if os.path.isfile(cand):
                 bin_path = cand

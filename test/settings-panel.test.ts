@@ -1,4 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {BRAND} from '@lib/brand.js';
 
 vi.mock('@luna/luna.js', () => ({
   disableVoice: vi.fn(async () => ({})),
@@ -117,7 +118,7 @@ describe('settings panel integration', () => {
 
     expect(saved.length).toBe(1);
     expect(saved[0].launcher.showClock).toBe(false);
-    const stored = JSON.parse(localStorage.getItem('lounge.config.v1') || '{}');
+    const stored = JSON.parse(localStorage.getItem(BRAND.storage.config) || '{}');
     expect(stored.launcher.showClock).toBe(false);
   });
 });

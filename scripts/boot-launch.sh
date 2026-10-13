@@ -8,8 +8,9 @@
 #
 # Invoked detached from /var/lib/webosbrew/init.d/50-launch-home-boot.
 
-APP_ID="org.webosbrew.lounge.launcher"
-LOG="/tmp/launch-home-boot.log"
+. "$(dirname "$0")/brand.sh"
+
+LOG="$TMP_PREFIX-boot.log"
 
 log() {
   echo "$(date '+%H:%M:%S' 2>/dev/null) $*" >>"$LOG" 2>/dev/null || true

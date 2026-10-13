@@ -1,4 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {BRAND} from '@lib/brand.js';
 
 vi.mock('@config/config.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@config/config.js')>();
@@ -184,7 +185,7 @@ describe('tools pane', () => {
     await waitFor(function () { return !result.hidden; });
 
     const report = pane.querySelector('.tv-check-report') as HTMLElement;
-    expect(report.textContent).toContain('Launch Home');
+    expect(report.textContent).toContain(BRAND.name);
     expect(report.textContent).toContain('model: OLED');
     expect(report.textContent).not.toContain('not shown');
     expect(focusNow).toHaveBeenCalledWith(result);

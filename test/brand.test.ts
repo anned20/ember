@@ -23,7 +23,7 @@ describe('generated brand modules', () => {
     expect(main.id).toBe(BRAND.appId);
     expect(main.title).toBe(BRAND.name);
     expect(main.vendor).toBe(BRAND.vendor);
-    expect(main.appDescription).toBe(BRAND.tagline + '.');
+    expect(main.appDescription).toBe(BRAND.tagline);
 
     const voice = JSON.parse(voiceAppinfo);
     expect(voice.id).toBe(BRAND.voiceAppId);

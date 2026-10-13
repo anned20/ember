@@ -6711,14 +6711,14 @@ class GrokVoiceDaemon:
         ):
             return None
         if "name" in n:
-            return "I'm the Launch Home voice assistant, powered by Grok."
+            return "I'm the " + brand.NAME + " voice assistant, powered by Grok."
         if "can you do" in n or "do you do" in n:
             return (
                 "I can answer questions, look up weather, control the TV, "
                 "and search the web when you need live facts."
             )
         return (
-            "I'm the Launch Home voice assistant on your LG TV, powered by Grok. "
+            "I'm the " + brand.NAME + " voice assistant on your LG TV, powered by Grok. "
             "Ask me anything."
         )
 
@@ -7326,7 +7326,7 @@ def _setup_file_logging(path: str = brand.TMP_PREFIX + "-voice.log") -> None:
 def main() -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Launch Home voice daemon")
+    parser = argparse.ArgumentParser(description=brand.NAME + " voice daemon")
     parser.add_argument("--config", default=None)
     args = parser.parse_args()
     # Own process group, so Launch Home's run loop (voice-run.sh) can stop the

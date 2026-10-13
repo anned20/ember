@@ -5,7 +5,7 @@
  */
 
 import {getAppIdCandidates} from './app-icons.js';
-import {BRAND_ID_NAMESPACE} from '@lib/brand.js';
+import {BRAND, BRAND_ID_NAMESPACE} from '@lib/brand.js';
 import type {CustomApp} from '@lib/types.js';
 
 /** A launch point as returned by luna.js listLaunchPoints. */
@@ -19,10 +19,14 @@ export interface LaunchPoint {
   [key: string]: unknown;
 }
 
-// Not for the dock: Launch Home itself (and its voice card), inputs and Live TV
-// (Launch Home's inputs row has those), and TV Settings (it has its own tile).
+// Not for the dock: Ember itself (and its voice card) plus any leftover Launch
+// Home install, inputs and Live TV (Ember's inputs row has those), and TV
+// Settings (it has its own tile).
+const ID_NAMESPACES = [BRAND_ID_NAMESPACE, BRAND.legacy.appIdNamespace]
+  .map(function (namespace) { return namespace.replace(/\./g, '\\.'); })
+  .join('|');
 const NOT_FOR_DOCK = new RegExp(
-  '^(' + BRAND_ID_NAMESPACE.replace(/\./g, '\\.') +
+  '^(' + ID_NAMESPACES +
   '|com\\.webos\\.app\\.(hdmi|externalinput|livetv$|inputcommon$|component|scart|av\\d*$|rgb)' +
   '|com\\.palm\\.app\\.settings$|com\\.webos\\.app\\.settings$)'
 );

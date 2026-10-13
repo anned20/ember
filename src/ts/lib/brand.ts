@@ -15,9 +15,9 @@ const SLUG = 'launch-home';
 // The localStorage namespace (the config, apps, weather… keys).
 const STORAGE_PREFIX = 'lounge';
 
-const NAME = 'Launch Home';
-const APP_ID = 'org.webosbrew.lounge.launcher';
-const VOICE_APP_ID = 'org.webosbrew.lounge.voice';
+const NAME = 'Ember';
+const APP_ID = 'com.ember.launcher';
+const VOICE_APP_ID = 'com.ember.voice';
 
 const APPS_DIR = '/media/developer/apps/usr/palm/applications';
 const APP_DIR = APPS_DIR + '/' + APP_ID;
@@ -26,9 +26,9 @@ const CONFIG_DIR = '/home/root/.config/' + SLUG;
 export const BRAND = {
   name: NAME,
   voiceName: NAME + ' Voice',
-  tagline: 'Come home to what you love',
+  tagline: 'Warm, bright, yours.',
   voiceTagline: 'Voice answers for ' + NAME,
-  vendor: 'webOS Homebrew',
+  vendor: 'ember',
 
   appId: APP_ID,
   voiceAppId: VOICE_APP_ID,
@@ -69,8 +69,10 @@ export const BRAND = {
     boot: '50-' + SLUG + '-boot'
   },
 
-  // Names from before the "Launch Home" rename, still swept up on enable.
+  // Ids and names from earlier identities: the Launch Home app-id namespace
+  // (kept out of the dock) and the older "Lounge" hooks (swept up on enable).
   legacy: {
+    appIdNamespace: 'org.webosbrew.lounge.',
     tmpPrefix: '/tmp/lounge-home',
     homeWatcherHook: '40-lounge-home',
     bootHook: '50-lounge-boot'

@@ -167,7 +167,7 @@ TTS_VOICES = (
 DEFAULT_TTS_VOICE = "iris"
 # Spoken TV answers stay short — overlay and TTS both show this same text.
 SYSTEM_PROMPT = (
-    "You are the Launch Home voice assistant, a concise TV voice assistant powered by Grok. "
+    "You are the " + brand.NAME + " voice assistant, a concise TV voice assistant powered by Grok. "
     "Limit answer length: one short sentence of about 12–24 words for ordinary "
     "facts unless the user asks for detail. Never pad with preambles or lists. "
     "Be direct and helpful. Never use markdown (no **, #, bullets, or links) — "

@@ -162,7 +162,7 @@ async function build() {
   appinfo.id = BRAND.appId;
   appinfo.title = BRAND.name;
   appinfo.vendor = BRAND.vendor;
-  appinfo.appDescription = BRAND.tagline + '.';
+  appinfo.appDescription = BRAND.tagline;
   fs.writeFileSync(path.join(dist, 'appinfo.json'), JSON.stringify(appinfo, null, 2) + '\n');
 
   const webosLib = path.join(root, 'node_modules/@procot/webostv/webOSTV/index.js');
@@ -175,9 +175,9 @@ async function build() {
 }
 
 /**
- * Pack the voice card (voice/overlay, app org.webosbrew.lounge.voice) and put
- * it inside Launch Home as voice/card.pkg; enable-voice.sh installs it on the
- * TV. Not named .ipk: ares-package leaves out every *.ipk file.
+ * Pack the voice card (voice/overlay, app com.ember.voice) and put it inside
+ * Ember as voice/card.pkg; enable-voice.sh installs it on the TV. Not named
+ * .ipk: ares-package leaves out every *.ipk file.
  */
 function packVoiceCard(aresPackage: string, version: string) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'launch-home-voice-card-'));

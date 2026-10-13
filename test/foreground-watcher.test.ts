@@ -146,7 +146,7 @@ describe('createForegroundWatcher', function () {
     expect(h.calls.closes).toBe(1);
   });
 
-  it('pauses ambient music when Launch Home is left during a launch', async function () {
+  it('pauses ambient music when Ember is left during a launch', async function () {
     vi.useFakeTimers();
     const h = makeHarness();
 
@@ -158,7 +158,7 @@ describe('createForegroundWatcher', function () {
     expect(h.calls.pause).toBe(1);
   });
 
-  it('brings Launch Home back when stock Home comes up, then rate-limits', async function () {
+  it('brings Ember back when stock Home comes up, then rate-limits', async function () {
     vi.useFakeTimers();
     const h = makeHarness();
 
@@ -189,7 +189,7 @@ describe('createForegroundWatcher', function () {
     expect(h.calls.seen.length).toBeGreaterThan(0);
   });
 
-  it('reclaims with bursts when Launch Home returns to the foreground', async function () {
+  it('reclaims with bursts when Ember returns to the foreground', async function () {
     vi.useFakeTimers();
     const h = makeHarness();
 

@@ -15,6 +15,7 @@ import urllib.error
 import urllib.request
 from typing import Callable, Optional
 
+import brand
 from grok_client import ChatResult, SYSTEM_PROMPT, _urlopen_retry
 
 OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -73,7 +74,7 @@ def stream_openrouter_chat(
             "Content-Type": "application/json",
             "Accept": "text/event-stream",
             "HTTP-Referer": "https://github.com/gprot42/webos-launch-home",
-            "X-Title": "Launch Home",
+            "X-Title": brand.NAME,
             "Connection": "close",
         },
         method="POST",
@@ -187,7 +188,7 @@ def transcribe_openrouter(
             "Authorization": "Bearer " + key,
             "Content-Type": "application/json",
             "HTTP-Referer": "https://github.com/gprot42/webos-launch-home",
-            "X-Title": "Launch Home",
+            "X-Title": brand.NAME,
         },
         method="POST",
     )

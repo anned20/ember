@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {createSystemPane} from '@settings/panes/system.js';
 import {createBinder} from '@settings/settings-binding.js';
 import type {SettingsContext} from '@settings/pane.js';
+import {BRAND} from '@lib/brand.js';
 import type {Config} from '@lib/types.js';
 
 function makeConfig(): Config {
@@ -60,7 +61,7 @@ describe('system pane', () => {
     expect((toggles[1] as HTMLElement).dataset.focusIndex).toBe('1010');
     expect((toggles[2] as HTMLElement).dataset.focusIndex).toBe('1011');
     expect((toggles[0] as HTMLInputElement).checked).toBe(false);
-    expect(pane.textContent).toContain('Volume in Launch Home');
+    expect(pane.textContent).toContain('Volume in ' + BRAND.name);
     expect(pane.textContent).toContain('Boot on TV start');
   });
 

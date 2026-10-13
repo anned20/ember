@@ -3,7 +3,7 @@
   "type": "web",
   "main": "index.html",
   "title": "Ember Voice",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "vendor": "ember",
   "icon": "icon.png",
   "largeIcon": "icon.png",

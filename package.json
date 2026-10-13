@@ -1,6 +1,6 @@
 {
   "name": "ember",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Ember — a fullscreen home screen for rooted LG webOS TVs",
   "private": true,
   "scripts": {

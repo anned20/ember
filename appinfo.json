@@ -1,6 +1,6 @@
 {
   "id": "com.ember.launcher",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "vendor": "ember",
   "type": "web",
   "main": "index.html",

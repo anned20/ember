@@ -42,7 +42,7 @@ DEFAULTS: dict[str, Any] = {
     "openrouter_stt_model": "openai/gpt-transcribe",
     "stt_language": "en",
     "chat_model": "grok-4.7",
-    "voice_model": "grok-voice-think-fast-2.0",
+    "voice_model": "grok-voice-3.0",
     "overlay_auto_dismiss_sec": 10,
     "close_native_aiplatform": True,
     "hidraw_device": "/dev/hidraw0",
@@ -128,6 +128,7 @@ CHAT_MODELS = [
 
 # Speech-to-Speech models used for xAI spoken answers (docs.x.ai voice-agent).
 VOICE_MODELS = [
+    "grok-voice-3.0",
     "grok-voice-think-fast-2.0",
     "grok-voice-think-fast-1.0",
     "grok-voice-latest",
@@ -171,6 +172,7 @@ _CHAT_MODEL_ALIASES = {
 }
 
 _VOICE_MODEL_ALIASES = {
+    "grok-voice-3": "grok-voice-3.0",
     "grok-voice-2-fast": "grok-voice-think-fast-2.0",
     "grok-voice-think-fast-2": "grok-voice-think-fast-2.0",
     "grok-voice-think-fast": "grok-voice-think-fast-2.0",
@@ -374,6 +376,7 @@ def provider_key_configured(config: dict[str, Any] | None = None) -> bool:
 _OPTION_LABELS = {
     "grok-4.7": "grok-4.7",
     "grok-4.6": "grok-4.6 (fallback)",
+    "grok-voice-3.0": "Voice 3.0",
     "grok-voice-think-fast-2.0": "Voice think fast 2.0",
     "grok-voice-think-fast-1.0": "Voice think fast 1.0",
     "gemini-3.8-flash": "Gemini 3.8 Flash",

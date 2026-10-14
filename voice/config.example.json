@@ -15,7 +15,7 @@
   "min_capture_sec": 1.6,
   "fresh_stream_per_press": false,
   "chat_model": "grok-4-fast",
-  "voice_model": "grok-voice-think-fast-2.0",
+  "voice_model": "grok-voice-3.0",
   "tts_enabled": true,
   "tts_voice": "iris",
   "tts_speed": 1.0,

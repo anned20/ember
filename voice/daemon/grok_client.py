@@ -63,7 +63,7 @@ CHAT_URL = "https://api.x.ai/v1/chat/completions"
 RESPONSES_URL = "https://api.x.ai/v1/responses"
 TTS_URL = "https://api.x.ai/v1/tts"
 # Speech-to-Speech (text-in path after local STT): flagship is think-fast-2.0.
-DEFAULT_VOICE_MODEL = "grok-voice-think-fast-2.0"
+DEFAULT_VOICE_MODEL = "grok-voice-3.0"
 VOICE_OUTPUT_RATE = 24000
 # webOS plays each chunk as a separate <audio> element. Emitting early crumbs
 # caused missing opening words (seq skip / mid-start) and stutter. Hold all
@@ -1432,7 +1432,7 @@ def stream_voice_answer(
     """Answer via Speech-to-Speech realtime API (text in → audio + transcript).
 
     Uses ``wss://api.x.ai/v1/realtime?model=…`` with
-    ``grok-voice-think-fast-2.0`` by default. Local STT already produced
+    ``grok-voice-3.0`` by default. Local STT already produced
     ``user_text``; this replaces chat completions + unary TTS for Grok answers.
 
     Audio is PCM16 mono at 24 kHz, wrapped into standalone WAV chunks so the

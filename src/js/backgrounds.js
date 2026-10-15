@@ -1,6 +1,7 @@
 import {discoverBackgroundImages, fetchJson, joinPath} from './usb.js';
 import {resolveAppUrl, withAssetVersion} from './compat.js';
 import {APP_VERSION} from './version.js';
+import {AERIAL_BACKGROUNDS} from './aerials.js';
 
 const BUILTIN_MANIFEST = 'assets/backgrounds/manifest.json';
 const BUILTIN_BASE = 'assets/backgrounds/';
@@ -279,6 +280,9 @@ export function normalizeBackgroundConfig(bg) {
   }
   if (!out.url) out.url = '';
   if (!Array.isArray(out.urls)) out.urls = [];
+  // Selected Apple aerial clip (source "aerial").
+  if (!out.aerial) out.aerial = AERIAL_BACKGROUNDS[0] ? AERIAL_BACKGROUNDS[0].id : '';
+  if (typeof out.shuffle !== 'boolean') out.shuffle = false;
 
   return out;
 }
@@ -364,12 +368,49 @@ export function isImageUrl(url) {
   return /^https?:\/\//i.test(url);
 }
 
-export async function resolveBackgroundImages(config, usbPath) {
-  const images = await resolveImagesAtSourceSize(config, usbPath);
-  if (!liteImages) return images.map(jpegForTv);
+export const MEDIA_IMAGE = 'image';
+export const MEDIA_VIDEO = 'video';
+
+function mediaDescriptors(urls, kind) {
+  return urls.map(function (url) {
+    return {kind: kind, url: url};
+  });
+}
+
+/** The Apple aerial clip with this id, or null. */
+function findAerialBackgroundById(id) {
+  if (!id) return null;
+  for (let i = 0; i < AERIAL_BACKGROUNDS.length; i += 1) {
+    if (AERIAL_BACKGROUNDS[i].id === id) return AERIAL_BACKGROUNDS[i];
+  }
+  return null;
+}
+
+/**
+ * The aerial clips to play. Single = the chosen clip; Slideshow = the whole
+ * catalog, in catalog order (the controller shuffles when the config asks).
+ */
+function aerialMedia(bg) {
+  if (bg.mode === 'slideshow') {
+    return mediaDescriptors(AERIAL_BACKGROUNDS.map(function (clip) {
+      return clip.url;
+    }), MEDIA_VIDEO);
+  }
+  const clip = findAerialBackgroundById(bg.aerial) || AERIAL_BACKGROUNDS[0];
+  if (!clip || !clip.url) return [];
+  return [{kind: MEDIA_VIDEO, url: clip.url}];
+}
+
+export async function resolveBackgroundMedia(config, usbPath) {
   const bg = normalizeBackgroundConfig(config.background);
-  if (bg.source === 'builtin') return liteBuiltinImages(images, bg.mode);
-  return images.map(sizeForDisplay).map(jpegForTv);
+  if (bg.source === 'aerial') return aerialMedia(bg);
+
+  const urls = await resolveImagesAtSourceSize(config, usbPath);
+  if (!liteImages) return mediaDescriptors(urls.map(jpegForTv), MEDIA_IMAGE);
+  if (bg.source === 'builtin') {
+    return mediaDescriptors(await liteBuiltinImages(urls, bg.mode), MEDIA_IMAGE);
+  }
+  return mediaDescriptors(urls.map(sizeForDisplay).map(jpegForTv), MEDIA_IMAGE);
 }
 
 async function resolveImagesAtSourceSize(config, usbPath) {

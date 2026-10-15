@@ -1,4 +1,4 @@
-import {REMOTE_KEY} from './remote.js';
+import {REMOTE_KEY, digitFromKey} from './remote.js';
 import {
   isSettingsTextField,
   isEditingSettingsText,
@@ -1167,7 +1167,9 @@ export function createFocusManager(root, handlers) {
         ArrowDown: REMOTE_KEY.DOWN,
         Enter: REMOTE_KEY.ENTER,
         Escape: REMOTE_KEY.BACK,
-        GoBack: REMOTE_KEY.BACK
+        GoBack: REMOTE_KEY.BACK,
+        ChannelUp: REMOTE_KEY.CHANNEL_UP,
+        ChannelDown: REMOTE_KEY.CHANNEL_DOWN
       };
       if (!typing) {
         keyMap.Backspace = REMOTE_KEY.BACK;
@@ -1175,6 +1177,22 @@ export function createFocusManager(root, handlers) {
       if (keyMap[event.key] !== undefined) {
         code = keyMap[event.key];
       }
+    }
+
+    // Number keys launch the home row tile at that position (1 = first).
+    // While the virtual keyboard is up, or Settings / All apps is open, the
+    // numbers belong to what is on screen, not the home row.
+    const digit = digitFromKey(code, event.key);
+    if (digit >= 0) {
+      const active = document.activeElement;
+      if (isEditingSettingsText(active)) return;
+      if (document.body.classList.contains('settings-open')) return;
+      if (root.querySelector('.all-apps:not([hidden])')) return;
+      if (digit > 0 && handlers && handlers.onNumber) {
+        event.preventDefault();
+        handlers.onNumber(digit);
+      }
+      return;
     }
 
     if (code === REMOTE_KEY.BACK) {
@@ -1214,6 +1232,14 @@ export function createFocusManager(root, handlers) {
       return;
     }
 
+    if (code === REMOTE_KEY.BLUE) {
+      if (handlers && handlers.onBlue) {
+        event.preventDefault();
+        handlers.onBlue();
+      }
+      return;
+    }
+
     if (code === REMOTE_KEY.VOLUME_UP) {
       if (handlers && handlers.onVolumeUp) {
         event.preventDefault();
@@ -1234,6 +1260,22 @@ export function createFocusManager(root, handlers) {
       if (handlers && handlers.onVolumeMute) {
         event.preventDefault();
         handlers.onVolumeMute();
+      }
+      return;
+    }
+
+    if (code === REMOTE_KEY.CHANNEL_UP) {
+      if (handlers && handlers.onChannelUp) {
+        event.preventDefault();
+        handlers.onChannelUp();
+      }
+      return;
+    }
+
+    if (code === REMOTE_KEY.CHANNEL_DOWN) {
+      if (handlers && handlers.onChannelDown) {
+        event.preventDefault();
+        handlers.onChannelDown();
       }
       return;
     }

@@ -220,7 +220,9 @@ setup_ssh() {
 	detect_luna_send_style
 	printf "  %s\n" "Luna CLI: ${LUNA_SEND_STYLE} (webOS 6 = standard, rooted newer = pub)"
 
-	[[ "$SETUP_DEVICE" == "1" ]] && setup_ares_device
+	if [[ "$SETUP_DEVICE" == "1" ]]; then
+		setup_ares_device
+	fi
 }
 
 setup_ares_device() {
@@ -314,37 +316,16 @@ install_ipk_ssh() {
 }
 
 install_ipk() {
-	local version ipk install_js attempt max_attempts delay
+	local version ipk
 	version="$(read_version)"
 	ipk="${APP_ID}_${version}_all.ipk"
 	[[ -f "$SCRIPT_DIR/dist/$ipk" ]] || die "Missing package: dist/$ipk"
-	install_js="$(ares_js ares-install)"
 
 	section "Installing to TV"
-	# ares-install's SSH exec channel is flaky against this TV's dropbear (fails
-	# with "Unable to exec"); one quick retry catches transient hiccups without
-	# burning time on a failure mode that the SSH fallback below handles anyway.
-	max_attempts=2
-	delay=3
-	# Dropbear on the TV can reject rapid back-to-back SSH exec channels.
-	sleep 3
-	for attempt in $(seq 1 "$max_attempts"); do
-		wait_for_ssh || {
-			printf "  %s\n" "$(c_ylw "SSH not ready (attempt $attempt/$max_attempts)")"
-			sleep "$delay"
-			continue
-		}
-		if node20 "$install_js" -d "$DEVICE" "$SCRIPT_DIR/dist/$ipk"; then
-			printf "  %s\n" "$(c_grn "Installed $ipk")"
-			return
-		fi
-		if [[ "$attempt" -lt "$max_attempts" ]]; then
-			printf "  %s\n" "$(c_ylw "Install failed (attempt $attempt/$max_attempts), retrying in ${delay}s...")"
-			sleep "$delay"
-		fi
-	done
-
-	section "Installing via SSH fallback"
+	# ares-install's SSH exec channel is flaky against this TV's dropbear and
+	# fails with "Unable to exec" after uploading. Don't retry it: install
+	# directly over SSH via appinstalld.
+	wait_for_ssh || die "SSH to root@${TV_IP} failed"
 	install_ipk_ssh "$SCRIPT_DIR/dist/$ipk"
 	printf "  %s\n" "$(c_grn "Installed $ipk (via SSH)")"
 }

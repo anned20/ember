@@ -14,6 +14,7 @@ import {
   builtinImageUrl,
   jpegForTv
 } from './backgrounds.js';
+import {AERIAL_BACKGROUNDS} from './aerials.js';
 import {loadBuiltinMusicManifest, normalizeMusicConfig} from './builtin-music.js';
 import {applyActiveProfile, getProfileOverrides, PROFILE_OPTIONS} from './profiles.js';
 import {fetchInputDevices, inputFromId, isTvInputId} from './inputs.js';
@@ -643,11 +644,16 @@ export function createSettingsPanel(panel, getConfig, options) {
     const showBuiltin = source === 'builtin';
     const showUsb = source === 'usb';
     const showUrl = source === 'url';
+    const showAerial = source === 'aerial';
     const isSlideshow = refs.displaySelect.value === 'slideshow';
     const revealGallery = !!(opts && opts.revealGallery);
 
     refs.displayRow.hidden = !isImage;
-    // Built-in / online galleries are mutually exclusive by source.
+    // Aerial Slideshow cycles the whole catalog, so the single-clip picker is
+    // hidden there (as the built-in gallery is for its own slideshow).
+    refs.aerialRow.hidden = !showAerial || isSlideshow;
+    refs.bgShuffleRow.hidden = !(showAerial && isSlideshow);
+    // Built-in / online / aerial galleries are mutually exclusive by source.
     refs.builtinRow.hidden = !showBuiltin || isSlideshow;
     refs.usbHint.hidden = !showUsb;
     refs.usbFileRow.hidden = !showUsb || isSlideshow;
@@ -655,12 +661,17 @@ export function createSettingsPanel(panel, getConfig, options) {
     refs.urlHint.hidden = !showUrl;
     refs.urlRow.hidden = !showUrl || isSlideshow;
     refs.urlsRow.hidden = !showUrl || !isSlideshow;
-    refs.intervalRow.hidden = !isImage || !isSlideshow;
-    refs.kenBurnsRow.hidden = !isImage;
+    // Neither applies to aerials: clips advance on the clip's own end, and a
+    // Ken Burns pan on top of a moving video is meaningless.
+    refs.intervalRow.hidden = !isImage || !isSlideshow || showAerial;
+    refs.kenBurnsRow.hidden = !isImage || showAerial;
+    refs.kenBurnsHint.hidden = !isImage || showAerial;
 
     // When the user switches Source to a photo catalog, scroll that gallery into view.
     if (revealGallery && !isSlideshow) {
-      if (showBuiltin && refs.builtinRow && !refs.builtinRow.hidden) {
+      if (showAerial && refs.aerialRow && !refs.aerialRow.hidden) {
+        focusPhotoGallery(refs.aerialRow);
+      } else if (showBuiltin && refs.builtinRow && !refs.builtinRow.hidden) {
         focusPhotoGallery(refs.builtinRow);
       } else if (showUrl && refs.remoteRow && !refs.remoteRow.hidden) {
         focusPhotoGallery(refs.remoteRow);
@@ -2058,9 +2069,12 @@ export function createSettingsPanel(panel, getConfig, options) {
       {value: 'animated-gradient', label: 'Animated Gradient'},
       {value: 'builtin', label: 'Built-in photos'},
       {value: 'usb', label: 'USB folder'},
-      {value: 'url', label: 'Online URL (nature + anime)'}
+      {value: 'url', label: 'Online URL (nature + anime)'},
+      {value: 'aerial', label: 'Aerial videos (Apple)'}
     ], bg.source, function (value) {
-      syncFields({revealGallery: value === 'url' || value === 'builtin'});
+      syncFields({
+        revealGallery: value === 'url' || value === 'builtin' || value === 'aerial'
+      });
     });
     section.appendChild(labeledControl('Source', sourceSelect));
 
@@ -2099,6 +2113,79 @@ export function createSettingsPanel(panel, getConfig, options) {
     });
     const displayRow = labeledControl('Display', displaySelect);
     section.appendChild(displayRow);
+
+    // Aerial Slideshow only: randomise the clip order.
+    const bgShuffleToggle = document.createElement('input');
+    bgShuffleToggle.type = 'checkbox';
+    bgShuffleToggle.checked = !!bg.shuffle;
+    bgShuffleToggle.className = 'focusable';
+    bgShuffleToggle.dataset.focusIndex = '936';
+    const bgShuffleRow = labeledControl('Shuffle clips', bgShuffleToggle);
+    section.appendChild(bgShuffleRow);
+
+    // Aerial clips (Apple) — title-only picker; the clips stream from Apple's
+    // CDN, so there are no packaged thumbnails to show.
+    let selectedAerialId = bg.aerial || (AERIAL_BACKGROUNDS[0] && AERIAL_BACKGROUNDS[0].id) || '';
+    const aerialRow = document.createElement('div');
+    aerialRow.className = 'settings-block photo-picker-block';
+    const aerialHeading = document.createElement('span');
+    aerialHeading.className = 'settings-block-label';
+    aerialHeading.textContent =
+      'Choose an aerial clip (' + AERIAL_BACKGROUNDS.length + ' \u00b7 streams from Apple)';
+    aerialRow.appendChild(aerialHeading);
+
+    const aerialGrid = document.createElement('div');
+    aerialGrid.className = 'photo-picker-grid aerial-picker-grid';
+    aerialRow.appendChild(aerialGrid);
+
+    function markAerialSelection() {
+      const tiles = aerialGrid.querySelectorAll('.photo-picker-tile');
+      for (let i = 0; i < tiles.length; i += 1) {
+        const tile = tiles[i];
+        const id = tile.dataset.aerialId || '';
+        const isSel = id === selectedAerialId;
+        tile.classList.toggle('is-selected', isSel);
+        tile.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+      }
+    }
+
+    function selectAerial(id) {
+      selectedAerialId = id || '';
+      markAerialSelection();
+    }
+
+    AERIAL_BACKGROUNDS.forEach(function (entry, index) {
+      const tile = document.createElement('div');
+      tile.className = 'photo-picker-tile photo-picker-tile-text focusable';
+      tile.setAttribute('role', 'button');
+      // Shares the gallery range with built-in / online; only one shows at once.
+      tile.dataset.focusIndex = String(905 + index);
+      tile.dataset.aerialId = entry.id;
+      tile.setAttribute('aria-label', entry.title || entry.id);
+      tile.tabIndex = 0;
+
+      const caption = document.createElement('span');
+      caption.className = 'photo-picker-caption';
+      caption.textContent = entry.title || entry.id;
+      caption.style.pointerEvents = 'none';
+
+      tile.appendChild(caption);
+      // Browse with arrows only; Select/click keeps is-selected when focus leaves.
+      tile.addEventListener('click', function (event) {
+        if (event && event.preventDefault) event.preventDefault();
+        selectAerial(entry.id);
+      });
+      aerialGrid.appendChild(tile);
+    });
+    markAerialSelection();
+
+    const aerialHint = document.createElement('p');
+    aerialHint.className = 'settings-hint';
+    aerialHint.textContent =
+      'Clips stream from Apple\u2019s network (nothing is packaged) and play muted, full-screen and looping. The TV must be online; if a clip will not play, the gradient above is used instead. ' +
+      'Aerials are the heaviest background source (network plus continuous video decode), and Performance mode has no effect on video.';
+    aerialRow.appendChild(aerialHint);
+    section.appendChild(aerialRow);
 
     // Built-in photo gallery (thumbnails) — only visible when Source is Built-in photos.
     let selectedBuiltinId = bg.builtin || (builtinManifest[0] && builtinManifest[0].id) || '';
@@ -2444,6 +2531,8 @@ export function createSettingsPanel(panel, getConfig, options) {
 
     const refs = {
       displayRow: displayRow,
+      bgShuffleRow: bgShuffleRow,
+      aerialRow: aerialRow,
       builtinRow: builtinRow,
       usbHint: usbHint,
       usbFileRow: usbFileRow,
@@ -2453,6 +2542,7 @@ export function createSettingsPanel(panel, getConfig, options) {
       urlsRow: urlsRow,
       intervalRow: intervalRow,
       kenBurnsRow: kenBurnsRow,
+      kenBurnsHint: kenBurnsHint,
       displaySelect: displaySelect
     };
 
@@ -3329,6 +3419,20 @@ export function createSettingsPanel(panel, getConfig, options) {
     allAppsHint.textContent = 'Opens a grid of every app on the TV: open any app without pinning it here.';
     appsSection.appendChild(allAppsHint);
 
+    // Number keys: press 1-9 on the remote to open the home row tile at that
+    // position (apps.js numbers the tiles and launches by number).
+    const numberKeyToggle = document.createElement('input');
+    numberKeyToggle.type = 'checkbox';
+    numberKeyToggle.className = 'focusable';
+    numberKeyToggle.dataset.focusIndex = '1191';
+    numberKeyToggle.checked = config.launcher.numberKeyLaunch !== false;
+    appsSection.appendChild(labeledControl('Number keys open home row tiles', numberKeyToggle));
+    const numberKeyHint = document.createElement('p');
+    numberKeyHint.className = 'settings-hint';
+    numberKeyHint.textContent = 'Press 1\u20139 on the remote to open the tile at that position ' +
+      '(1 is the first); each tile shows its number.';
+    appsSection.appendChild(numberKeyHint);
+
     const pinnedList = document.createElement('div');
     pinnedList.className = 'settings-pinned-list';
     appsSection.appendChild(pinnedList);
@@ -3907,6 +4011,7 @@ export function createSettingsPanel(panel, getConfig, options) {
       config.background.mode = displaySelect.value;
       config.background.preset = presetSelect.value;
       config.background.builtin = selectedBuiltinId || '';
+      config.background.aerial = selectedAerialId || '';
       config.background.file = usbFileInput.value.trim();
       // Online catalog is independent of built-in; only apply when source is url.
       config.background.remote = selectedRemoteId || '';
@@ -3925,6 +4030,7 @@ export function createSettingsPanel(panel, getConfig, options) {
       config.background.urls = parseUrlList(urlsInput.value);
       config.background.slideshowIntervalSec = Number(intervalInput.value) || 300;
       config.background.kenBurns = kenBurnsToggle.checked;
+      config.background.shuffle = bgShuffleToggle.checked;
       config.background.overlayOpacity = Number(overlayRange.value) / 100;
 
       config.music.enabled = musicEnabled.checked;
@@ -4001,6 +4107,7 @@ export function createSettingsPanel(panel, getConfig, options) {
       config.launcher.bundledIcons = bundledIconsToggle.checked;
       config.launcher.perfMode = perfModeToggle.checked;
       config.launcher.allAppsTile = allAppsTileToggle.checked;
+      config.launcher.numberKeyLaunch = numberKeyToggle.checked;
       config.launcher.glassTint = glassSelect.value || 'light';
       config.launcher.glassBorder = glassBorderSelect.value || 'white';
       config.launcher.focusColour = focusColourSelect.value || 'warm';

@@ -160,6 +160,11 @@ chmod +x /var/lib/webosbrew/init.d/30-ember-elevate
 > working after a system update, re-root the TV / reinstall Homebrew Channel and
 > repeat steps 1–2.
 
+## Development
+
+Building Ember, running it on LG's webOS TV Simulator and deploying to a TV:
+see [DEVELOPMENT.md](DEVELOPMENT.md).
+
 ## Credits
 
 Ember is based on [gprot42/webos-launch-home](https://github.com/gprot42/webos-launch-home). Thanks to its author and contributors.

@@ -70,6 +70,9 @@ Vitest with the jsdom environment (`vitest.config.mjs`). Tests mirror `src/ts/`:
 - `build.ts` bundles `src/ts/boot.ts`, copies HTML, CSS and assets into `dist/`,
   cache-busts asset URLs, and with `--pack` builds the IPK.
 - `deploy.sh` and `install2tvfrommacos.sh` install to the TV.
+- `simulator.ts` installs LG's webOS TV Simulator and launches `dist/` on it
+  (`npm run sim:setup`, `npm run sim`), the laptop route to a running Ember. See
+  `simulator.md`.
 - The `*.sh` root helpers (`home-watcher.sh`, `boot-launch.sh`,
   `cleanup-voice.sh` and the rest) ship inside the IPK and run on the TV.
 - `generate-aerials.ts` regenerates `src/ts/background/aerials.ts`. The output is
@@ -90,6 +93,9 @@ current `-v8` set ships.
 - `npm run brand` re-renders `scripts/brand.sh` from `src/ts/lib/brand.ts`.
 - `npm test` runs Vitest.
 - `npm run build` bundles to `dist/`. `npm run pack` also produces the IPK.
-- `npm run deploy` builds and installs on the TV.
+- `npm run deploy` builds and installs on the TV. The Simulator is a different
+  route: `npm run sim` (see `simulator.md`).
+- `npm run sim` builds, then runs `dist/` on LG's webOS TV Simulator;
+  `npm run sim:setup` installs that Simulator, and `-- 22` picks a version.
 - `npm run version` bumps the version and stages `version.md` and
   `appinfo.json`.

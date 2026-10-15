@@ -23,6 +23,8 @@ the tree.
 - **`docs/agents/architecture.md`**: how `main.ts` composes the modules, the focus router, and the lifecycle.
 - **`docs/agents/config-and-backups.md`**: the settings tree, schema/migrations, and backup compatibility.
 - **`docs/agents/adding-a-setting.md`**: the end-to-end path for a new setting.
+- **`docs/agents/simulator.md`**: running Ember on LG's webOS TV Simulator instead of the TV.
+- **`DEVELOPMENT.md`**: the human-facing version of the above: commands, the Simulator loop, deploying.
 
 ## Agent skills
 

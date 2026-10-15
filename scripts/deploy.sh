@@ -6,7 +6,6 @@
 #   npm run deploy
 #   npm run deploy -- --no-launch
 #   npm run deploy -- --no-notify
-#   ARES_DEVICE=emulator npm run deploy
 #   LAUNCH=0 npm run deploy
 #
 # Self-contained. Resolves the ares device, runs `npm run pack`, copies the IPK

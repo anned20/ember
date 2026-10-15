@@ -9,6 +9,8 @@
     "pack": "node scripts/build.ts --pack",
     "verify-ipk": "node scripts/verify-ipk.ts",
     "deploy": "bash scripts/deploy.sh",
+    "sim": "npm run build && node scripts/simulator.ts",
+    "sim:setup": "node scripts/simulator.ts setup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p scripts/tsconfig.json",
     "clean": "rm -rf dist",

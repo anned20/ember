@@ -31,9 +31,10 @@ const tsAliases = {
 
 // Dev / source-only assets that must not ship in the .ipk.
 const PACK_EXCLUDE = new Set([
+  'icon-source.svg',
   'icon-source.png',
   'icon-source-clay.png',
-  // Older icon generations — appinfo uses v8 only.
+  // Older icon generations — appinfo uses v9 only.
   'icon-60-v4.png',
   'icon-80-v4.png',
   'icon-130-v4.png',
@@ -46,6 +47,9 @@ const PACK_EXCLUDE = new Set([
   'icon-60-v7.png',
   'icon-80-v7.png',
   'icon-130-v7.png',
+  'icon-60-v8.png',
+  'icon-80-v8.png',
+  'icon-130-v8.png',
   // assets/backgrounds/1920/: Performance-mode wallpapers, downloaded from
   // this repo on demand (see LITE_WALLPAPER_BASE in backgrounds.js), so the
   // IPK only carries the 4K originals.

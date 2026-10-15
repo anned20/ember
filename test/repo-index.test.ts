@@ -12,7 +12,7 @@ const input: RepoInput = {
   tagline: 'Warm, bright, yours.',
   baseUrl: 'https://anned20.github.io/ember',
   sourceUrl: 'https://github.com/anned20/ember',
-  iconUri: 'https://raw.githubusercontent.com/anned20/ember/main/assets/icon-130-v8.png',
+  iconUri: 'https://raw.githubusercontent.com/anned20/ember/main/assets/icon-130-v9.png',
   ipkFile: 'com.ember.launcher_1.2.3_all.ipk',
   ipkSha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
   ipkSize: 1234567

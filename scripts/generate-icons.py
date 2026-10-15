@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Generate Ember icons from the source app mark.
 
-Source art: assets/icon-source.png — full-bleed pictogram (no baked-in title).
+Source art: assets/icon-source.png — full-bleed pictogram (no baked-in title),
+rendered from the editable master in assets/icon-source.svg (rsvg-convert).
 webOS already shows the app title under the tile, so the icon itself stays
 visual-only and readable at 60–80px.
 
 Outputs (versioned filenames so Home drops its path-keyed icon cache):
-  icon.png / icon-80-v8.png (80)
-  icon-mini.png / icon-60-v8.png (60)
-  icon-large.png / icon-130-v8.png (130)
+  icon.png / icon-80-v9.png (80)
+  icon-mini.png / icon-60-v9.png (60)
+  icon-large.png / icon-130-v9.png (130)
 
 Bump ICON_TAG (and appinfo.json paths) whenever the art changes.
 """
@@ -22,7 +23,7 @@ ASSETS = ROOT / "assets"
 SOURCE = ASSETS / "icon-source.png"
 
 # Bump when art changes — must match appinfo.json icon paths.
-ICON_TAG = "v8"
+ICON_TAG = "v9"
 
 # Slight center crop so subject stays inside OS rounded-square masks.
 SAFE_CROP = 0.04

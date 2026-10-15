@@ -26,7 +26,7 @@ const site = path.join(dist, 'repo');
 // the URL its owner pasted. A fork overrides the first one with `--base`.
 const DEFAULT_BASE_URL = 'https://anned20.github.io/ember';
 const SOURCE_URL = 'https://github.com/' + BRAND.repo;
-const ICON_URL = 'https://raw.githubusercontent.com/' + BRAND.repo + '/main/assets/icon-130-v8.png';
+const ICON_URL = 'https://raw.githubusercontent.com/' + BRAND.repo + '/main/assets/icon-130-v9.png';
 
 function argValue(name: string): string | undefined {
   const arg = process.argv.find((value) => value.indexOf(name + '=') === 0);

@@ -87,8 +87,8 @@ Vitest with the jsdom environment (`vitest.config.mjs`). Tests mirror `src/ts/`:
 `app-icons/` holds the bundled launcher icons, `backgrounds/` the wallpapers and
 `manifest.json`, and `music/` the ambient tracks and `manifest.json`. The
 `1920/` performance wallpaper set is downloaded on demand and excluded from the
-IPK. The `*-v4` to `*-v7` icon generations are packaging exclusions, so only the
-current `-v8` set ships.
+IPK. The `*-v4` to `*-v8` icon generations are packaging exclusions, so only the
+current `-v9` set ships.
 
 ## Commands
 

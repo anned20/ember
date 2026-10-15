@@ -169,8 +169,8 @@ ssh_tv "grep -q '\"version\": *\"${VERSION}\"' '${APP_DIR}/appinfo.json'" \
 
 # Same-version reinstalls can report success without replacing assets; compare
 # the shipped icon's size to confirm the files actually landed.
-local_icon_bytes="$(wc -c <"$ROOT_DIR/dist/assets/icon-80-v8.png" | tr -d ' ')"
-remote_icon_bytes="$(ssh_tv "wc -c <'${APP_DIR}/assets/icon-80-v8.png'" 2>/dev/null | tr -d '[:space:]')"
+local_icon_bytes="$(wc -c <"$ROOT_DIR/dist/assets/icon-80-v9.png" | tr -d ' ')"
+remote_icon_bytes="$(ssh_tv "wc -c <'${APP_DIR}/assets/icon-80-v9.png'" 2>/dev/null | tr -d '[:space:]')"
 [[ "$remote_icon_bytes" == "$local_icon_bytes" ]] \
 	|| die "Install reported success but assets were not replaced (icon: ${remote_icon_bytes:-missing} vs ${local_icon_bytes} bytes)."
 printf "  %s\n" "$(c_grn "Installed ${APP_ID} ${VERSION}")"

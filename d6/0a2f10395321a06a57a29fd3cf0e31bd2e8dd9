@@ -1,0 +1,28 @@
+.github/workflows/release.yml
+  h_1a6b0cc05bf029 10-16,21-23,42-51
+DEVELOPMENT.md
+  h_1a6b0cc05bf029 23,79-84
+README.md
+  h_1a6b0cc05bf029 77-88
+docs/agents/layout.md
+  h_1a6b0cc05bf029 72-74,99-100
+package.json
+  h_1a6b0cc05bf029 10
+scripts/build-repo.ts
+  h_1a6b0cc05bf029 1-102
+src/ts/lib/repo-index.ts
+  h_1a6b0cc05bf029 1-100
+test/repo-index.test.ts
+  h_1a6b0cc05bf029 1-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d60a2f10395321a06a57a29fd3cf0e31bd2e8dd9",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

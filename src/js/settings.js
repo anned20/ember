@@ -2514,15 +2514,6 @@ export function createSettingsPanel(panel, getConfig, options) {
       'While the wallpaper moves, tiles and buttons are tinted instead of frosted glass: blurring a moving picture makes TVs stutter.';
     section.appendChild(kenBurnsHint);
 
-    const overlayRange = document.createElement('input');
-    overlayRange.type = 'range';
-    overlayRange.min = '20';
-    overlayRange.max = '60';
-    overlayRange.value = String(Math.round((bg.overlayOpacity || 0.45) * 100));
-    overlayRange.className = 'focusable';
-    overlayRange.dataset.focusIndex = '935';
-    section.appendChild(labeledControl('Overlay opacity', overlayRange));
-
     const oledNote = document.createElement('p');
     oledNote.className = 'oled-note';
     oledNote.textContent = 'On OLED TVs, prefer slideshow or gradients over a single static photo left on screen for long periods.';
@@ -3152,6 +3143,12 @@ export function createSettingsPanel(panel, getConfig, options) {
     const wallpaperLayer = document.getElementById('background-layer');
     const wallpaperImage = wallpaperLayer ? getComputedStyle(wallpaperLayer).backgroundImage : '';
     if (wallpaperImage && wallpaperImage !== 'none') glassPreview.style.backgroundImage = wallpaperImage;
+    // The same dark gradient as the home screen's scrim (#scrim), at the
+    // dimming chosen below, so the slider shows its effect at once.
+    const previewScrim = document.createElement('div');
+    previewScrim.className = 'glass-preview-scrim';
+    previewScrim.setAttribute('aria-hidden', 'true');
+    glassPreview.appendChild(previewScrim);
     function previewTile(title, icon, selected) {
       const tile = document.createElement('div');
       // Not .focused: the focus manager clears that class from everything.
@@ -3231,6 +3228,28 @@ export function createSettingsPanel(panel, getConfig, options) {
     glassSection.appendChild(labeledControl('Selection highlight', focusColourSelect));
     glassSection.appendChild(glassNote('The glow around the tile or button the remote is on, ' +
       'and the colour of the current input.'));
+
+    // Wallpaper dimming: the dark gradient over the wallpaper (strongest along
+    // the bottom, behind the tiles). It was "Overlay opacity" in Background,
+    // 20-60 %, with no preview: Settings hides the home screen, so moving it
+    // showed nothing until Save, and then little.
+    const overlayRange = document.createElement('input');
+    overlayRange.type = 'range';
+    overlayRange.min = '0';
+    overlayRange.max = '80';
+    const savedDim = typeof bg.overlayOpacity === 'number' ? bg.overlayOpacity : 0.45;
+    overlayRange.value = String(Math.round(savedDim * 100));
+    overlayRange.className = 'focusable';
+    overlayRange.dataset.focusIndex = '935';
+    function paintPreviewDim() {
+      previewScrim.style.opacity = String(Number(overlayRange.value) / 100);
+    }
+    overlayRange.addEventListener('input', paintPreviewDim);
+    paintPreviewDim();
+    glassSection.appendChild(labeledControl('Wallpaper dimming', overlayRange));
+    glassSection.appendChild(glassNote('A dark shade over the wallpaper, strongest along the bottom ' +
+      'behind the tiles, so labels stay readable on a bright picture. 0 shows the wallpaper as it is. ' +
+      'The Night and Cinema profiles use their own dimming.'));
     paintGlassPreview();
     panes.look.appendChild(glassSection);
 

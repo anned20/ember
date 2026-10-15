@@ -140,7 +140,9 @@ export function createBackgroundController(elements, getConfig) {
 
   function applyScrim() {
     const config = getConfig();
-    const opacity = (config.background && config.background.overlayOpacity) || 0.45;
+    const set = config.background && config.background.overlayOpacity;
+    // 0 is a value ("no dimming"); it used to fall back to 0.45.
+    const opacity = typeof set === 'number' ? set : 0.45;
     scrim.style.opacity = String(opacity);
   }
 

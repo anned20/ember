@@ -7,7 +7,7 @@ const STORAGE_KEY = 'lounge.config.v1';
 // means, its type or its name? Bump this and add a step to migrateConfig():
 // stored settings and restored backups from older versions both go through
 // those steps (see configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 24;
+export const CONFIG_SCHEMA_VERSION = 25;
 
 export const DEFAULT_CONFIG = {
   version: CONFIG_SCHEMA_VERSION,
@@ -91,8 +91,9 @@ export const DEFAULT_CONFIG = {
     focusColour: 'warm',
     // All apps tile on the home row (opens the grid of every app on the TV).
     allAppsTile: true,
-    // Remote number keys (1-9) open the home row tile at that position.
-    numberKeyLaunch: true,
+    // Remote number keys (1-9) open the home row tile at that position, with
+    // a number badge on each tile. Off unless switched on in Settings -> Apps.
+    numberKeyLaunch: false,
     // Clock placement: left | center (top) | center-middle | right.
     // right leaves room for the settings gear; center-middle is screen centre.
     clockAlign: 'center',
@@ -422,7 +423,7 @@ function migrateConfig(config) {
   // v22: remote number keys open the home row tile at that position.
   if ((config.version || 1) < 22) {
     if (typeof config.launcher.numberKeyLaunch !== 'boolean') {
-      config.launcher.numberKeyLaunch = true;
+      config.launcher.numberKeyLaunch = false;
     }
     config.version = 22;
   }
@@ -443,6 +444,14 @@ function migrateConfig(config) {
       config.background.shuffle = false;
     }
     config.version = 24;
+  }
+
+  // v25: number keys off by default. v22 switched them on for everyone
+  // (0.0.119, out for a few hours); nobody had chosen the badges on every
+  // tile, so they go off here too. Settings -> Apps turns them back on.
+  if ((config.version || 1) < 25) {
+    config.launcher.numberKeyLaunch = false;
+    config.version = 25;
   }
 
   return config;

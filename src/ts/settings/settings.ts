@@ -376,7 +376,7 @@ export function createSettingsPanel(
       {id: 'inputs', label: 'Inputs & channels', sub: 'HDMI inputs, Live TV channels'},
       {id: 'weather', label: 'Weather', sub: 'Forecast and location'},
       {id: 'system', label: 'System', sub: 'Volume levels, Home button, boot, performance'},
-      {id: 'tools', label: 'Tools', sub: 'Backup & restore, TV check'}
+      {id: 'tools', label: 'Tools', sub: 'Backup & restore, TV check, updates'}
     ];
     let activeSettingsTab = 'look';
     const tabButtons: Record<string, HTMLButtonElement> = {};

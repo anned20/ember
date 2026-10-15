@@ -11,7 +11,9 @@ import {
 } from '@luna/luna.js';
 import {findLoungeRoots} from '@lib/usb.js';
 import {qrSvgMarkup} from '@lib/qr-svg.js';
+import {RELEASE_PAGE_URL, fetchLatestRelease, updateVerdict} from '@lib/update-check.js';
 import {BRAND} from '@lib/brand.js';
+import {APP_VERSION} from '@lib/version.js';
 import {
   LAST_BACKUP_KEY, backupLabel, backupWhen, compatibilityNote, lastBackupNote, listBackups,
   restoreReport, settingsBackupText
@@ -39,7 +41,8 @@ interface BackupRecord {
 
 /**
  * The Tools pane: Backup & restore (back up, pick a backup, restore, with the
- * status note) and the TV check (the launcher probe and the shareable report).
+ * status note), the TV check (the launcher probe and the shareable report) and
+ * the update check (the running version and GitHub's newest release).
  *
  * A restore redraws the whole panel, which rebuilds this pane; the report it
  * leaves behind is held in this closure until the next build shows it.
@@ -269,6 +272,74 @@ export function createToolsPane(): PaneHandle {
         } finally {
           checking = false;
           tvCheckBtn.textContent = 'Run TV check';
+        }
+      });
+
+      // Updates: the version that is running, and on demand GitHub's newest
+      // release. The answer is one sentence and, when there is a release to
+      // open, a QR code of its page. Nothing is downloaded or installed, no
+      // setting changes, and no root is needed.
+      const updateSection = createSection('Updates');
+      updateSection.appendChild(createHint('Asks GitHub for the newest ' + BRAND.name +
+        ' release. Nothing is downloaded or installed; when there is a newer one, ' +
+        'scan its code to open the release page on your phone.'));
+      updateSection.appendChild(createHint('You are running ' + BRAND.name + ' ' + APP_VERSION + '.'));
+
+      const updateBtn = createMiniButton({
+        label: 'Check for updates',
+        focusIndex: '1602',
+        className: 'settings-scan-btn',
+        dataset: {updateAction: 'check'}
+      });
+      updateSection.appendChild(updateBtn);
+
+      const updateStatus = createHint('');
+      updateStatus.dataset.updateAction = 'status';
+      updateSection.appendChild(updateStatus);
+
+      // The release page as a code to scan. The tv-check-result class keeps it
+      // hidden until there is something to show.
+      const updateQr = document.createElement('div');
+      updateQr.className = 'tv-check-result';
+      updateQr.dataset.updateAction = 'qr';
+      updateQr.hidden = true;
+      const updateQrCode = document.createElement('div');
+      updateQrCode.className = 'tv-check-qr';
+      updateQr.appendChild(updateQrCode);
+      updateSection.appendChild(updateQr);
+      ctx.panes.tools.appendChild(updateSection);
+
+      let updateBusy = false;
+      updateBtn.addEventListener('click', async function () {
+        if (updateBusy) return;
+        updateBusy = true;
+        // Not disabled: a disabled button drops focus.
+        updateBtn.textContent = 'Checking…';
+        updateStatus.textContent = 'Asking GitHub…';
+        // No code until there is a release to show: a leftover one could be
+        // scanned for the wrong answer.
+        updateQr.hidden = true;
+        updateQrCode.innerHTML = '';
+        try {
+          const verdict = updateVerdict(APP_VERSION, await fetchLatestRelease());
+          if (verdict.state === 'available') {
+            updateStatus.textContent = BRAND.name + ' ' + verdict.latest + ' is available; you have ' +
+              APP_VERSION + '. Update from Homebrew Channel, or scan the code to get the file.';
+            updateQrCode.innerHTML = qrSvgMarkup(RELEASE_PAGE_URL);
+            updateQr.hidden = false;
+          } else if (verdict.state === 'current') {
+            updateStatus.textContent = 'You are up to date: ' + BRAND.name + ' ' + APP_VERSION +
+              ' is the newest release.';
+          } else {
+            updateStatus.textContent = 'GitHub\u2019s newest release has no version ' + BRAND.name +
+              ' can read, so it can\u2019t tell whether you are up to date.';
+          }
+        } catch (err) {
+          updateStatus.textContent = 'Couldn\u2019t reach GitHub. Check that the TV is connected to ' +
+            'the internet and try again.';
+        } finally {
+          updateBusy = false;
+          updateBtn.textContent = 'Check for updates';
         }
       });
     }

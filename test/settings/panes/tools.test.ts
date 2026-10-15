@@ -32,12 +32,21 @@ vi.mock('@lib/qr-svg.js', () => ({
   qrSvgMarkup: vi.fn(() => '<svg></svg>')
 }));
 
+vi.mock('@lib/update-check.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@lib/update-check.js')>();
+  return Object.assign({}, actual, {
+    fetchLatestRelease: vi.fn(async () => 'v0.0.0')
+  });
+});
+
 import {createToolsPane} from '@settings/panes/tools.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {settingsBackupText} from '@settings/settings-backup.js';
 import {readSettingsBackups, runTvCheck} from '@luna/luna.js';
 import {configFromBackup, saveConfig} from '@config/config.js';
 import {findLoungeRoots} from '@lib/usb.js';
+import {fetchLatestRelease} from '@lib/update-check.js';
+import {APP_VERSION} from '@lib/version.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
 import type {Config} from '@lib/types.js';
 
@@ -111,6 +120,15 @@ function pickRow(pane: HTMLElement): HTMLElement {
   return (pane.querySelector('[data-focus-index="1592"]') as HTMLElement).closest('.settings-row') as HTMLElement;
 }
 
+/** The Updates section's check button, result line and release-page code. */
+function updateParts(pane: HTMLElement): {btn: HTMLButtonElement; status: HTMLElement; qr: HTMLElement} {
+  return {
+    btn: pane.querySelector('[data-focus-index="1602"]') as HTMLButtonElement,
+    status: pane.querySelector('[data-update-action="status"]') as HTMLElement,
+    qr: pane.querySelector('[data-update-action="qr"]') as HTMLElement
+  };
+}
+
 describe('tools pane', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
@@ -123,6 +141,8 @@ describe('tools pane', () => {
     vi.mocked(saveConfig).mockReset();
     vi.mocked(findLoungeRoots).mockReset();
     vi.mocked(findLoungeRoots).mockResolvedValue(['/media/usb1']);
+    vi.mocked(fetchLatestRelease).mockReset();
+    vi.mocked(fetchLatestRelease).mockResolvedValue('v0.0.0');
   });
 
   it('builds the backup & restore and TV check sections', () => {
@@ -138,6 +158,12 @@ describe('tools pane', () => {
 
     expect(pane.querySelector('[data-focus-index="1600"]')).not.toBeNull();
     expect((pane.querySelector('[data-focus-index="1601"]') as HTMLElement).hidden).toBe(true);
+
+    // The Updates section shows the running version and the check button, and
+    // no code until there is a release to open.
+    expect(pane.textContent).toContain(BRAND.name + ' ' + APP_VERSION);
+    expect(pane.querySelector('[data-focus-index="1602"]')).not.toBeNull();
+    expect((pane.querySelector('[data-update-action="qr"]') as HTMLElement).hidden).toBe(true);
 
     expect(pane.textContent).toContain('No backup made from this TV yet.');
   });
@@ -189,5 +215,57 @@ describe('tools pane', () => {
     expect(report.textContent).toContain('model: OLED');
     expect(report.textContent).not.toContain('not shown');
     expect(focusNow).toHaveBeenCalledWith(result);
+  });
+
+  it('reports a newer release with a code for its release page', async () => {
+    let release: (tag: string) => void = function () {};
+    vi.mocked(fetchLatestRelease).mockReturnValue(new Promise(function (resolve) { release = resolve; }));
+    const {pane} = buildTools();
+    const {btn, status, qr} = updateParts(pane);
+
+    btn.click();
+    // Not disabled while busy: a disabled button drops focus.
+    expect(btn.textContent).toBe('Checking…');
+    expect(btn.disabled).toBe(false);
+    // A second press while the first is in flight is ignored.
+    btn.click();
+    release('v9.9.9');
+    await waitFor(function () { return status.textContent.indexOf('is available') >= 0; });
+
+    expect(fetchLatestRelease).toHaveBeenCalledTimes(1);
+    expect(status.textContent).toContain(BRAND.name + ' 9.9.9 is available');
+    expect(status.textContent).toContain('you have ' + APP_VERSION);
+    expect(qr.hidden).toBe(false);
+    expect(qr.querySelector('svg')).not.toBeNull();
+    expect(btn.textContent).toBe('Check for updates');
+  });
+
+  it('reports the running version as up to date, with no code', async () => {
+    vi.mocked(fetchLatestRelease).mockResolvedValue(APP_VERSION);
+    const {pane} = buildTools();
+    const {btn, status, qr} = updateParts(pane);
+
+    btn.click();
+    await waitFor(function () { return status.textContent.indexOf('up to date') >= 0; });
+
+    expect(status.textContent).toContain(BRAND.name + ' ' + APP_VERSION);
+    expect(qr.hidden).toBe(true);
+  });
+
+  it('reports a failure to reach GitHub, without a stale code', async () => {
+    vi.mocked(fetchLatestRelease).mockRejectedValue(new Error('HTTP 403'));
+    const {pane} = buildTools();
+    const {btn, status, qr} = updateParts(pane);
+
+    // A code from an earlier check must not survive a failure.
+    (qr.querySelector('.tv-check-qr') as HTMLElement).innerHTML = '<svg></svg>';
+    qr.hidden = false;
+    btn.click();
+    await waitFor(function () { return status.textContent.indexOf('reach GitHub') >= 0; });
+
+    expect(status.textContent).toContain('Couldn\u2019t reach GitHub');
+    expect(status.textContent).not.toContain('up to date');
+    expect(qr.hidden).toBe(true);
+    expect(qr.querySelector('svg')).toBeNull();
   });
 });

@@ -1,0 +1,14 @@
+docs/adr/0002-voice-upgrade-path.md
+  h_1a6b0cc05bf029 1-125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b51b05689f323d5d2395ff6c5e089922ee967b6e",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

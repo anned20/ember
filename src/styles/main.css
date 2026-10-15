@@ -315,6 +315,23 @@ body.all-apps-open #background-layer.gradient-animated {
   z-index: 2;
 }
 
+.settings-run-user {
+  margin: 8px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.settings-run-user::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
 }
 
 .run-user-checking {
@@ -1504,6 +1521,100 @@ body.settings-open .settings-panel * {
   padding: 12px 14px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.35);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 20px;
+  line-height: 1.45;
+  color: #c8e6ff;
+  white-space: pre-wrap;
+}
+
+/* Settings -> TV check: summary text beside its QR code (scan to share). */
+/* Settings -> Pinned apps: an app this TV doesn't have (hidden on the home row). */
+.settings-pinned-row.is-missing .settings-pinned-title,
+.settings-pinned-row.is-missing .settings-app-icon {
+  opacity: 0.55;
+}
+
+/* Settings -> Backup & restore: its two buttons side by side. */
+.settings-backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.tv-check-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #1c1c28;
+}
+
+.tv-check-result[hidden] {
+  display: none;
+}
+
+.tv-check-report {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font: 16px/1.4 monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #f4f0eb;
+}
+
+.tv-check-qr svg {
+  display: block;
+  width: 420px;
+  height: 420px;
+  border-radius: 10px;
+  background: #fff;
+  pointer-events: none;
+}
+
+.settings-loading {
+  margin-top: 32px;
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Solid (non-glass) controls inside settings so rows paint fully. */
+.settings-panel .option-stepper {
+  background: #2a2a38;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.settings-panel .settings-text,
+.settings-panel .settings-textarea,
+.settings-panel .settings-close,
+.settings-panel .settings-save,
+.settings-panel .settings-mini-btn {
+  background: #2a2a38;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f4f0eb;
+}
+
+/* Rows carry the highlight's padding at all times (same 14px footprint as
+   before) so moving the highlight never changes row height — that reflowed
+   the whole panel on every D-pad step. */
+.settings-panel .settings-row {
+  background: transparent;
+  color: #f4f0eb;
+  padding: 6px 14px;
+  margin: 0 -14px 2px;
+  border-radius: 14px;
+}
+
+/* Readonly until Select — must not look disabled while D-pad focusing. */
+.settings-panel input[readonly],
+.settings-panel textarea[readonly] {
+  opacity: 1;
   color: #f4f0eb;
   -webkit-text-fill-color: #f4f0eb;
   cursor: pointer;
@@ -1528,6 +1639,86 @@ body.settings-open .settings-panel * {
 .settings-body::-webkit-scrollbar-thumb {
   min-height: 72px;
   border: 4px solid transparent;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.38);
+  background-clip: padding-box;
+}
+
+.settings-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 214, 170, 0.55);
+  background-clip: padding-box;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 36px 64px 24px 64px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #14141c;
+  color: #f4f0eb;
+}
+
+.settings-header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.settings-header-actions > * + * {
+  margin-left: 12px;
+}
+
+.settings-header-title h2 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.25;
+  max-width: 1200px;
+}
+
+.settings-version {
+  margin: 6px 0 0;
+  font-size: 18px;
+  font-weight: 400;
+  opacity: 0.55;
+  letter-spacing: 0.03em;
+}
+
+.settings-section {
+  margin-bottom: 28px;
+}
+
+.settings-section h3 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  font-weight: 500;
+  color: #ffd6aa;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font-size: 22px;
+}
+
+/*
+ * Author `display: flex/block` rules beat the UA stylesheet's
+ * `[hidden] { display: none }`, so Gradient / USB / Photo rows stayed visible
+ * (and still "filled out") after switching Source. Force-hide inside settings.
+ */
+.settings-panel [hidden] {
+  display: none !important;
+}
+
+/* Larger hit/target for Magic Remote + 10-foot UI. */
+.settings-panel input[type='checkbox'] {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   margin: 0;
   flex-shrink: 0;
   cursor: pointer;
@@ -1575,6 +1766,86 @@ body.settings-open .settings-panel * {
   background: rgba(255, 255, 255, 0.08);
   color: inherit;
   cursor: pointer;
+}
+
+.option-stepper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 320px;
+  max-width: 440px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.14),
+    rgba(255, 255, 255, 0.05)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 8px rgba(0, 0, 0, 0.2),
+    0 6px 20px rgba(0, 0, 0, 0.28);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  color: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.option-stepper .stepper-arrow {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 26px;
+  line-height: 1;
+  color: #ffd6aa;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: opacity 0.15s ease;
+}
+
+.option-stepper .stepper-arrow.is-disabled {
+  opacity: 0.25;
+}
+
+.option-stepper .stepper-label {
+  flex: 1 1 auto;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.option-stepper.focused {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.85),
+    0 0 0 5px rgba(255, 200, 150, 0.55),
+    0 14px 40px rgba(0, 0, 0, 0.45),
+    0 0 34px rgba(255, 190, 130, 0.35);
+  transform: scale(1.04);
+}
+
+/*
+ * Settings scroll highlight: whole row lights up while D-pad/wheel moves
+ * through options (not only a tiny focus ring on the control).
+ */
+.settings-panel .settings-row-highlight {
+  position: relative;
+  z-index: 2;
+  border-radius: 14px;
+  background: rgba(255, 200, 150, 0.16) !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.75),
+    0 0 0 5px rgba(255, 200, 150, 0.45),
+    0 10px 28px rgba(0, 0, 0, 0.35);
 }
 
 .settings-panel .settings-track-row.settings-row-highlight,

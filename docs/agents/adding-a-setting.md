@@ -61,8 +61,8 @@ A few things to keep in mind:
   near the top of `createSettingsPanel`. Sections are appended to their pane.
 - `focusIndex` is the D-pad order key and must be unique within the settings
   body. Sections use numeric ranges (look around 1000, background around 900,
-  AI Voice around 1960 and up), so pick a free value inside the range of the
-  pane you extend.
+  tools from 1960 up), so pick a free value inside the range of the pane you
+  extend.
 - Text fields use `createTextField(...)` with `textField(...)`. A one-off
   control uses `field(path, {read, write})`.
 

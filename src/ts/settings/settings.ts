@@ -14,7 +14,6 @@ import {createLookPane} from './panes/look.js';
 import {createScreensaverPane} from './panes/screensaver.js';
 import {createSystemPane} from './panes/system.js';
 import {createAppsPane} from './panes/apps.js';
-import {createAiPane} from './panes/ai.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from './pane.js';
 export type {SettingsPanelOptions} from './pane.js';
 import {createHint} from './components/index.js';
@@ -53,9 +52,6 @@ export function createSettingsPanel(
   // does not immediately hit Close and dismiss the panel.
   let openGuardUntil = 0;
   let guardHandler: ((event: Event) => void) | null = null;
-  // The AI Voice pane's cleanup (its SuperGrok poll and retry timers), so
-  // hiding or redrawing the panel can stop them.
-  let aiPaneDispose: (() => void) | null = null;
 
   function clearOpenGuard() {
     openGuardUntil = 0;
@@ -97,10 +93,6 @@ export function createSettingsPanel(
     opening = false;
     renderGen += 1; // invalidate any in-flight render
     clearOpenGuard();
-    if (aiPaneDispose) {
-      aiPaneDispose();
-      aiPaneDispose = null;
-    }
     panel.hidden = true;
     document.body.classList.remove('settings-open');
     if (options.onClose) options.onClose();
@@ -285,12 +277,6 @@ export function createSettingsPanel(
   }
 
   async function render(gen: number): Promise<void> {
-    // A redraw (a restore) rebuilds the panel: stop the previous AI Voice
-    // pane's timers before the new one is built.
-    if (aiPaneDispose) {
-      aiPaneDispose();
-      aiPaneDispose = null;
-    }
     const config = getConfig();
     const effective = applyActiveProfile(config);
     // Every plain control is bound to the config path it edits; Save runs
@@ -390,7 +376,6 @@ export function createSettingsPanel(
       {id: 'inputs', label: 'Inputs & channels', sub: 'HDMI inputs, Live TV channels'},
       {id: 'weather', label: 'Weather', sub: 'Forecast and location'},
       {id: 'system', label: 'System', sub: 'Volume levels, Home button, boot, performance'},
-      {id: 'ai', label: 'AI Voice', sub: 'Voice assistant, keys, models'},
       {id: 'tools', label: 'Tools', sub: 'Backup & restore, TV check'}
     ];
     let activeSettingsTab = 'look';
@@ -497,18 +482,6 @@ export function createSettingsPanel(
     // Settings opens on Look.
     setSettingsTab('look', {force: true});
 
-    // The AI Voice pane: the voice-service status, the provider/key/model
-    // cluster and the SuperGrok sign-in flow. It is rebuilt with the panel and
-    // reads its dependencies from the context; its Save override writes voice
-    // settings and returns "handled" so the field table is not collected.
-    const aiPaneHandle = createAiPane();
-    paneHandles.ai = aiPaneHandle;
-    aiPaneHandle.build(context);
-    // The sign-in modal is a full-panel overlay, so it hangs off the panel
-    // build stage rather than the pane box.
-    if (aiPaneHandle.overlay) next.appendChild(aiPaneHandle.overlay);
-    aiPaneDispose = aiPaneHandle.dispose;
-
     // The Look pane: the active Profile picker, the Background section (drawn
     // by its own pane) and the Glass and Clock & icons sections. The root
     // injects the Background handle so the profile picker still drives its note
@@ -559,8 +532,8 @@ export function createSettingsPanel(
     saveBtn.dataset.focusIndex = String(indexInRow('settings-header', 0));
     saveBtn.textContent = 'Save';
     saveBtn.addEventListener('click', function () {
-      // A pane with its own write path (the AI Voice pane) handles Save first
-      // and says whether it did; the rest collect the plain field table.
+      // A pane with its own write path handles Save first and says whether it
+      // did; the rest collect the plain field table.
       const activePane = paneHandles[activeSettingsTab];
       if (activePane && activePane.onSave && activePane.onSave(context, config, saveBtn)) {
         return;
@@ -604,13 +577,6 @@ export function createSettingsPanel(
     hide: hide,
     isVisible: function () { return visible; },
     handleBack: function () {
-      const modal = panel && panel.querySelector('.ai-oauth-modal:not([hidden])') as HTMLElement | null;
-      if (modal) {
-        const cancelBtn = modal.querySelector('.ai-oauth-modal-cancel') as HTMLElement | null;
-        if (cancelBtn) cancelBtn.click();
-        else modal.hidden = true;
-        return true;
-      }
       // Back from inside a category goes to the category list; Back on the
       // list (or the header) closes Settings.
       const active = document.activeElement;

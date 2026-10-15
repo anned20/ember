@@ -18,4 +18,3 @@ export * from './mini-button.js';
 export * from './app-row.js';
 export * from './gallery.js';
 export * from './option-stepper.js';
-export * from './provider-picker.js';

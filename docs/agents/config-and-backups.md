@@ -76,7 +76,7 @@ older}`, or `null` if `data` is not Ember settings. It:
      `{why: 'newer'}`. It is kept but unused.
    - A key the backup is missing is filled from defaults.
 3. Restores this TV's own device settings (`DEVICE_SETTINGS`) from `current`.
-   They belong to the TV rather than the person, for example `voiceEnabled`.
+   They belong to the TV rather than the person, for example `terminalChecked`.
 
 The `skipped` list drives the restore status line (`restoreReport`).
 

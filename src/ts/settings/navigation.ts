@@ -85,11 +85,6 @@ export function createSettingsNavigation(
     return host.focusItem(el);
   }
 
-  function oauthModalOpen(): boolean {
-    const modal = document.querySelector<HTMLElement>('.ai-oauth-modal');
-    return !!(modal && !modal.hidden);
-  }
-
   /**
    * Settings controls in on-screen (DOM) order, before the visibility check.
    * Settings never sorts by focusIndex: those numbers collide and drift, which
@@ -98,17 +93,14 @@ export function createSettingsNavigation(
   function settingsCandidates(): NavEl[] {
     const panel = panelEl();
     if (!panel) return [];
-    const modal = oauthModalOpen()
-      ? document.querySelector<NavEl>('.ai-oauth-modal:not([hidden])')
-      : null;
     const list = panel.querySelectorAll<NavEl>('.focusable:not([disabled])');
     return Array.prototype.filter.call(list, function (item: NavEl) {
-      if (modal) return !!(item.closest && item.closest('.ai-oauth-modal') === modal);
       // Never step into controls inside an inactive tab pane.
       const pane = item.closest && item.closest('.settings-tab-pane');
       if (pane && !pane.classList.contains('is-active')) return false;
-      // Wheel / up-down must not land on the other tab (that used to flip
-      // AI Voice back to Home). Left/Right on the tab bar uses settingsTabButtons.
+      // Wheel / up-down must not land on the other tab (that used to flip the
+      // visible category back to Home). Left/Right on the tab bar uses
+      // settingsTabButtons.
       if (item.classList && item.classList.contains('settings-tab') &&
           !item.classList.contains('active')) {
         return false;
@@ -168,7 +160,7 @@ export function createSettingsNavigation(
   function activateSettingsTabButton(tabBtn: NavEl | null): boolean {
     if (!tabBtn) return false;
     // Tell Settings to flip the pane. Do not rely on focus() — Magic Remote
-    // pointer / wheel used to focus Home and yank AI Voice back.
+    // pointer / wheel used to focus Home and yank the pane back.
     try {
       tabBtn.dispatchEvent(new CustomEvent('settings-activate-tab', {bubbles: true}));
     } catch (err) { /* ignore */ }

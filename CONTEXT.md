@@ -63,8 +63,8 @@ backgrounds and music, all on top of the webOS Luna service bus.
 - **Home watcher**: the root init.d script that relaunches Ember when
   stock Home appears (`launchOnHome`). **Boot on start** (`bootOnStart`) does
   the same at power-on.
-- **Homebrew Channel** (root): app scanning, the Home watcher, boot-on-start and
-  the voice assistant all need the elevated Luna service.
+- **Homebrew Channel** (root): app scanning, the Home watcher and boot-on-start
+  all need the elevated Luna service.
 - **Activity**: counters of what happened in the background (relaunches,
   returns, closes, reclaims, foreground ids), shown under Settings → Tools →
   TV check (`activity.ts`).
@@ -102,7 +102,9 @@ backgrounds and music, all on top of the webOS Luna service bus.
   setting of the wrong kind is a **skip** (`why: 'type'`) and keeps the TV's
   current value. One from a newer version is `why: 'newer'`, kept but unused.
 - **Device settings**: settings that belong to the TV rather than the person
-  (`DEVICE_SETTINGS`), kept as-is across a restore (for example `voiceEnabled`).
+  (`DEVICE_SETTINGS`), kept as-is across a restore (for example
+  `terminalChecked`). An old config's `voiceEnabled` key is ignored, not
+  migrated: Ember has no voice assistant any more.
 - **Launch Home import** (first-run import): on the first start with no stored
   config, Ember imports the newest Launch Home backup it can find, so an upgrade
   keeps its setup (`importLegacySettings`). Launch Home backups also stay
@@ -110,12 +112,12 @@ backgrounds and music, all on top of the webOS Luna service bus.
 
 ## Voice
 
-- **Voice assistant**: Ember's optional assistant for the Magic Remote's
-  Voice button (`voice/`), off by default.
-- **Daemon**: the Python process that talks to the voice provider and the TV
-  (`voice/daemon`, runs as root).
-- **Voice card** (overlay): the hidden `com.ember.voice` app that
-  shows and speaks the answer (`voice/overlay`).
-- **Provider**: the assistant backend, one of Grok/xAI, Gemini or OpenRouter.
+- **Voice teardown**: the one-shot removal of the voice assistant an earlier
+  Ember installed (`scripts/cleanup-voice.sh`). Ember has no voice assistant any
+  more; on its first start after the update it stops the old daemon, removes the
+  boot hook (`hooks.voice`) and gives LG's voice services back. The config
+  directory with the provider keys and the sign-in is left for the standalone
+  **Ember Voice** app, which also reuses the old card's app id. See
+  `docs/adr/0002-voice-upgrade-path.md`.
 
 See `docs/agents/` for how each of these is wired and extended.

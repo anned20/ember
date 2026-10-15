@@ -13,8 +13,8 @@ callbacks.
 
 `createApp()` composes in dependency order:
 
-1. Leaf modules that need only config and the DOM: `voiceIndicator`, `weather`,
-   `background`, `music`.
+1. Leaf modules that need only config and the DOM: `weather`, `background`,
+   `music`.
 2. Rows and surfaces: `channelStrip`, `inputs`, `customScreensaver`, `settings`,
    `apps`, `focus`, `allApps`.
 
@@ -79,7 +79,7 @@ keys, the wheel and photo-tile Select to `settings/navigation.ts`
 sequential/row movement, the photo picker and value adjustment; the router lends
 it `focusItem`/`isFocusable`/`noteRemoteNav` as a host, so focus painting keeps
 one owner. The router imports the standalone `settings/text-gate.ts`, not the
-panel, so importing it no longer loads the panel and its ten panes.
+panel, so importing it no longer loads the panel and its eight panes.
 
 For key handling, `focus.ts` calls the callbacks `main.ts` passes: `onNumber`,
 `onBack`, `onRed`/`onGreen`/`onBlue`, `onVolume*` and `onChannel*`. Those
@@ -102,11 +102,12 @@ app's context menu). Unmarked controls keep clicking on keydown.
      interactive immediately. A cold boot replaces stock Home, so speed beats
      completeness.
   3. `await refreshAll()` fills in tiles, background, inputs, channels and music.
-  4. `customScreensaver.start()`, the voice indicator and listener, the
-     document and window listeners, and `foregroundWatcher.start()`.
-  5. `whenIdle(...)` runs the before-update backup, terminal auto-pin, weather,
-     root hook re-assert and voice sync. These do root or network work and must
-     not compete with the first paint.
+  4. `customScreensaver.start()`, the document and window listeners, and
+     `foregroundWatcher.start()`.
+  5. `whenIdle(...)` runs the after-update work (the old voice assistant's
+     teardown, the before-update backup), the terminal auto-pin, weather and the
+     root hook re-assert. These do root or network work and must not compete with
+     the first paint.
 - `stop()` clears every timer, stops the watcher and modules, and runs the
   `removers` (listeners registered through the local `on()` helper). Register
   all listeners and timers through `on()` and `laterTracked()` so `stop()`

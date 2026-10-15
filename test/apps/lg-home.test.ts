@@ -7,7 +7,7 @@ function ids(points: Array<{id: string}>): string[] {
 }
 
 describe('lgHomeAppsToAdd', () => {
-  it('keeps Ember, its voice card and a leftover Launch Home out of the dock', () => {
+  it('keeps Ember, anything else in its id namespace and a leftover Launch Home out of the dock', () => {
     expect(ids([
       {id: 'com.ember.launcher'},
       {id: 'com.ember.voice'},

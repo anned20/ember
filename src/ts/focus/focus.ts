@@ -308,7 +308,7 @@ export function createFocusManager(
   }
 
   function rememberHomeFocus(el: FocusEl): void {
-    if (el.closest && el.closest('.ai-oauth-modal, .all-apps')) return;
+    if (el.closest && el.closest('.all-apps')) return;
     homeFocus = {el: el, key: homeKey(el)};
   }
 
@@ -406,11 +406,9 @@ export function createFocusManager(
       : null;
     if (!target) return;
     if (target.dataset && target.dataset.pointerFocus === 'off') return;
-    const oauthModal = document.querySelector('.ai-oauth-modal:not([hidden])');
-    if (oauthModal && !(oauthModal.contains && oauthModal.contains(target))) return;
     if (shouldIgnorePointerTarget(target)) return;
     // Settings: don't let the cursor steal focus onto the other tab (Home)
-    // while the user is in AI Voice content — that flipped the pane back.
+    // while the user is in the pane content — that flipped the pane back.
     if (document.body.classList.contains('settings-open') &&
         target.classList && target.classList.contains('settings-tab') &&
         !target.classList.contains('active')) {

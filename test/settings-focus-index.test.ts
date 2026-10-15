@@ -1,10 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('@luna/luna.js', () => ({
-  disableVoice: vi.fn(async () => ({})),
-  enableVoice: vi.fn(async () => ({otherVoice: ''})),
   execRoot: vi.fn(async () => ''),
-  isVoiceRunning: vi.fn(async () => false),
   listLaunchPoints: vi.fn(async () => []),
   readSettingsBackups: vi.fn(async () => []),
   runTvCheck: vi.fn(async () => ''),
@@ -36,16 +33,6 @@ vi.mock('@home/inputs.js', () => ({
   fetchInputDevices: vi.fn(async () => []),
   inputFromId: vi.fn((id: string) => ({id: id, label: id})),
   isTvInputId: vi.fn((id: string) => id === 'TV')
-}));
-
-vi.mock('@voice/voice-config.js', () => ({
-  getVoiceConfig: vi.fn(async () => ({})),
-  getVoiceStatus: vi.fn(async () => ({})),
-  setVoiceConfig: vi.fn(async () => ({})),
-  startSuperGrokLogin: vi.fn(async () => ({})),
-  cancelSuperGrokLogin: vi.fn(async () => ({})),
-  signOutSuperGrok: vi.fn(async () => ({})),
-  importSuperGrokAuth: vi.fn(async () => ({}))
 }));
 
 import {loadConfig} from '@config/config.js';

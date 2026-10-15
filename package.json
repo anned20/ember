@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p scripts/tsconfig.json",
     "clean": "rm -rf dist",
     "version:set": "node scripts/set-version.ts",
-    "version": "node scripts/set-version.ts && git add version.md appinfo.json voice/overlay/appinfo.json"
+    "version": "node scripts/set-version.ts && git add version.md appinfo.json"
   },
   "devDependencies": {
     "@procot/webostv": "^1.2.6",

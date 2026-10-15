@@ -3,7 +3,6 @@
 const crypto = require('crypto');
 const esbuild = require('esbuild');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const {execSync} = require('child_process');
 
@@ -22,7 +21,6 @@ const tsAliases = {
   '@apps': path.join(root, 'src/ts/apps'),
   '@background': path.join(root, 'src/ts/background'),
   '@music': path.join(root, 'src/ts/music'),
-  '@voice': path.join(root, 'src/ts/voice'),
   '@settings': path.join(root, 'src/ts/settings'),
   '@focus': path.join(root, 'src/ts/focus'),
   '@home': path.join(root, 'src/ts/home'),
@@ -73,8 +71,8 @@ function copyRecursive(src: string, dest: string) {
 async function build() {
   const version = readVersion();
 
-  // Keep the generated brand modules (scripts/brand.sh, voice/daemon/brand.py)
-  // in step with src/ts/lib/brand.ts before they are copied below.
+  // Keep the generated brand module (scripts/brand.sh) in step with
+  // src/ts/lib/brand.ts before it is copied below.
   require('./generate-brand.ts');
 
   fs.rmSync(dist, {recursive: true, force: true});
@@ -132,10 +130,9 @@ async function build() {
     'diagnostics.sh',
     // Home -> Channels chip: Live TV's channel list, now playing, switching.
     'channels.sh',
-    // Settings -> AI Voice -> Voice assistant on/off, and its run loop.
-    'voice-run.sh',
-    'enable-voice.sh',
-    'disable-voice.sh'
+    // First start after the update: stop the voice assistant an earlier Ember
+    // installed (scripts/cleanup-voice.sh).
+    'cleanup-voice.sh'
   ].forEach(function (name) {
     const src = path.join(root, 'scripts', name);
     if (fs.existsSync(src)) {
@@ -144,18 +141,6 @@ async function build() {
       try { fs.chmodSync(dest, 0o755); } catch (err) { /* windows */ }
     }
   });
-
-  // Voice assistant: the daemon (run as root by voice-run.sh once voice is
-  // turned on) and its settings template. Sources only, no __pycache__.
-  const voiceSrc = path.join(root, 'voice');
-  const voiceDist = path.join(dist, 'voice');
-  fs.mkdirSync(path.join(voiceDist, 'daemon'), {recursive: true});
-  for (const name of fs.readdirSync(path.join(voiceSrc, 'daemon'))) {
-    if (name.endsWith('.py')) {
-      fs.copyFileSync(path.join(voiceSrc, 'daemon', name), path.join(voiceDist, 'daemon', name));
-    }
-  }
-  fs.copyFileSync(path.join(voiceSrc, 'config.example.json'), path.join(voiceDist, 'config.example.json'));
 
   const appinfo = JSON.parse(fs.readFileSync(path.join(root, 'appinfo.json'), 'utf8'));
   appinfo.version = version;
@@ -174,44 +159,6 @@ async function build() {
   console.log('Built dist/');
 }
 
-/**
- * Pack the voice card (voice/overlay, app com.ember.voice) and put it inside
- * Ember as voice/card.pkg; enable-voice.sh installs it on the TV. Not named
- * .ipk: ares-package leaves out every *.ipk file.
- */
-function packVoiceCard(aresPackage: string, version: string) {
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'ember-voice-card-'));
-  try {
-    const stage = path.join(work, 'app');
-    copyRecursive(path.join(root, 'voice/overlay'), stage);
-    const cardInfo = JSON.parse(fs.readFileSync(path.join(stage, 'appinfo.json'), 'utf8'));
-    cardInfo.version = version;
-    cardInfo.id = BRAND.voiceAppId;
-    cardInfo.title = BRAND.voiceName;
-    cardInfo.vendor = BRAND.vendor;
-    cardInfo.appDescription = BRAND.voiceTagline;
-    fs.writeFileSync(path.join(stage, 'appinfo.json'), JSON.stringify(cardInfo, null, 2) + '\n');
-    const cardIndex = path.join(stage, 'index.html');
-    if (fs.existsSync(cardIndex)) {
-      fs.writeFileSync(cardIndex, fs.readFileSync(cardIndex, 'utf8')
-        .replace(/<title>[^<]*<\/title>/, '<title>' + BRAND.voiceName + '</title>'));
-    }
-    fs.copyFileSync(path.join(root, 'assets/icon-80-v8.png'), path.join(stage, 'icon.png'));
-    const out = path.join(work, 'out');
-    fs.mkdirSync(out);
-    execSync(`"${aresPackage}" --no-minify -o "${out}" "${stage}"`, {stdio: 'inherit'});
-    const ipk = path.join(out, cardInfo.id + '_' + version + '_all.ipk');
-    if (!fs.existsSync(ipk)) {
-      throw new Error('ares-package did not produce ' + ipk);
-    }
-    verifyIpk(ipk);
-    fs.copyFileSync(ipk, path.join(dist, 'voice', 'card.pkg'));
-    fs.writeFileSync(path.join(dist, 'voice', 'card-version'), version + '\n');
-  } finally {
-    fs.rmSync(work, {recursive: true, force: true});
-  }
-}
-
 async function main() {
   await build();
 
@@ -223,7 +170,6 @@ async function main() {
     if (!fs.existsSync(aresPackage)) {
       throw new Error('Missing @webos-tools/cli — run npm install');
     }
-    packVoiceCard(aresPackage, readVersion());
     execSync(`"${aresPackage}" --no-minify .`, {cwd: dist, stdio: 'inherit'});
 
     const packed = JSON.parse(fs.readFileSync(path.join(dist, 'appinfo.json'), 'utf8'));

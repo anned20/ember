@@ -55,7 +55,7 @@ export function createToolsPane(): PaneHandle {
       // restore and each update. Backups from other versions restore as far as
       // they fit (config.js, configFromBackup). Needs root (Homebrew Channel).
       const backupSection = createSection('Backup & restore');
-      backupSection.appendChild(createHint('Saves all your ' + BRAND.name + ' settings: apps, wallpaper, music, clock, weather and profiles. The copy on the TV is kept if you reinstall ' + BRAND.name + '. A plugged-in USB drive gets a copy too (' + BRAND.usbFolder + '/' + BRAND.usbSettingsFile + '), to move your settings to another TV. ' + BRAND.name + ' also keeps a copy by itself before each restore and each update. Backups made by other versions of ' + BRAND.name + ' can be restored too: you’re told what fitted. Voice keys and sign-in aren’t included; they stay on the TV.'));
+      backupSection.appendChild(createHint('Saves all your ' + BRAND.name + ' settings: apps, wallpaper, music, clock, weather and profiles. The copy on the TV is kept if you reinstall ' + BRAND.name + '. A plugged-in USB drive gets a copy too (' + BRAND.usbFolder + '/' + BRAND.usbSettingsFile + '), to move your settings to another TV. ' + BRAND.name + ' also keeps a copy by itself before each restore and each update. Backups made by other versions of ' + BRAND.name + ' can be restored too: you’re told what fitted.'));
       const backupActions = document.createElement('div');
       backupActions.className = 'settings-backup-actions';
       const backupBtn = createMiniButton({

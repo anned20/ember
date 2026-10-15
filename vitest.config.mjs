@@ -10,7 +10,6 @@ const alias = {
   '@apps': path.join(root, 'src/ts/apps'),
   '@background': path.join(root, 'src/ts/background'),
   '@music': path.join(root, 'src/ts/music'),
-  '@voice': path.join(root, 'src/ts/voice'),
   '@settings': path.join(root, 'src/ts/settings'),
   '@focus': path.join(root, 'src/ts/focus'),
   '@home': path.join(root, 'src/ts/home'),

@@ -113,9 +113,6 @@ export const DEFAULT_CONFIG: Config = {
     // When true, press of the Home button (stock home coming to the
     // foreground after another app) relaunches Ember. Off by default.
     launchOnHome: false,
-    // Ember's voice assistant (Settings -> AI Voice). It takes over the
-    // remote's Voice button, so it is off until turned on.
-    voiceEnabled: false,
     // TV system volume (0–100) while Ember is in the foreground.
     // null = don't change it (new installs); existing configs keep their level.
     volumeAtHome: null,
@@ -503,8 +500,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 // Settings that belong to this TV rather than to the person: a restore keeps
-// the TV's own values. voiceEnabled installs things on the TV.
-const DEVICE_SETTINGS: string[][] = [['launcher', 'voiceEnabled'], ['launcher', 'terminalChecked']];
+// the TV's own values. terminalChecked records what this TV has installed.
+// An old config's voiceEnabled is not listed (Ember has no voice assistant any
+// more) and is simply ignored.
+const DEVICE_SETTINGS: string[][] = [['launcher', 'terminalChecked']];
 
 function valueAt(obj: unknown, path: string[]): unknown {
   let cur: unknown = obj;

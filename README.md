@@ -74,6 +74,18 @@ sdk-to-year mapping are recorded in
 
 ## Install
 
+### From Homebrew Channel
+
+Ember publishes its own Homebrew Channel repository. Add it once under **Homebrew Channel → Settings → Add repository**:
+
+```
+https://anned20.github.io/ember/apps.json
+```
+
+Ember then appears in Homebrew Channel's app list, installs on the TV with one press, and offers an **Update** for each new version. Updates keep your settings, and the address never changes. No computer and no SSH needed.
+
+### From a computer
+
 Requires a rooted LG TV with [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) and SSH enabled.
 
 ```bash

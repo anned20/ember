@@ -1,0 +1,66 @@
+CONTEXT.md
+  h_1a6b0cc05bf029 66-67,105-107,115-121
+README.md
+  h_1a6b0cc05bf029 28,34,72
+docs/agents/adding-a-setting.md
+  h_1a6b0cc05bf029 64-65
+docs/agents/architecture.md
+  h_1a6b0cc05bf029 16-17,82,105-110
+docs/agents/config-and-backups.md
+  h_1a6b0cc05bf029 79
+docs/agents/layout.md
+  h_1a6b0cc05bf029 56-60,70-71,73-74,90,94-95
+package.json
+  h_1a6b0cc05bf029 16
+scripts/build.ts
+  h_1a6b0cc05bf029 74-75,133-135
+scripts/cleanup-voice.sh
+  h_1a6b0cc05bf029 2-19,26-31,33-47,49,51,53-55,59,63-65,67,69-76,87-90
+scripts/generate-brand.ts
+  h_1a6b0cc05bf029 3-5,15,29,31-32
+scripts/set-version.ts
+  h_1a6b0cc05bf029 47
+src/styles/main.css
+  h_1a6b0cc05bf029 270
+src/ts/apps/apps.ts
+  h_1a6b0cc05bf029 27
+src/ts/apps/lg-home.ts
+  h_1a6b0cc05bf029 22
+src/ts/config/config.ts
+  h_1a6b0cc05bf029 503-506
+src/ts/focus/focus.ts
+  h_1a6b0cc05bf029 311,411
+src/ts/lib/brand-codegen.ts
+  h_1a6b0cc05bf029 2-5,25-41
+src/ts/lib/brand.ts
+  h_1a6b0cc05bf029 4-6,8-9,12-13,33,41-42,57-59,67-68,92
+src/ts/luna/luna-transport.ts
+  h_1a6b0cc05bf029 44
+src/ts/luna/luna.ts
+  h_1a6b0cc05bf029 284,523-528,530,532-535
+src/ts/main.ts
+  h_1a6b0cc05bf029 12,36,117,1177-1184,1193-1195,1349-1353,1356
+src/ts/settings/navigation.ts
+  h_1a6b0cc05bf029 101-103,163
+src/ts/settings/panes/tools.ts
+  h_1a6b0cc05bf029 58
+src/ts/settings/settings.ts
+  h_1a6b0cc05bf029 535-536
+test/apps/lg-home.test.ts
+  h_1a6b0cc05bf029 10
+test/brand.test.ts
+  h_1a6b0cc05bf029 5,7-9,14
+test/main.test.ts
+  h_1a6b0cc05bf029 4-5,8-33,37-39,56-77,86,160-203
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "32c82eb3849444b810f638a0a8910db4d704955b",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

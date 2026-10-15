@@ -324,7 +324,7 @@ export function createToolsPane(): PaneHandle {
           const verdict = updateVerdict(APP_VERSION, await fetchLatestRelease());
           if (verdict.state === 'available') {
             updateStatus.textContent = BRAND.name + ' ' + verdict.latest + ' is available; you have ' +
-              APP_VERSION + '. Scan the code to open the release page on your phone.';
+              APP_VERSION + '. Update from Homebrew Channel, or scan the code to get the file.';
             updateQrCode.innerHTML = qrSvgMarkup(RELEASE_PAGE_URL);
             updateQr.hidden = false;
           } else if (verdict.state === 'current') {

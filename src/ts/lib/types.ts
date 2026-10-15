@@ -100,6 +100,7 @@ export interface LauncherConfig {
   numberKeyLaunch: boolean;
   clockAlign: string;
   clockSize: string;
+  clockShadow: string;
   timezone: string;
   iconSize: string;
   iconAlign: string;

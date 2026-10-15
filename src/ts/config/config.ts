@@ -9,7 +9,7 @@ const STORAGE_KEY = BRAND.storage.config;
 // means, its type or its name? Bump this and add an entry to CONFIG_MIGRATIONS
 // keyed by the new version: stored settings and restored backups from older
 // versions both run through those steps (see migrateConfig / configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 24;
+export const CONFIG_SCHEMA_VERSION = 25;
 
 export const DEFAULT_CONFIG: Config = {
   version: CONFIG_SCHEMA_VERSION,
@@ -100,6 +100,8 @@ export const DEFAULT_CONFIG: Config = {
     clockAlign: 'center',
     // Clock type size: small | medium | large | x-large | xx-large.
     clockSize: 'large',
+    // Clock shadow for legibility over light wallpapers: off | soft | strong.
+    clockShadow: 'strong',
     timezone: '',
     iconSize: 'medium',
     iconAlign: 'center',
@@ -430,6 +432,13 @@ export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
     if (!config.background) config.background = {} as BackgroundConfig;
     if (typeof config.background.shuffle !== 'boolean') {
       config.background.shuffle = false;
+    }
+  },
+
+  // v25: clock shadow, so bright wallpapers no longer wash the clock out.
+  25: function addClockShadow(config) {
+    if (['off', 'soft', 'strong'].indexOf(config.launcher.clockShadow) < 0) {
+      config.launcher.clockShadow = 'strong';
     }
   }
 };

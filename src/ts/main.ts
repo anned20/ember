@@ -753,6 +753,16 @@ export function createApp(): AppLifecycle {
       'clock-size-xx-large'
     );
     document.body.classList.add('clock-size-' + size);
+
+    const shadowAllowed: Record<string, number> = {off: 1, soft: 1, strong: 1};
+    const shadow = shadowAllowed[launcher.clockShadow] ? launcher.clockShadow : 'strong';
+
+    document.body.classList.remove(
+      'clock-shadow-off',
+      'clock-shadow-soft',
+      'clock-shadow-strong'
+    );
+    document.body.classList.add('clock-shadow-' + shadow);
   }
 
   function updateClock() {

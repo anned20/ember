@@ -1,4 +1,4 @@
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 import {
   CONFIG_MIGRATIONS, CONFIG_SCHEMA_VERSION, DEFAULT_CONFIG, migrateConfig
 } from '@config/config.js';
@@ -25,6 +25,18 @@ describe('config migration registry', () => {
     delete (config.background as Partial<Config['background']>).aerial;
     CONFIG_MIGRATIONS[23](config);
     expect(config.background.aerial).toBe('aerial-apple-east-asia');
+  });
+
+  it('backfills the clock shadow without overruling an explicit choice', () => {
+    const missing = configAt(24);
+    delete (missing.launcher as Partial<Config['launcher']>).clockShadow;
+    migrateConfig(missing);
+    expect(missing.launcher.clockShadow).toBe('strong');
+
+    const chosen = configAt(24);
+    chosen.launcher.clockShadow = 'off';
+    migrateConfig(chosen);
+    expect(chosen.launcher.clockShadow).toBe('off');
   });
 
   it('applies only the steps above the stored version, in order', () => {

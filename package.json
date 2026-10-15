@@ -7,6 +7,7 @@
     "brand": "node scripts/generate-brand.ts",
     "build": "node scripts/build.ts",
     "pack": "node scripts/build.ts --pack",
+    "repo": "node scripts/build-repo.ts",
     "verify-ipk": "node scripts/verify-ipk.ts",
     "deploy": "bash scripts/deploy.sh",
     "sim": "npm run build && node scripts/simulator.ts",

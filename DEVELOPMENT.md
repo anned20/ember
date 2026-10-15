@@ -20,6 +20,7 @@ them.
 | --- | --- |
 | `npm run build` | Bundles `src/` into `dist/`. |
 | `npm run pack` | Builds, then writes the installable `.ipk` to `dist/`. |
+| `npm run repo` | Writes `dist/repo/`, the Homebrew Channel repository, from the packed IPK. |
 | `npm run sim` | Builds, then runs `dist/` on LG's webOS TV Simulator. |
 | `npm run sim:setup` | Installs that Simulator (once). |
 | `npm run deploy` | Packs, copies the IPK over SSH, installs and launches it on the TV. |
@@ -75,7 +76,12 @@ TV needs SSH reachable, and Ember's root-only features need root on it.
 `npm run typecheck` and `npm test` both need to pass. The same two run on every
 push and pull request (`.github/workflows/test.yml`), and a `v*` tag builds the
 IPK and attaches it to a GitHub release
-(`.github/workflows/release.yml`).
+(`.github/workflows/release.yml`). That same tag deploys `dist/repo/` to GitHub
+Pages, the repository a TV adds in Homebrew Channel. Pages fills the deploy step
+in only once it is switched to the **GitHub Actions** source under Settings →
+Pages; the release and its IPK are published either way. The repository's
+address is fixed — renaming the repo or moving Pages breaks every TV that saved
+it.
 
 Commits follow the Conventional Commits format in [AGENTS.md](AGENTS.md):
 `<type>(<scope>): <summary>`. Brand values (names, app ids, TV paths) live only

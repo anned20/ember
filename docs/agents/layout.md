@@ -69,6 +69,9 @@ Vitest with the jsdom environment (`vitest.config.mjs`). Tests mirror `src/ts/`:
 
 - `build.ts` bundles `src/ts/boot.ts`, copies HTML, CSS and assets into `dist/`,
   cache-busts asset URLs, and with `--pack` builds the IPK.
+- `build-repo.ts` (`npm run repo`) writes `dist/repo/` — the Homebrew Channel
+  repository the release workflow publishes to GitHub Pages — from the packed
+  IPK. The documents themselves are built by `src/ts/lib/repo-index.ts`.
 - `deploy.sh` and `install2tvfrommacos.sh` install to the TV.
 - `simulator.ts` installs LG's webOS TV Simulator and launches `dist/` on it
   (`npm run sim:setup`, `npm run sim`), the laptop route to a running Ember. See
@@ -93,6 +96,8 @@ current `-v8` set ships.
 - `npm run brand` re-renders `scripts/brand.sh` from `src/ts/lib/brand.ts`.
 - `npm test` runs Vitest.
 - `npm run build` bundles to `dist/`. `npm run pack` also produces the IPK.
+- `npm run repo` writes `dist/repo/` (the Homebrew Channel repository) from the
+  packed IPK. The release workflow runs it and deploys it to GitHub Pages.
 - `npm run deploy` builds and installs on the TV. The Simulator is a different
   route: `npm run sim` (see `simulator.md`).
 - `npm run sim` builds, then runs `dist/` on LG's webOS TV Simulator;

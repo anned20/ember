@@ -17,6 +17,8 @@ const STORAGE_PREFIX = 'ember';
 
 const NAME = 'Ember';
 const APP_ID = 'com.ember.launcher';
+// The public repository, owner/name: the update check's API and release URL.
+const REPO = 'anned20/ember';
 
 const APPS_DIR = '/media/developer/apps/usr/palm/applications';
 const APP_DIR = APPS_DIR + '/' + APP_ID;
@@ -29,6 +31,7 @@ export const BRAND = {
 
   appId: APP_ID,
   slug: SLUG,
+  repo: REPO,
 
   // Where the app and its config folder live on the TV.
   appDir: APP_DIR,

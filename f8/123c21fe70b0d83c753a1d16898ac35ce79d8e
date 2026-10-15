@@ -1,0 +1,30 @@
+AGENTS.md
+  h_1a6b0cc05bf029 26-27
+DEVELOPMENT.md
+  h_1a6b0cc05bf029 1-87
+README.md
+  h_1a6b0cc05bf029 163-167
+docs/agents/layout.md
+  h_1a6b0cc05bf029 73-75,96-99
+docs/agents/simulator.md
+  h_1a6b0cc05bf029 1-50
+package.json
+  h_1a6b0cc05bf029 12-13
+scripts/simulator.ts
+  h_1a6b0cc05bf029 1-139
+src/ts/lib/simulator-download.ts
+  h_1a6b0cc05bf029 1-64
+test/simulator-download.test.ts
+  h_1a6b0cc05bf029 1-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f8123c21fe70b0d83c753a1d16898ac35ce79d8e",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

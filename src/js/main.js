@@ -293,6 +293,17 @@ function applySystemVolume(level) {
   return setSystemVolume(level).catch(function () { /* best-effort */ });
 }
 
+// The home volume, settled before the music starts: fired and forgotten, the
+// Luna call landed a moment after the first notes, so each start played a
+// split second at the TV's previous (louder) level and then dropped. Capped
+// so a slow or missing audio service never holds up the home screen.
+function settleHomeVolume() {
+  return Promise.race([
+    applyHomeVolume(),
+    new Promise(function (resolve) { setTimeout(resolve, 1500); })
+  ]);
+}
+
 function applyHomeVolume() {
   const config = getConfig();
   return applySystemVolume(config.launcher && config.launcher.volumeAtHome);
@@ -906,9 +917,9 @@ function handleResume() {
   }
   // Debounce stacked resume events (visibility + webOSRelaunch + focus).
   clearTimeout(resumeTimer);
-  resumeTimer = setTimeout(function () {
+  resumeTimer = setTimeout(async function () {
     const config = getConfig();
-    applyHomeVolume();
+    await settleHomeVolume();
     if (config.music && config.music.resumeOnReturn) {
       music.fadeInAndResume();
     }
@@ -1211,8 +1222,8 @@ async function init() {
   setInterval(updateClock, 30000);
   bindAppScrollHints();
 
-  applyHomeVolume();
   applyScreensaverSetting();
+  await settleHomeVolume();
   await refreshAll();
   weather.start();
 

@@ -3,6 +3,7 @@ import {resetSdkVersionCache} from '@luna/platform.js';
 import {setLunaAdapter} from '@luna/luna-transport.js';
 import {BRAND} from '@lib/brand.js';
 import {APP_VERSION} from '@lib/version.js';
+import {loadConfig, saveConfig} from '@config/config.js';
 import type {WebOSServiceRequestOptions} from '@lib/types.js';
 
 // The wallpaper and the music player do real media work (image probes, decoders)
@@ -155,6 +156,25 @@ describe('platform gate', () => {
 
     setIntervalSpy.mockRestore();
     clearIntervalSpy.mockRestore();
+  });
+
+  it('drives the clock shadow from the config', async () => {
+    document.body.innerHTML = FIXTURE;
+    setDeviceInfo('10');
+    const config = loadConfig();
+    config.launcher.clockShadow = 'off';
+    saveConfig(config);
+
+    const {createApp} = await import('../src/ts/main.js');
+    const app = createApp();
+    app.start();
+
+    await vi.waitFor(function () {
+      expect(document.body.classList.contains('clock-shadow-off')).toBe(true);
+    });
+    expect(document.body.classList.contains('clock-shadow-strong')).toBe(false);
+
+    app.stop();
   });
 });
 

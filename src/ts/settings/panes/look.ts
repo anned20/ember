@@ -236,6 +236,26 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
       });
       clockSection.appendChild(labeledControl('Clock size', clockSizeSelect));
 
+      const clockShadowSelect = createOptionStepper({
+        focusIndex: 1094,
+        choices: [
+          {value: 'off', label: 'Off'},
+          {value: 'soft', label: 'Soft'},
+          {value: 'strong', label: 'Strong'}
+        ],
+        path: 'launcher.clockShadow',
+        // Normalise unknown legacy values to the default.
+        parse: function (raw) {
+          return ['off', 'soft', 'strong'].indexOf(raw) < 0 ? 'strong' : raw;
+        },
+        format: function (value) {
+          const shadow = String(value);
+          return ['off', 'soft', 'strong'].indexOf(shadow) < 0 ? 'strong' : shadow;
+        },
+        binder: ctx.binder
+      });
+      clockSection.appendChild(labeledControl('Clock shadow', clockShadowSelect));
+
       const timezoneSelect = createOptionStepper({
         focusIndex: 1004,
         choices: TIMEZONE_OPTIONS.map(function (option) {

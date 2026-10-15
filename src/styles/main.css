@@ -499,6 +499,27 @@ body.clock-right .clock-stack {
   display: none;
 }
 
+/* Shadow — driven by body.clock-shadow-off / .clock-shadow-strong. "soft" is
+   the base text-shadow above, so it needs no rule. */
+body.clock-shadow-off .clock,
+body.clock-shadow-off .clock-date {
+  text-shadow: none;
+}
+
+body.clock-shadow-strong .clock {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.8),
+    0 2px 8px rgba(0, 0, 0, 0.7),
+    0 6px 26px rgba(0, 0, 0, 0.6);
+}
+
+body.clock-shadow-strong .clock-date {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.8),
+    0 2px 8px rgba(0, 0, 0, 0.65),
+    0 5px 20px rgba(0, 0, 0, 0.55);
+}
+
 /* Size — driven by body.clock-size-small / medium / large / x-large / xx-large */
 body.clock-size-small .clock {
   font-size: 36px;

@@ -39,6 +39,7 @@ vi.mock('@home/inputs.js', () => ({
 import {loadConfig} from '@config/config.js';
 import {createSettingsPanel} from '@settings/settings.js';
 import type {Config} from '@lib/types.js';
+import type {OptionStepperElement} from '@settings/components/index.js';
 
 async function waitFor(selector: string, root: ParentNode, ms = 3000): Promise<Element> {
   const start = Date.now();
@@ -107,5 +108,36 @@ describe('settings panel integration', () => {
     expect(saved[0].launcher.showClock).toBe(false);
     const stored = JSON.parse(localStorage.getItem(BRAND.storage.config) || '{}');
     expect(stored.launcher.showClock).toBe(false);
+  });
+
+  it('shows a bad clock shadow as Strong and saves the chosen one', async () => {
+    const config = loadConfig();
+    config.launcher.clockShadow = 'nonsense';
+    localStorage.setItem(BRAND.storage.config, JSON.stringify(config));
+
+    const panel = document.createElement('div');
+    panel.id = 'settings-panel';
+    document.body.appendChild(panel);
+
+    const saved: Config[] = [];
+    const handle = createSettingsPanel(panel, loadConfig, {
+      onSave: function (config) { saved.push(config); }
+    });
+    handle.show();
+
+    // Scope past the wallpaper photo tiles, which share this pane's index space.
+    const shadow = await waitFor('.option-stepper[data-focus-index="1094"]', panel) as OptionStepperElement;
+    expect(shadow.dataset.value).toBe('strong');
+
+    shadow.__step(-1);
+    expect(shadow.dataset.value).toBe('soft');
+
+    const saveBtn = await waitFor('.settings-save', panel);
+    // Wait out the open guard, which swallows the click sequence that opened us.
+    await new Promise(function (resolve) { setTimeout(resolve, 800); });
+    (saveBtn as HTMLButtonElement).click();
+
+    expect(saved.length).toBe(1);
+    expect(saved[0].launcher.clockShadow).toBe('soft');
   });
 });

@@ -260,10 +260,11 @@ install_ipk_ssh() {
 	expected_icon_bytes="$(wc -c <"$SCRIPT_DIR/dist/assets/icon.png" | tr -d ' ')"
 
 	luna_oneshot_tv 'luna://com.webos.applicationManager/closeByAppId' "{\"id\":\"${APP_ID}\"}"
-	# closeByAppId only *suspends* the web app; webOS resumes the same in-memory
-	# page (old code) on the next launch, so a plain reinstall never loads new
-	# JS/HTML. Hard-kill the WAM process for this app to force a true cold start.
-	ssh_tv "pkill -f '${APP_ID}' 2>/dev/null; true" >/dev/null 2>&1 || true
+	# No pkill here. The installer (appInstallService dev/install) closes a
+	# running Launch Home itself and the next launch loads the new files, same
+	# version or not (checked on webOS 25). And `pkill -f <app id>` matched
+	# every process with the app folder in its command line: the voice
+	# service (voice-run.sh, voice_daemon.py) and the SSH shell running it.
 
 	ssh_tv "rm -rf '${remote_dir}' && mkdir -p '${remote_dir}' && chmod 777 '${remote_dir}'"
 	scp -o BatchMode=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=no \

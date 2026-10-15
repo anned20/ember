@@ -78,9 +78,14 @@ APP_DIR="/media/developer/apps/usr/palm/applications/$APP_ID"
 section "Installing to TV"
 wait_for_ssh || die "SSH to $TARGET failed."
 
-# closeByAppId only suspends the web app; a plain reinstall then resumes the old
-# in-memory page, so hard-kill the WAM process to force a true cold start.
-ssh_tv "pkill -f '$APP_ID' 2>/dev/null; true" >/dev/null 2>&1 || true
+# Close a running Launch Home before replacing its files. The installer
+# (appInstallService dev/install) closes it as well and the next launch loads
+# the new files, same version or not (checked on webOS 25). Never
+# `pkill -f <app id>`: it matched every process with the app folder in its
+# command line, including the voice service (voice-run.sh, voice_daemon.py)
+# and the SSH shell running it.
+close_payload="$(printf '{"id":"%s"}' "$APP_ID")"
+ssh_tv "if [ -x /usr/bin/luna-send ]; then luna-send -n 1 -w 8000 -f luna://com.webos.applicationManager/closeByAppId '$close_payload'; else /usr/bin/luna-send-pub -n 1 -w 8000 luna://com.webos.applicationManager/closeByAppId '$close_payload'; fi" >/dev/null 2>&1 || true
 
 ssh_tv "rm -rf '$REMOTE_TMP' && mkdir -p '$REMOTE_TMP' && chmod 777 '$REMOTE_TMP'"
 printf "  Uploading %s…\n" "$(basename "$IPK")"

@@ -1,0 +1,28 @@
+appinfo.json
+  h_1a6b0cc05bf029 8-10
+assets/icon-source.svg
+  h_1a6b0cc05bf029 1-42
+docs/agents/layout.md
+  h_1a6b0cc05bf029 90-91
+scripts/build-repo.ts
+  h_1a6b0cc05bf029 29
+scripts/build.ts
+  h_1a6b0cc05bf029 34,37,50-52
+scripts/deploy.sh
+  h_1a6b0cc05bf029 172-173
+scripts/generate-icons.py
+  h_1a6b0cc05bf029 4-5,10-12,26
+test/repo-index.test.ts
+  h_1a6b0cc05bf029 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e96d64dd601afa4f0d265b40e7bb596e241b7222",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

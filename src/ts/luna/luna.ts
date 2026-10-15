@@ -56,12 +56,6 @@ export interface TvChannelNow {
   programme: string;
 }
 
-/** Result of enabling the voice assistant. */
-export interface VoiceEnableResult {
-  listening: boolean;
-  otherVoice: string;
-}
-
 /** The foreground app id, or '' when unknown. */
 export interface ForegroundInfo {
   appId: string;
@@ -287,9 +281,7 @@ const DIAGNOSTICS_SCRIPT = HOME_WATCHER_APP_DIR + '/diagnostics.sh';
 const BOOT_LAUNCH_ENABLE = HOME_WATCHER_APP_DIR + '/enable-boot-launch.sh';
 const BOOT_LAUNCH_DISABLE = HOME_WATCHER_APP_DIR + '/disable-boot-launch.sh';
 const CHANNELS_SCRIPT = HOME_WATCHER_APP_DIR + '/channels.sh';
-const VOICE_ENABLE = HOME_WATCHER_APP_DIR + '/enable-voice.sh';
-const VOICE_DISABLE = HOME_WATCHER_APP_DIR + '/disable-voice.sh';
-const VOICE_RUN = HOME_WATCHER_APP_DIR + '/voice-run.sh';
+const VOICE_CLEANUP = HOME_WATCHER_APP_DIR + '/cleanup-voice.sh';
 
 /**
  * Install + start the root Home-button watcher so Home opens Ember even when
@@ -528,58 +520,19 @@ function rootScriptOutput(execPromise: Promise<LunaResponse>): Promise<string> {
 }
 
 /**
- * Settings -> AI Voice -> Voice assistant on: installs the voice card and a
- * boot hook and starts Ember's own voice daemon (scripts/enable-voice.sh).
- * Safe to repeat; after an update it restarts the daemon on the new code. The
- * first run installs the card, so allow a minute or two.
- * Resolves {listening, otherVoice}; otherVoice is 'running' or 'installed' when
- * VoxRelay is also on the TV (Ember leaves it alone), else ''.
+ * Tear down the voice assistant an earlier Ember installed
+ * (scripts/cleanup-voice.sh): stop its daemon, remove the boot hook that would
+ * restart it and give LG's voice services back. Run once after the update, from
+ * the idle pass. It is a quiet no-op on a TV that never enabled voice, and it
+ * keeps the provider keys and the answer card. Resolves true once the init.d
+ * hook is gone, so an interrupted run is retried at the next start.
  */
-export function enableVoice(): Promise<VoiceEnableResult> {
+export function cleanupVoice(): Promise<boolean> {
   const cmd =
-    'chmod 755 "' + VOICE_ENABLE + '" "' + VOICE_RUN + '" 2>/dev/null; sh "' +
-    VOICE_ENABLE + '"';
-  return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootVoiceEnable)).then(function (out) {
-    if (out.indexOf('missing_voice') >= 0) {
-      throw new Error('voice files are missing from ' + BRAND.name);
-    }
-    if (out.indexOf('missing_python') >= 0) {
-      throw new Error('this TV has no Python 3');
-    }
-    if (out.indexOf('card_install_failed') >= 0) {
-      throw new Error('could not install the voice card');
-    }
-    if (out.indexOf('enabled') < 0) {
-      throw new Error(out.split('\n')[0] || 'voice assistant did not start');
-    }
-    const other = /other_voice=voxrelay:(\w+)/.exec(out);
-    return {
-      listening: out.indexOf('enabled listening') >= 0,
-      otherVoice: other ? other[1] : ''
-    };
-  });
-}
-
-/** True while Ember's voice run loop is alive (voice-run.sh status). */
-export function isVoiceRunning() {
-  const cmd = 'sh "' + VOICE_RUN + '" status 2>/dev/null || echo stopped';
-  return execRoot(cmd, TIMEOUTS.rootVoiceProbe).then(function (res) {
-    return readExecStdout(res).indexOf('running') === 0;
-  });
-}
-
-/**
- * Voice assistant off: stops the daemon and removes the boot hook and voice
- * card (scripts/disable-voice.sh). Its settings and sign-in stay on the TV.
- */
-export function disableVoice() {
-  const cmd =
-    'chmod 755 "' + VOICE_DISABLE + '" 2>/dev/null; sh "' + VOICE_DISABLE + '"';
-  return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootVoiceDisable)).then(function (out) {
-    if (out.indexOf('disabled') < 0) {
-      throw new Error(out.split('\n')[0] || 'voice assistant did not stop');
-    }
-    return true;
+    'chmod 755 "' + VOICE_CLEANUP + '" 2>/dev/null; sh "' + VOICE_CLEANUP + '"';
+  return rootScriptOutput(execRoot(cmd, TIMEOUTS.rootVoiceCleanup)).then(function (out) {
+    // "clean" (nothing left to do) or "cleaned" (the hook is gone either way).
+    return out.indexOf('clean') >= 0;
   });
 }
 

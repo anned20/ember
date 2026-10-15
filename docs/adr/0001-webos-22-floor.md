@@ -64,8 +64,6 @@ hard crash.
 - `getSdkVersion` / `isSupportedPlatform` in `platform.ts` are the one place
   the supported-platform contract is decided and enforced.
 - The background/music packaged-asset paths use a single URL form per image.
-- The hidden voice overlay app follows the same floor (`webOSSystem` instead of
-  `PalmSystem`).
 
 ## Alternatives considered
 

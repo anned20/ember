@@ -9,7 +9,7 @@ import type {BackgroundController} from '@background/background.js';
 import {createMusicPlayer} from '@music/music.js';
 import type {MusicPlayer} from '@music/music.js';
 import {createAppGrid} from '@apps/apps.js';
-import type {AppGrid, LaunchableApp} from '@apps/apps.js';
+import type {AppGrid} from '@apps/apps.js';
 import {createInputRow} from '@home/inputs.js';
 import type {InputRowHandle} from '@home/inputs.js';
 import {createChannelStrip} from '@home/channels.js';
@@ -22,8 +22,6 @@ import {createCustomScreensaver} from '@background/screensaver.js';
 import type {CustomScreensaver} from '@background/screensaver.js';
 import {createWeatherPanel} from '@home/weather.js';
 import type {WeatherPanelHandle} from '@home/weather.js';
-import {createVoiceIndicator} from '@voice/voice-indicator.js';
-import type {VoiceIndicator} from '@voice/voice-indicator.js';
 import {
   getForegroundApp,
   launchApp,
@@ -35,7 +33,7 @@ import {
   disableHomeWatcher,
   enableBootLaunch,
   disableBootLaunch,
-  enableVoice,
+  cleanupVoice,
   writeAutoBackup,
   readSettingsBackups,
   setSystemVolume,
@@ -49,8 +47,6 @@ import {describeDetectedPlatform, renderUnsupportedSurface} from '@lib/unsupport
 import {isTerminalAppId, getAppIdCandidates} from '@apps/app-icons.js';
 import {setPreferBundledIcons} from '@apps/app-catalog.js';
 import {setLiteImages} from '@background/background-sources.js';
-import {addVoiceListener, setVoiceWsEnabled, stopVoiceWs} from '@voice/voice-ws.js';
-import {resolveVoiceLaunch} from '@voice/voice-launch.js';
 import {activity, noteForeground} from '@lib/activity.js';
 import {settingsBackupText, importLegacySettings} from '@settings/settings-backup.js';
 import {APP_VERSION} from '@lib/version.js';
@@ -77,7 +73,6 @@ interface HomeElements {
   audio: HTMLAudioElement;
   settingsPanel: HTMLElement | null;
   toast: HTMLElement | null;
-  voiceIndicator: HTMLElement | null;
   customScreensaver: HTMLElement;
   weatherPanel: HTMLElement | null;
   onToast?: (message: string) => void;
@@ -119,7 +114,7 @@ const GLASS_BORDERS = ['glass', 'none', 'black', 'blue', 'purple', 'green', 'war
 const FOCUS_COLOURS = ['white', 'border', 'blue', 'purple', 'green', 'gold'];
 
 // Run `fn` once the first paint and the current work are done, so startup side
-// work (root hooks, voice, backups) does not compete with bringing the screen
+// work (root hooks, backups) does not compete with bringing the screen
 // up on a cold boot.
 function whenIdle(fn: () => void) {
   if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
@@ -226,8 +221,6 @@ export function createApp(): AppLifecycle {
   const storedSettingsAtStart = readStoredConfigText();
   let baseConfig: Config = loadConfig();
   let visible = true;
-  let lastVoiceLaunchKey = '';
-  let lastVoiceLaunchAt = 0;
   // Set when a Launch Home backup was imported on this first start, for the toast.
   let importedNotice = '';
 
@@ -261,7 +254,6 @@ export function createApp(): AppLifecycle {
     audio: document.getElementById('ambient-audio')! as HTMLAudioElement,
     settingsPanel: document.getElementById('settings-panel'),
     toast: document.getElementById('toast'),
-    voiceIndicator: document.getElementById('voice-indicator'),
     customScreensaver: document.getElementById('custom-screensaver')!,
     weatherPanel: document.getElementById('weather-panel')
   };
@@ -269,7 +261,6 @@ export function createApp(): AppLifecycle {
   // Modules are built by buildModules() after the platform gate has passed, so
   // an unsupported TV never constructs them (some subscribe to the Luna bus on
   // construction). The handles are assigned before any callback can run.
-  let voiceIndicator!: VoiceIndicator;
   let weather!: WeatherPanelHandle;
   let background!: BackgroundController;
   let music!: MusicPlayer;
@@ -405,7 +396,6 @@ export function createApp(): AppLifecycle {
   // the Luna bus on construction, so this must not run on an unsupported TV.
   function buildModules() {
     // Leaf modules: no collaborators beyond config and the DOM.
-    voiceIndicator = createVoiceIndicator(elements.voiceIndicator);
     weather = createWeatherPanel(elements.weatherPanel, getConfig, {
       isVisible: function () { return visible; }
     });
@@ -495,11 +485,6 @@ export function createApp(): AppLifecycle {
         // Shown over the still-open panel; dismissing it hands focus back to
         // Settings via reclaimInput().
         customScreensaver.preview();
-      },
-      // Settings -> AI Voice turned the voice assistant on/off (already applied
-      // and saved there).
-      onVoiceEnabledChange: function (on: boolean) {
-        setVoiceWsEnabled(on);
       },
       // Inputs list: offer Live TV when the TV has channels tuned.
       hasTvChannels: function () {
@@ -700,21 +685,6 @@ export function createApp(): AppLifecycle {
           ? 'Boot on start failed: ' + short
           : 'Boot on start failed — check root / Homebrew Channel');
       }
-    });
-  }
-
-  // Voice assistant (Settings -> AI Voice). Re-running the enable at start is
-  // cheap when all is current, and restarts the daemon on the code this Launch
-  // Home version ships after an update.
-  function syncVoice(config: Config | null | undefined) {
-    if (!(config && config.launcher && config.launcher.voiceEnabled)) {
-      return Promise.resolve();
-    }
-    return enableVoice().catch(function (err: ErrorLike) {
-      console.error(err);
-      const detail = err && err.message ? String(err.message) : '';
-      showToast('Voice assistant failed to start' +
-        (detail ? ': ' + detail.replace(/\s+/g, ' ').slice(0, 80) : ''));
     });
   }
 
@@ -1082,7 +1052,6 @@ export function createApp(): AppLifecycle {
     visible = true;
     foregroundWatcher.noteResume();
     setAppInactive(false);
-    voiceIndicator.start();
     // Debounce stacked resume events (visibility + webOSRelaunch + focus).
     clearTimeout(resumeTimer ?? undefined);
     resumeTimer = setTimeout(function () {
@@ -1117,7 +1086,6 @@ export function createApp(): AppLifecycle {
       // Our surface was backgrounded, so any app we launched took the foreground
       // normally. This disarms the ghost-focus recovery for that launch.
       foregroundWatcher.noteHidden();
-      voiceIndicator.hide();
       customScreensaver.hide();
       channelStrip.close();
       return;
@@ -1206,7 +1174,14 @@ export function createApp(): AppLifecycle {
     importedNotice = 'Imported your previous settings.';
   }
 
-  function keepSettingsFromBeforeUpdate() {
+  /**
+   * The first start after an update. Version bookkeeping first, then the two
+   * things it triggers: the voice teardown (an earlier Ember may have installed
+   * a root daemon and a boot hook) and the before-update settings backup. The
+   * teardown is fired before the checks below can return early, because a TV
+   * whose stored settings are unreadable still needs its daemon stopped.
+   */
+  function workAfterUpdate() {
     let last: string | null = null;
     try {
       last = localStorage.getItem(LAST_RUN_VERSION_KEY);
@@ -1215,6 +1190,9 @@ export function createApp(): AppLifecycle {
     } catch (err) {
       return;
     }
+    // Optional, and needs root: without Homebrew Channel the daemon keeps
+    // running until there is one, exactly as the backup below does.
+    cleanupVoice().catch(function () { /* no root / desktop preview */ });
     if (!storedSettingsAtStart) return;  // first install: nothing to keep
     let stored = null;
     try {
@@ -1235,24 +1213,6 @@ export function createApp(): AppLifecycle {
   function triggerScreensaverPreview(reason: string) {
     console.log('[' + BRAND.slug + '] screensaver preview:', reason || '');
     customScreensaver.preview();
-  }
-
-  // Voice app launch. A voice assistant on the local socket sends appLaunch
-  // ("launch Prime Video") or transcriptFinal; launching from this foreground
-  // web app is what reliably brings native apps (Prime Video) to the front.
-  // The assistant opens its own app itself and doesn't send appLaunch for it.
-  function voiceLaunchDeduped(spec: LaunchableApp) {
-    if (!spec) return;
-    const key = String((spec.ids && spec.ids[0]) || spec.id || spec.title || '');
-    const now = Date.now();
-    if (key && key === lastVoiceLaunchKey && now - lastVoiceLaunchAt < 4000) {
-      return;
-    }
-    lastVoiceLaunchKey = key;
-    lastVoiceLaunchAt = now;
-    apps.launchApp(spec).catch(function (err) {
-      console.error(err);
-    });
   }
 
   // Register a listener and remember how to remove it, so stop() leaves the
@@ -1287,7 +1247,6 @@ export function createApp(): AppLifecycle {
     if (stopped) return;
     buildModules();
     built = true;
-    setVoiceWsEnabled(!!(baseConfig.launcher && baseConfig.launcher.voiceEnabled));
 
     await applyUsbOverrides();
     if (stopped) return;
@@ -1348,35 +1307,6 @@ export function createApp(): AppLifecycle {
       } catch (errR) { /* ignore */ }
     });
 
-    // Mic + AI badge while a voice assistant is listening (top-right).
-    voiceIndicator.start();
-
-    const removeVoiceListener = addVoiceListener(function (eventName, payload) {
-      if (eventName === 'appLaunch') {
-        const ids: string[] = [];
-        if (payload && payload.id) ids.push(payload.id);
-        if (payload && Array.isArray(payload.ids)) {
-          payload.ids.forEach(function (id) {
-            if (id && ids.indexOf(id) < 0) ids.push(id);
-          });
-        }
-        if (!ids.length) return;
-        voiceLaunchDeduped({
-          id: ids[0],
-          launchId: ids[0],
-          ids: ids,
-          title: (payload && payload.spoken) || ids[0]
-        });
-        return;
-      }
-      if (eventName === 'transcriptFinal') {
-        const text = payload && (payload.text || payload.transcript);
-        const spec = resolveVoiceLaunch(text, getConfig());
-        if (spec) voiceLaunchDeduped(spec);
-      }
-    });
-    removers.push(removeVoiceListener);
-
     // Retry ambient autoplay shortly after startup (webOS often allows play once
     // the app surface is fully focused, even if the first play() was blocked).
     laterTracked(function () { music.unlockAutoplay(); }, 600);
@@ -1416,13 +1346,14 @@ export function createApp(): AppLifecycle {
     on(window, 'pagehide', handlePowerOff);
     foregroundWatcher.start();
 
-    // Side work that the first usable screen does not need: the before-update
-    // settings backup, the terminal auto-pin, the weather timers, and re-asserting
-    // the root/voice hooks. Each runs root/network work through Homebrew Channel,
-    // which is itself still starting up on a cold boot, so run them once idle.
+    // Side work that the first usable screen does not need: the after-update
+    // work (the old voice assistant's teardown, the before-update settings
+    // backup), the terminal auto-pin, the weather timers, and re-asserting the
+    // root hooks. Each runs root/network work through Homebrew Channel, which
+    // is itself still starting up on a cold boot, so run them once idle.
     whenIdle(function () {
       if (stopped) return;
-      keepSettingsFromBeforeUpdate();
+      workAfterUpdate();
       autoEnableTerminal().then(function (added) {
         // The idle pass runs after the first dock render; if it pinned the
         // terminal, redraw so the tile shows now instead of next boot.
@@ -1435,7 +1366,6 @@ export function createApp(): AppLifecycle {
       if (shouldInterceptHome(cfg.launcher) || (cfg.launcher && cfg.launcher.bootOnStart)) {
         syncRootHooks(cfg, {quiet: true}).catch(function () { /* ignore */ });
       }
-      syncVoice(cfg);
     });
   }
 
@@ -1466,8 +1396,6 @@ export function createApp(): AppLifecycle {
     if (settings.isVisible()) settings.hide();
     weather.stop();
     customScreensaver.stop();
-    voiceIndicator.stop();
-    stopVoiceWs();
     background.destroy();
     music.stop();
     focus.destroy();

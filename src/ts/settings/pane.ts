@@ -20,7 +20,6 @@ export interface SettingsPanelOptions {
   onRendered?: () => void;
   onSave?: (config: Config) => void;
   onToast?: (message: string) => void;
-  onVoiceEnabledChange?: (on: boolean) => void;
   onPreviewScreensaver?: () => void;
   hasTvChannels?: () => boolean;
   focusControl?: (el: Element) => boolean;

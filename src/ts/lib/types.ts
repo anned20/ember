@@ -110,7 +110,6 @@ export interface LauncherConfig {
   bootOnStart: boolean;
   returnOnAppExit: boolean;
   launchOnHome: boolean;
-  voiceEnabled: boolean;
   volumeAtHome: number | null;
   volumeOnAppLaunch: number | null;
   screensaverMinutes: number;
@@ -196,9 +195,6 @@ export interface BackupFitResult {
   newer: boolean;
   older: boolean;
 }
-
-/** Callback registered with voice-ws addVoiceListener. */
-export type VoiceListener = (eventName: string, payload: Record<string, any>) => void;
 
 /* -------------------------------------------------------------------------- */
 /* webOS device globals + build define                                         */

@@ -19,7 +19,7 @@ export interface LaunchPoint {
   [key: string]: unknown;
 }
 
-// Not for the dock: Ember itself (and its voice card) plus any leftover Launch
+// Not for the dock: Ember itself plus any leftover Launch Home entries — the
 // Home install, inputs and Live TV (Ember's inputs row has those), and TV
 // Settings (it has its own tile).
 const ID_NAMESPACES = [BRAND_ID_NAMESPACE, BRAND.legacy.appIdNamespace]

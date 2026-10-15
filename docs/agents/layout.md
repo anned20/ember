@@ -10,7 +10,6 @@ whole tree. Read this after `AGENTS.md`.
 | `src/` | The app itself: `index.html`, `styles/main.css`, and the TypeScript in `src/ts/`. |
 | `test/` | Vitest tests, mirroring the module layout under `src/ts/`. |
 | `scripts/` | Build, packaging, deploy and root/TV helper scripts (TypeScript and shell). |
-| `voice/` | The optional voice assistant: Python daemon (`daemon/`) and the hidden overlay app (`overlay/`). |
 | `assets/` | Shipped resources: app icons, wallpapers, ambient music, TV icons. |
 | `docs/` | Human docs (`background-sources.md`), screenshots, and the agent docs in `docs/agents/`. |
 | `dist/` | The generated build output. Never edit or commit it (git-ignored). |
@@ -27,7 +26,6 @@ grouped by domain:
 | `apps/` | `@apps` | App discovery, icons, the app grid and the All-apps overlay, LG-home import. |
 | `background/` | `@background` | Background sources (built-in, USB, online), aerial clips, the in-app screensaver. |
 | `music/` | `@music` | The ambient music player and its built-in track manifest. |
-| `voice/` | `@voice` | Voice-assistant websocket client, launch resolution and the mic indicator. |
 | `settings/` | `@settings` | The Settings panel (the composition root in `settings.ts`), the panel's key/wheel navigation (`navigation.ts`), backup/restore, field bindings, the text-field gate (`text-gate.ts`) and the pane seam (`pane.ts`). UI components live in `settings/components/`, category panes in `settings/panes/`. |
 | `focus/` | `@focus` | Focus manager and the row model it moves over. |
 | `home/` | `@home` | Home-screen rows and panels: TV inputs, channels, weather. |
@@ -55,12 +53,11 @@ and have no alias, so refer to them relatively.
 
 The app's identity — display names, tagline, vendor, app ids, storage keys, TV
 paths and root-hook names — lives in one place: `src/ts/lib/brand.ts`. The
-TypeScript modules import it; `scripts/build.ts` stamps the app manifests, the
-`index.html` titles and the voice card from it; and `scripts/generate-brand.ts`
-(`npm run brand`) renders it into `scripts/brand.sh` and `voice/daemon/brand.py`
-for the shipped shell scripts and the Python daemon. Those two files are
-generated and committed: never edit them by hand, run `npm run brand` after
-changing `brand.ts`, and `test/brand.test.ts` fails if they drift.
+TypeScript modules import it; `scripts/build.ts` stamps the app manifest and the
+`index.html` title from it; and `scripts/generate-brand.ts` (`npm run brand`)
+renders it into `scripts/brand.sh` for the shipped shell scripts. That file is
+generated and committed: never edit it by hand, run `npm run brand` after
+changing `brand.ts`, and `test/brand.test.ts` fails if it drifts.
 
 ## `test/`
 
@@ -70,21 +67,14 @@ Vitest with the jsdom environment (`vitest.config.mjs`). Tests mirror `src/ts/`:
 
 ## `scripts/`
 
-- `build.ts` bundles `src/ts/boot.ts`, copies HTML, CSS, assets and `voice/`
-  into `dist/`, cache-busts asset URLs, and with `--pack` builds the IPK.
+- `build.ts` bundles `src/ts/boot.ts`, copies HTML, CSS and assets into `dist/`,
+  cache-busts asset URLs, and with `--pack` builds the IPK.
 - `deploy.sh` and `install2tvfrommacos.sh` install to the TV.
-- The `*.sh` root helpers (`home-watcher.sh`, `boot-launch.sh`, `voice-run.sh`
-  and the rest) ship inside the IPK and run on the TV.
+- The `*.sh` root helpers (`home-watcher.sh`, `boot-launch.sh`,
+  `cleanup-voice.sh` and the rest) ship inside the IPK and run on the TV.
 - `generate-aerials.ts` regenerates `src/ts/background/aerials.ts`. The output is
   committed and the script is run by hand. `generate-icons.py` regenerates the
   app icons.
-
-## `voice/`
-
-- `daemon/` is the Python 3 voice daemon. It runs as root on the TV and is
-  copied to `dist/`.
-- `overlay/` is the hidden `com.ember.voice` app, built into
-  `dist/voice/card.pkg` by `npm run pack`.
 
 ## `assets/`
 
@@ -97,10 +87,9 @@ current `-v8` set ships.
 ## Commands
 
 - `npm run typecheck` runs `tsc --noEmit` for the app and for `scripts/`.
-- `npm run brand` re-renders `scripts/brand.sh` and `voice/daemon/brand.py` from
-  `src/ts/lib/brand.ts`.
+- `npm run brand` re-renders `scripts/brand.sh` from `src/ts/lib/brand.ts`.
 - `npm test` runs Vitest.
 - `npm run build` bundles to `dist/`. `npm run pack` also produces the IPK.
 - `npm run deploy` builds and installs on the TV.
-- `npm run version` bumps the version and stages `version.md` plus the two
-  `appinfo.json` files.
+- `npm run version` bumps the version and stages `version.md` and
+  `appinfo.json`.

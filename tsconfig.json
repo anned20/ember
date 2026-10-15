@@ -16,7 +16,6 @@
       "@apps/*": ["./src/ts/apps/*"],
       "@background/*": ["./src/ts/background/*"],
       "@music/*": ["./src/ts/music/*"],
-      "@voice/*": ["./src/ts/voice/*"],
       "@settings/*": ["./src/ts/settings/*"],
       "@focus/*": ["./src/ts/focus/*"],
       "@home/*": ["./src/ts/home/*"],

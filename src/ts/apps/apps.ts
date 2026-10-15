@@ -24,7 +24,7 @@ interface TileApp extends AppRecord {
 
 /**
  * Anything the dock can launch: a full AppRecord, or a bare reference with
- * just the launch candidates (e.g. a voice utterance match). Only the optional
+ * just the launch candidates (e.g. a spoken app name). Only the optional
  * id fields are read.
  */
 export interface LaunchableApp {

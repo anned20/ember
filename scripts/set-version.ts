@@ -44,7 +44,7 @@ if (lock.version !== version || (lock.packages && lock.packages[''] && lock.pack
 
 // Source manifests. build.js overrides these at pack time; syncing the sources
 // keeps the checked-in defaults truthful.
-for (const rel of ['appinfo.json', 'voice/overlay/appinfo.json']) {
+for (const rel of ['appinfo.json']) {
   const info = readJson(rel);
   if (info.version !== version) {
     info.version = version;

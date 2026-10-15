@@ -1,0 +1,24 @@
+src/ts/lib/update-check.ts
+  h_1a6b0cc05bf029 1-92
+src/ts/settings/panes/tools.ts
+  h_1a6b0cc05bf029 14,16,44-45,277-344
+src/ts/settings/settings.ts
+  h_1a6b0cc05bf029 379
+test/__snapshots__/settings-focus-index.test.ts.snap
+  h_1a6b0cc05bf029 285
+test/settings/panes/tools.test.ts
+  h_1a6b0cc05bf029 35-41,48-49,123-131,144-145,162-167,219-270
+test/update-check.test.ts
+  h_1a6b0cc05bf029 1-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7badf7a8d8c24495a6d94a462c10722f13984ae1",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

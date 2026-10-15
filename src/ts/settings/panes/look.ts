@@ -240,7 +240,7 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
         focusIndex: 1094,
         choices: [
           {value: 'off', label: 'Off'},
-          {value: 'soft', label: 'Soft (original)'},
+          {value: 'soft', label: 'Soft'},
           {value: 'strong', label: 'Strong'}
         ],
         path: 'launcher.clockShadow',

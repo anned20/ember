@@ -1,0 +1,14 @@
+src/styles/main.css
+  h_1a6b0cc05bf029 318-334,1524-1617,1642-1721,1771-1850
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d1a915e85ad308831b1b244726f822e08084e61e",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

@@ -3149,6 +3149,10 @@ export function createSettingsPanel(panel, getConfig, options) {
     previewScrim.className = 'glass-preview-scrim';
     previewScrim.setAttribute('aria-hidden', 'true');
     glassPreview.appendChild(previewScrim);
+    const previewDim = document.createElement('div');
+    previewDim.className = 'glass-preview-dim';
+    previewDim.setAttribute('aria-hidden', 'true');
+    glassPreview.appendChild(previewDim);
     function previewTile(title, icon, selected) {
       const tile = document.createElement('div');
       // Not .focused: the focus manager clears that class from everything.
@@ -3179,10 +3183,25 @@ export function createSettingsPanel(panel, getConfig, options) {
     glassPreview.appendChild(previewInputs);
     glassSection.appendChild(glassPreview);
 
-    // Wallpaper dimming: the dark gradient over the wallpaper (strongest along
-    // the bottom, behind the tiles). It was "Overlay opacity" in Background,
-    // 20-60 %, with no preview: Settings hides the home screen, so moving it
-    // showed nothing until Save, and then little.
+    // Two shades over the wallpaper, both shown live in the preview above:
+    // dimming of the whole picture (new; 0 by default), and the gradient along
+    // the bottom behind the tiles (the old "Overlay opacity", kept as it was).
+    const dimRange = document.createElement('input');
+    dimRange.type = 'range';
+    dimRange.min = '0';
+    dimRange.max = '80';
+    dimRange.value = String(Math.round((typeof bg.dimming === 'number' ? bg.dimming : 0) * 100));
+    dimRange.className = 'focusable';
+    dimRange.dataset.focusIndex = '937';
+    function paintPreviewDimming() {
+      previewDim.style.opacity = String(Number(dimRange.value) / 100);
+    }
+    dimRange.addEventListener('input', paintPreviewDimming);
+    paintPreviewDimming();
+    glassSection.appendChild(labeledControl('Wallpaper dimming', dimRange));
+    glassSection.appendChild(glassNote('Darkens the whole wallpaper evenly, for glare, evenings or an OLED. ' +
+      '0 shows the picture as it is.'));
+
     const overlayRange = document.createElement('input');
     overlayRange.type = 'range';
     overlayRange.min = '0';
@@ -3196,10 +3215,9 @@ export function createSettingsPanel(panel, getConfig, options) {
     }
     overlayRange.addEventListener('input', paintPreviewDim);
     paintPreviewDim();
-    glassSection.appendChild(labeledControl('Wallpaper dimming', overlayRange));
-    glassSection.appendChild(glassNote('A dark shade over the wallpaper, strongest along the bottom ' +
-      'behind the tiles, so labels stay readable on a bright picture. 0 shows the wallpaper as it is. ' +
-      'The Night and Cinema profiles use their own dimming.'));
+    glassSection.appendChild(labeledControl('Shade behind the tiles', overlayRange));
+    glassSection.appendChild(glassNote('A dark gradient along the bottom of the wallpaper, behind the tiles, ' +
+      'so their labels stay readable on a bright picture. The Night and Cinema profiles use their own shade.'));
 
     function paintGlassPreview() {
       const tint = glassSelect.value;
@@ -4052,6 +4070,7 @@ export function createSettingsPanel(panel, getConfig, options) {
       config.background.kenBurns = kenBurnsToggle.checked;
       config.background.shuffle = bgShuffleToggle.checked;
       config.background.overlayOpacity = Number(overlayRange.value) / 100;
+      config.background.dimming = Number(dimRange.value) / 100;
 
       config.music.enabled = musicEnabled.checked;
       config.music.showBar = showMusicBar.checked;

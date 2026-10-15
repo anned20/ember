@@ -61,6 +61,7 @@ let lastVoiceLaunchAt = 0;
 const elements = {
   backgroundLayer: document.getElementById('background-layer'),
   scrim: document.getElementById('scrim'),
+  dim: document.getElementById('dim'),
   clock: document.getElementById('clock'),
   clockDate: document.getElementById('clock-date'),
   appSettingsBtn: document.getElementById('app-settings-btn'),

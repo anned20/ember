@@ -70,6 +70,8 @@ function preloadImage(url) {
 export function createBackgroundController(elements, getConfig) {
   const layer = elements.backgroundLayer;
   const scrim = elements.scrim;
+  // Whole-picture dimming (#dim), next to the scrim's bottom shade.
+  const dim = elements.dim;
   let slideshowTimer = null;
   let slideshowIndex = 0;
   let slideshowMedia = [];
@@ -141,9 +143,11 @@ export function createBackgroundController(elements, getConfig) {
   function applyScrim() {
     const config = getConfig();
     const set = config.background && config.background.overlayOpacity;
-    // 0 is a value ("no dimming"); it used to fall back to 0.45.
+    // 0 is a value ("no shade"); it used to fall back to 0.45.
     const opacity = typeof set === 'number' ? set : 0.45;
     scrim.style.opacity = String(opacity);
+    const dimming = config.background && config.background.dimming;
+    if (dim) dim.style.opacity = String(typeof dimming === 'number' ? dimming : 0);
   }
 
   function clearSlideshow() {

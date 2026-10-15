@@ -235,9 +235,21 @@ body.focus-gold, .glass-preview.focus-gold {
   position: relative;
 }
 
-.glass-preview > :not(.glass-preview-scrim) {
+.glass-preview > :not(.glass-preview-scrim):not(.glass-preview-dim) {
   position: relative;
   z-index: 1;
+}
+
+.glass-preview-dim {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  border-radius: inherit;
+  background: #000;
+  pointer-events: none;
 }
 
 .glass-preview-scrim {
@@ -296,6 +308,18 @@ body.app-inactive #background-layer.gradient-animated,
 body.all-apps-open #background-layer.has-image.ken-burns,
 body.all-apps-open #background-layer.gradient-animated {
   animation-play-state: paused;
+}
+
+/* Wallpaper dimming (Settings -> Look -> Glass): the whole picture, evenly. */
+#dim {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
 }
 
 #scrim {
@@ -1421,6 +1445,7 @@ body.perf-mode .app-scroll-badge {
  */
 body.settings-open #background-layer,
 body.settings-open #scrim,
+body.settings-open #dim,
 body.settings-open .top-bar,
 body.settings-open .launcher,
 body.settings-open .music-bar {

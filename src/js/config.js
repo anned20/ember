@@ -7,7 +7,7 @@ const STORAGE_KEY = 'lounge.config.v1';
 // means, its type or its name? Bump this and add a step to migrateConfig():
 // stored settings and restored backups from older versions both go through
 // those steps (see configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 25;
+export const CONFIG_SCHEMA_VERSION = 26;
 
 export const DEFAULT_CONFIG = {
   version: CONFIG_SCHEMA_VERSION,
@@ -27,7 +27,11 @@ export const DEFAULT_CONFIG = {
     path: '',
     file: '',
     slideshowIntervalSec: 300,
+    // Shade behind the tiles: the dark gradient along the bottom (Settings ->
+    // Look -> Glass).
     overlayOpacity: 0.45,
+    // Wallpaper dimming: the whole picture, evenly. 0 = as it is.
+    dimming: 0,
     kenBurns: false,
     // Aerial Slideshow: randomise the clip order instead of catalog order.
     shuffle: false
@@ -452,6 +456,13 @@ function migrateConfig(config) {
   if ((config.version || 1) < 25) {
     config.launcher.numberKeyLaunch = false;
     config.version = 25;
+  }
+
+  // v26: wallpaper dimming of the whole picture, next to the bottom shade.
+  if ((config.version || 1) < 26) {
+    if (!config.background) config.background = {};
+    if (typeof config.background.dimming !== 'number') config.background.dimming = 0;
+    config.version = 26;
   }
 
   return config;

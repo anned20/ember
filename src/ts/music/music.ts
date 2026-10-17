@@ -7,6 +7,7 @@ import {
 import {discoverMusicTracks, isAudioFile} from '@lib/usb.js';
 import {subscribeVolume} from '@luna/luna.js';
 import {BRAND} from '@lib/brand.js';
+import {t} from '@lib/i18n.js';
 import type {Config, MusicTrack} from '@lib/types.js';
 
 export interface MusicPlayerElements {
@@ -116,7 +117,7 @@ export function createMusicPlayer(
     if (track.title) return track.title;
 
     const parts = (track.url || '').split('/');
-    const name = parts[parts.length - 1] || 'Unknown track';
+    const name = parts[parts.length - 1] || t('music.bar.unknown');
     return name.replace(/\.[^.]+$/, '');
   }
 
@@ -149,7 +150,7 @@ export function createMusicPlayer(
     let text = '';
     if (track) {
       text = pendingAutoplay
-        ? trackLabel(track) + ' — press OK / any key to play'
+        ? t('music.bar.pressToPlay', {track: trackLabel(track)})
         : trackLabel(track);
     }
     titleEl.textContent = text;
@@ -726,7 +727,7 @@ export function createMusicPlayer(
     muteBtn.innerHTML = muted ? SOUND_OFF : SOUND_ON;
     muteBtn.classList.toggle('is-muted', muted);
     muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
-    muteBtn.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
+    muteBtn.setAttribute('aria-label', muted ? t('music.bar.unmute') : t('music.bar.mute'));
   }
   paintMute();
 

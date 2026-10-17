@@ -11,6 +11,7 @@ import {
 } from '@settings/components/index.js';
 import type {StepperOption} from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
+import {t, tn} from '@lib/i18n.js';
 import type {BuiltinMusicEntry, UsbTrack} from '@lib/types.js';
 
 // How long the packaged-track manifest may take to arrive before it is abandoned.
@@ -28,10 +29,10 @@ export function createMusicPane(): PaneHandle {
       const config = ctx.rawConfig;
       const music = normalizeMusicConfig(config.music);
 
-      const section = createSection('Music');
+      const section = createSection(t('music.section'));
 
       const musicEnabledField = createToggle({
-        label: 'Ambient music',
+        label: t('music.enabled'),
         focusIndex: '940',
         path: 'music.enabled',
         binder: ctx.binder
@@ -39,22 +40,20 @@ export function createMusicPane(): PaneHandle {
       section.appendChild(musicEnabledField.row);
 
       const showMusicBarField = createToggle({
-        label: 'Show music bar',
+        label: t('music.showBar'),
         focusIndex: '9405',
         path: 'music.showBar',
         binder: ctx.binder
       });
       section.appendChild(showMusicBarField.row);
 
-      section.appendChild(createHint(
-        'When on, shows the track name next to the volume control. Off by default (volume only).'
-      ));
+      section.appendChild(createHint(t('music.showBarHint')));
 
       const musicSourceSelect = createOptionStepper({
         focusIndex: 941,
         choices: [
-          {value: 'builtin', label: 'Built-in ambient (6 tracks)'},
-          {value: 'usb', label: 'My tracks (USB)'}
+          {value: 'builtin', label: t('music.source.builtin')},
+          {value: 'usb', label: t('music.source.usb')}
         ],
         path: 'music.source',
         binder: ctx.binder,
@@ -62,7 +61,7 @@ export function createMusicPane(): PaneHandle {
           syncMusicFields();
         }
       });
-      section.appendChild(labeledControl('Source', musicSourceSelect));
+      section.appendChild(labeledControl(t('music.source'), musicSourceSelect));
 
       // --- Built-in: multi-select which of the 8 packaged tracks to rotate ---
       const savedBuiltinPlaylist = Array.isArray(music.builtinPlaylist)
@@ -77,7 +76,7 @@ export function createMusicPane(): PaneHandle {
 
       const builtinPlaylistList = document.createElement('div');
       builtinPlaylistList.className = 'settings-track-list';
-      const builtinPlaylistBlock = labeledBlock('Built-in tracks (tick to include)', builtinPlaylistList);
+      const builtinPlaylistBlock = labeledBlock(t('music.builtinPlaylist'), builtinPlaylistList);
       section.appendChild(builtinPlaylistBlock);
 
       function enabledBuiltinIds(): string[] {
@@ -102,7 +101,7 @@ export function createMusicPane(): PaneHandle {
         path: 'music.builtin',
         binder: ctx.binder
       });
-      const builtinTrackRow = labeledControl('Start with', builtinTrackSelect);
+      const builtinTrackRow = labeledControl(t('music.startWith'), builtinTrackSelect);
       section.appendChild(builtinTrackRow);
 
       function refreshBuiltinStartOptions(): void {
@@ -117,7 +116,7 @@ export function createMusicPane(): PaneHandle {
       const musicFolderPicker = createOptionStepper({
         focusIndex: 951,
         choices: [
-          {value: '', label: 'Custom path (type below)…'}
+          {value: '', label: t('music.folder.custom')}
         ],
         value: '',
         onChange: function (value) {
@@ -127,11 +126,11 @@ export function createMusicPane(): PaneHandle {
           }
         }
       });
-      const musicFolderRow = labeledControl('Browse folders', musicFolderPicker);
+      const musicFolderRow = labeledControl(t('music.folder.browse'), musicFolderPicker);
       section.appendChild(musicFolderRow);
 
       findLoungeRoots().then(function (roots) {
-        const opts = [{value: '', label: 'Custom path (type below)…'}];
+        const opts = [{value: '', label: t('music.folder.custom')}];
         roots.forEach(function (root) {
           opts.push({value: joinPath(root, 'music'), label: joinPath(root, 'music')});
           opts.push({value: joinPath(root, 'music'), label: joinPath(root, 'music')});
@@ -139,18 +138,18 @@ export function createMusicPane(): PaneHandle {
         });
 
         if (opts.length === 1) {
-          opts[0].label = 'No USB drives detected — type a path below';
+          opts[0].label = t('music.folder.none');
         }
         musicFolderPicker.setOptions(opts, config.music.path || '');
       }).catch(function () {
         musicFolderPicker.setOptions(
-          [{value: '', label: 'Could not scan USB drives — type a path below'}], '');
+          [{value: '', label: t('music.folder.failed')}], '');
       });
 
       const musicPathField = createTextField({
-        label: 'Music folder',
+        label: t('music.path'),
         focusIndex: '952',
-        placeholder: 'e.g. /media/usb1/ember/music',
+        placeholder: t('music.path.placeholder'),
         path: 'music.path',
         trim: true,
         binder: ctx.binder
@@ -169,9 +168,9 @@ export function createMusicPane(): PaneHandle {
 
       const usbPlaylistList = document.createElement('div');
       usbPlaylistList.className = 'settings-track-list';
-      const usbPlaylistBlock = labeledBlock('USB tracks (tick to include)', usbPlaylistList);
+      const usbPlaylistBlock = labeledBlock(t('music.usbPlaylist'), usbPlaylistList);
 
-      const usbScanStatus = createHint('Set a folder with playlist.m3u or tracks.json, then scan.');
+      const usbScanStatus = createHint(t('music.usbScan.idle'));
       usbPlaylistBlock.insertBefore(usbScanStatus, usbPlaylistList);
       section.appendChild(usbPlaylistBlock);
 
@@ -185,11 +184,11 @@ export function createMusicPane(): PaneHandle {
         usbPlaylistList.innerHTML = '';
         if (!usbTrackEntries.length) {
           usbScanStatus.textContent = musicPathInput.value.trim()
-            ? 'No tracks found. Add playlist.m3u or tracks.json in that folder.'
-            : 'Set a USB music folder to load your tracks.';
+            ? t('music.usbScan.empty')
+            : t('music.usbScan.noFolder');
           return;
         }
-        usbScanStatus.textContent = usbTrackEntries.length + ' track(s) found — tick the ones to play.';
+        usbScanStatus.textContent = tn('music.usbScan.found', usbTrackEntries.length);
         const hadSaved = savedUsb.length > 0;
         usbTrackEntries.forEach(function (entry, index) {
           const url = entry.url || '';
@@ -233,7 +232,7 @@ export function createMusicPane(): PaneHandle {
           renderUsbTrackList([]);
           return;
         }
-        usbScanStatus.textContent = 'Scanning USB music…';
+        usbScanStatus.textContent = t('music.usbScan.scanning');
         ctx.withDeadline(discoverMusicTracks(folder), USB_SCAN_MS).then(function (list) {
           if (gen !== usbScanGen || !ctx.isVisible()) return;
           renderUsbTrackList((list || []) as UsbTrack[]);
@@ -245,7 +244,7 @@ export function createMusicPane(): PaneHandle {
       }
 
       const shuffleField = createToggle({
-        label: 'Shuffle',
+        label: t('music.shuffle'),
         focusIndex: '990',
         path: 'music.shuffle',
         binder: ctx.binder
@@ -256,18 +255,18 @@ export function createMusicPane(): PaneHandle {
       const repeatSelect = createOptionStepper({
         focusIndex: 991,
         choices: [
-          {value: 'all', label: 'Repeat all'},
-          {value: 'one', label: 'Repeat one'},
-          {value: 'off', label: 'Play once'}
+          {value: 'all', label: t('music.repeat.all')},
+          {value: 'one', label: t('music.repeat.one')},
+          {value: 'off', label: t('music.repeat.off')}
         ],
         path: 'music.repeat',
         binder: ctx.binder
       });
-      const repeatRow = labeledControl('Repeat', repeatSelect);
+      const repeatRow = labeledControl(t('music.repeat'), repeatSelect);
       section.appendChild(repeatRow);
 
       const musicVolumeField = createTextField({
-        label: 'Ambient volume',
+        label: t('music.volume'),
         focusIndex: '992',
         type: 'range',
         className: 'focusable',
@@ -280,9 +279,7 @@ export function createMusicPane(): PaneHandle {
       });
       section.appendChild(musicVolumeField.row);
 
-      section.appendChild(createHint(
-        'Six built-in tracks ship in the app (48 kbps ambient, CC0 / CC BY). If music is silent at launch, press any remote key once (autoplay unlock). Red = pause, Green = skip. USB: Source → My tracks for more.'
-      ));
+      section.appendChild(createHint(t('music.hint')));
 
       function syncMusicFields(): void {
         const isBuiltin = musicSourceSelect.value === 'builtin';

@@ -9,6 +9,7 @@ import {
 } from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 import {BRAND} from '@lib/brand.js';
+import {t, tn} from '@lib/i18n.js';
 
 /**
  * The Screensaver pane: the in-app photo slideshow (on/off, idle delay, slide
@@ -17,10 +18,10 @@ import {BRAND} from '@lib/brand.js';
 export function createScreensaverPane(): PaneHandle {
   return {
     build: function (ctx: SettingsContext): void {
-      const section = createSection('Screensaver');
+      const section = createSection(t('screensaver.section'));
 
       const customSsField = createToggle({
-        label: BRAND.name + ' screensaver',
+        label: t('screensaver.custom', {brand: BRAND.name}),
         focusIndex: '990',
         path: 'launcher.customScreensaver',
         binder: ctx.binder
@@ -30,14 +31,14 @@ export function createScreensaverPane(): PaneHandle {
       const customSsIdle = createOptionStepper({
         focusIndex: 991,
         choices: [
-          {value: '2', label: '2 minutes'},
-          {value: '5', label: '5 minutes'},
-          {value: '10', label: '10 minutes'},
-          {value: '15', label: '15 minutes'},
-          {value: '20', label: '20 minutes'},
-          {value: '30', label: '30 minutes'},
-          {value: '45', label: '45 minutes'},
-          {value: '60', label: '60 minutes'}
+          {value: '2', label: tn('screensaver.minutes', 2)},
+          {value: '5', label: tn('screensaver.minutes', 5)},
+          {value: '10', label: tn('screensaver.minutes', 10)},
+          {value: '15', label: tn('screensaver.minutes', 15)},
+          {value: '20', label: tn('screensaver.minutes', 20)},
+          {value: '30', label: tn('screensaver.minutes', 30)},
+          {value: '45', label: tn('screensaver.minutes', 45)},
+          {value: '60', label: tn('screensaver.minutes', 60)}
         ],
         path: 'launcher.customScreensaverMinutes',
         parse: function (raw) {
@@ -46,17 +47,17 @@ export function createScreensaverPane(): PaneHandle {
         },
         binder: ctx.binder
       });
-      section.appendChild(labeledControl('Start after (idle)', customSsIdle));
+      section.appendChild(labeledControl(t('screensaver.startAfter'), customSsIdle));
 
       const customSsSlide = createOptionStepper({
         focusIndex: 992,
         choices: [
-          {value: '12', label: '12 seconds'},
-          {value: '20', label: '20 seconds'},
-          {value: '30', label: '30 seconds'},
-          {value: '45', label: '45 seconds'},
-          {value: '60', label: '1 minute'},
-          {value: '120', label: '2 minutes'}
+          {value: '12', label: tn('screensaver.seconds', 12)},
+          {value: '20', label: tn('screensaver.seconds', 20)},
+          {value: '30', label: tn('screensaver.seconds', 30)},
+          {value: '45', label: tn('screensaver.seconds', 45)},
+          {value: '60', label: tn('screensaver.minutes', 1)},
+          {value: '120', label: tn('screensaver.minutes', 2)}
         ],
         path: 'launcher.customScreensaverSlideSec',
         parse: function (raw) {
@@ -65,10 +66,10 @@ export function createScreensaverPane(): PaneHandle {
         },
         binder: ctx.binder
       });
-      section.appendChild(labeledControl('Photo change every', customSsSlide));
+      section.appendChild(labeledControl(t('screensaver.slideEvery'), customSsSlide));
 
       const customSsClockField = createToggle({
-        label: 'Screensaver clock',
+        label: t('screensaver.clock'),
         focusIndex: '993',
         path: 'launcher.customScreensaverShowClock',
         binder: ctx.binder
@@ -76,28 +77,26 @@ export function createScreensaverPane(): PaneHandle {
       section.appendChild(customSsClockField.row);
 
       const customSsDateField = createToggle({
-        label: 'Screensaver date',
+        label: t('screensaver.date'),
         focusIndex: '994',
         path: 'launcher.customScreensaverShowDate',
         binder: ctx.binder
       });
       section.appendChild(customSsDateField.row);
 
-      section.appendChild(createHint(
-        'Full-screen photo slideshow from your ' + BRAND.name + ' wallpapers while this app is open. Any remote button wakes. Uses Ken Burns motion for OLED care.'
-      ));
+      section.appendChild(createHint(t('screensaver.hint', {brand: BRAND.name})));
 
       // Preview over the open panel. Closing Settings first threw away any
       // unsaved changes; the saver sits above it and hands focus back here.
       section.appendChild(createMiniButton({
-        label: 'Preview screensaver now',
+        label: t('screensaver.preview'),
         focusIndex: '996',
         className: 'settings-preview-ss-btn',
         onClick: function () {
           if (ctx.options.onPreviewScreensaver) {
             ctx.options.onPreviewScreensaver();
           } else if (ctx.options.onToast) {
-            ctx.options.onToast('Save & reopen ' + BRAND.name + ' to preview');
+            ctx.options.onToast(t('screensaver.previewToast', {brand: BRAND.name}));
           }
         }
       }));
@@ -111,11 +110,11 @@ export function createScreensaverPane(): PaneHandle {
       const screensaverSelect = createOptionStepper({
         focusIndex: 995,
         choices: [
-          {value: '0', label: 'Off (never)'},
-          {value: '3', label: '3 minutes'},
-          {value: '10', label: '10 minutes'},
-          {value: '20', label: '20 minutes'},
-          {value: '30', label: '30 minutes'}
+          {value: '0', label: t('screensaver.off')},
+          {value: '3', label: tn('screensaver.minutes', 3)},
+          {value: '10', label: tn('screensaver.minutes', 10)},
+          {value: '20', label: tn('screensaver.minutes', 20)},
+          {value: '30', label: tn('screensaver.minutes', 30)}
         ],
         value: String(ssMins),
         path: 'launcher.screensaverMinutes',
@@ -133,11 +132,9 @@ export function createScreensaverPane(): PaneHandle {
           cfg.launcher.screensaverMinutes = 30;
         }
       });
-      section.appendChild(labeledControl('TV system screensaver', screensaverSelect));
+      section.appendChild(labeledControl(t('screensaver.tv'), screensaverSelect));
 
-      section.appendChild(createHint(
-        'LG system gallery timeout (3/10/20/30 min only). When ' + BRAND.name + ' screensaver is on, leave this at 30 so the TV does not interrupt first. Requires rooted TV.'
-      ));
+      section.appendChild(createHint(t('screensaver.tvHint', {brand: BRAND.name})));
 
       ctx.panes.screensaver.appendChild(section);
     }

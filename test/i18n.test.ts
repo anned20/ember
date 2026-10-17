@@ -69,9 +69,13 @@ describe('translation', () => {
     setLanguage('en');
     expect(tn('music.usbScan.found', 1)).toBe('1 track found — tick the ones to play.');
     expect(tn('music.usbScan.found', 3)).toBe('3 tracks found — tick the ones to play.');
+    expect(tn('screensaver.minutes', 1)).toBe('1 minute');
+    expect(tn('screensaver.seconds', 30)).toBe('30 seconds');
 
     setLanguage('nl');
     expect(tn('music.usbScan.found', 1)).toBe('1 nummer gevonden — vink de nummers aan die je wilt afspelen.');
     expect(tn('music.usbScan.found', 0)).toBe('0 nummers gevonden — vink de nummers aan die je wilt afspelen.');
+    expect(tn('screensaver.minutes', 5)).toBe('5 minuten');
+    expect(tn('screensaver.seconds', 1)).toBe('1 seconde');
   });
 });

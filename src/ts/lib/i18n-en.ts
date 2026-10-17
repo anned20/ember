@@ -191,10 +191,64 @@ export const en = {
   'background.overlay': 'Overlay opacity',
   'background.oledNote': 'On OLED TVs, prefer slideshow or gradients over a single static photo left on screen for long periods.',
 
+  // ── The Music pane (panes/music.ts) ───────────────────────────────────────
+  'music.section': 'Music',
+  'music.enabled': 'Ambient music',
+  'music.showBar': 'Show music bar',
+  'music.showBarHint': 'When on, shows the track name next to the volume control. Off by default (volume only).',
+  'music.source': 'Source',
+  'music.source.builtin': 'Built-in ambient (6 tracks)',
+  'music.source.usb': 'My tracks (USB)',
+  'music.builtinPlaylist': 'Built-in tracks (tick to include)',
+  'music.startWith': 'Start with',
+  'music.folder.browse': 'Browse folders',
+  'music.folder.custom': 'Custom path (type below)…',
+  'music.folder.none': 'No USB drives detected — type a path below',
+  'music.folder.failed': 'Could not scan USB drives — type a path below',
+  'music.path': 'Music folder',
+  'music.path.placeholder': 'e.g. /media/usb1/ember/music',
+  'music.usbPlaylist': 'USB tracks (tick to include)',
+  'music.usbScan.idle': 'Set a folder with playlist.m3u or tracks.json, then scan.',
+  'music.usbScan.empty': 'No tracks found. Add playlist.m3u or tracks.json in that folder.',
+  'music.usbScan.noFolder': 'Set a USB music folder to load your tracks.',
+  'music.usbScan.scanning': 'Scanning USB music…',
+  'music.shuffle': 'Shuffle',
+  'music.repeat': 'Repeat',
+  'music.repeat.all': 'Repeat all',
+  'music.repeat.one': 'Repeat one',
+  'music.repeat.off': 'Play once',
+  'music.volume': 'Ambient volume',
+  'music.hint': 'Six built-in tracks ship in the app (48 kbps ambient, CC0 / CC BY). If music is silent at launch, press any remote key once (autoplay unlock). Red = pause, Green = skip. USB: Source → My tracks for more.',
+
+  // ── The Screensaver pane (panes/screensaver.ts) ───────────────────────────
+  'screensaver.section': 'Screensaver',
+  'screensaver.custom': '{brand} screensaver',
+  'screensaver.startAfter': 'Start after (idle)',
+  'screensaver.slideEvery': 'Photo change every',
+  'screensaver.clock': 'Screensaver clock',
+  'screensaver.date': 'Screensaver date',
+  'screensaver.hint': 'Full-screen photo slideshow from your {brand} wallpapers while this app is open. Any remote button wakes. Uses Ken Burns motion for OLED care.',
+  'screensaver.preview': 'Preview screensaver now',
+  'screensaver.previewToast': 'Save & reopen {brand} to preview',
+  'screensaver.tv': 'TV system screensaver',
+  'screensaver.tvHint': 'LG system gallery timeout (3/10/20/30 min only). When {brand} screensaver is on, leave this at 30 so the TV does not interrupt first. Requires rooted TV.',
+  'screensaver.off': 'Off (never)',
+
+  // ── The music bar (music/music.ts) ────────────────────────────────────────
+  'music.bar.unknown': 'Unknown track',
+  'music.bar.pressToPlay': '{track} — press OK / any key to play',
+  'music.bar.mute': 'Mute',
+  'music.bar.unmute': 'Unmute',
+
   // ── Counted strings ───────────────────────────────────────────────────────
   // The USB music scan (panes/music.ts).
   'music.usbScan.found.one': '{count} track found — tick the ones to play.',
-  'music.usbScan.found.other': '{count} tracks found — tick the ones to play.'
+  'music.usbScan.found.other': '{count} tracks found — tick the ones to play.',
+  // The screensaver delays (panes/screensaver.ts); the slide list mixes the two.
+  'screensaver.minutes.one': '1 minute',
+  'screensaver.minutes.other': '{count} minutes',
+  'screensaver.seconds.one': '1 second',
+  'screensaver.seconds.other': '{count} seconds'
 } as const;
 
 /** Every key the English dictionary defines. */

@@ -27,6 +27,7 @@ import type {GalleryEntry, OptionStepperElement} from '@settings/components/inde
 import {beginSettingsTextEdit} from '@settings/text-gate.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 import {BRAND} from '@lib/brand.js';
+import {t} from '@lib/i18n.js';
 import type {BuiltinBackground, Config} from '@lib/types.js';
 
 // How long the packaged-photo manifest may take to arrive before it is abandoned.
@@ -153,8 +154,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
     const entry = PROFILE_OPTIONS.filter(function (p) { return p.id === profileId; })[0];
     profileBgNote.hidden = !forced;
     profileBgNote.textContent = forced
-      ? 'The ' + (entry ? entry.label : profileId) + ' profile uses its own dark background, ' +
-        'so this Source applies once Active profile is Default or Night.'
+      ? t('background.profileNote', {profile: entry ? t(entry.labelKey) : profileId})
       : '';
   }
 
@@ -167,11 +167,13 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       rawConfig = ctx.rawConfig;
       const bg = normalizeBackgroundConfig(ctx.config.background);
 
-      const section = createSection('Background');
+      const section = createSection(t('background.section'));
 
       const sourceSelect = createOptionStepper({
         focusIndex: 902,
-        choices: SOURCE_OPTIONS,
+        choices: SOURCE_OPTIONS.map(function (option) {
+          return {value: option.value, label: t(option.labelKey)};
+        }),
         path: 'background.source',
         binder: ctx.binder,
         onChange: function (value) {
@@ -180,7 +182,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
           });
         }
       });
-      section.appendChild(labeledControl('Source', sourceSelect));
+      section.appendChild(labeledControl(t('background.source'), sourceSelect));
 
       // A profile with its own background (Cinema) overrides the Source above.
       // Unexplained, Save looked like it reset photos back to Gradient.
@@ -191,19 +193,21 @@ export function createBackgroundPane(): BackgroundPaneHandle {
 
       const presetSelect = createOptionStepper({
         focusIndex: 903,
-        choices: PRESET_OPTIONS,
+        choices: PRESET_OPTIONS.map(function (option) {
+          return {value: option.value, label: t(option.labelKey)};
+        }),
         path: 'background.preset',
         binder: ctx.binder
       });
       // Only shown when Source is Gradient / Animated Gradient (not when Photo is set).
-      const presetRow = labeledControl('Gradient style', presetSelect);
+      const presetRow = labeledControl(t('background.preset'), presetSelect);
       section.appendChild(presetRow);
 
       const displaySelect = createOptionStepper({
         focusIndex: 904,
         choices: [
-          {value: 'static', label: 'Single image'},
-          {value: 'slideshow', label: 'Slideshow'}
+          {value: 'static', label: t('background.display.static')},
+          {value: 'slideshow', label: t('background.display.slideshow')}
         ],
         path: 'background.mode',
         binder: ctx.binder,
@@ -211,12 +215,12 @@ export function createBackgroundPane(): BackgroundPaneHandle {
           syncFields();
         }
       });
-      const displayRow = labeledControl('Display', displaySelect);
+      const displayRow = labeledControl(t('background.display'), displaySelect);
       section.appendChild(displayRow);
 
       // Aerial Slideshow only: randomise the clip order.
       const bgShuffleField = createToggle({
-        label: 'Shuffle clips',
+        label: t('background.shuffle'),
         focusIndex: '936',
         path: 'background.shuffle',
         binder: ctx.binder
@@ -228,7 +232,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       // CDN, so there are no packaged thumbnails to show.
       let selectedAerialId = bg.aerial || (AERIAL_BACKGROUNDS[0] && AERIAL_BACKGROUNDS[0].id) || '';
       const aerialGallery = createGallery({
-        heading: 'Choose an aerial clip (' + AERIAL_BACKGROUNDS.length + ' \u00b7 streams from Apple)',
+        heading: t('background.aerial.heading', {count: AERIAL_BACKGROUNDS.length}),
         focusIndex: indexInRow('settings-photo', 0),
         gridClassName: 'aerial-picker-grid',
         selectedId: selectedAerialId,
@@ -243,16 +247,13 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       const aerialRow = aerialGallery.row;
       section.appendChild(aerialRow);
 
-      aerialRow.appendChild(createHint(
-        'Clips stream from Apple\u2019s network (nothing is packaged) and play muted, full-screen and looping. The TV must be online; if a clip will not play, the gradient above is used instead. ' +
-        'Aerials are the heaviest background source (network plus continuous video decode), and Performance mode has no effect on video.'
-      ));
+      aerialRow.appendChild(createHint(t('background.aerial.hint')));
 
       // Built-in photo gallery (thumbnails) — only visible when Source is Built-in photos.
       // Built empty; the tiles arrive with the manifest in `load`.
       let selectedBuiltinId = bg.builtin || '';
       const builtinGallery = createGallery({
-        heading: 'Choose a built-in photo (~3840px, sharp on 4K)',
+        heading: t('background.builtin.heading'),
         focusIndex: indexInRow('settings-photo', 0),
         selectedId: selectedBuiltinId,
         entries: [],
@@ -262,18 +263,16 @@ export function createBackgroundPane(): BackgroundPaneHandle {
         }
       });
       const builtinRow = builtinGallery.row;
-      builtinRow.appendChild(createHint(
-        'Packaged at ~3840px for 4K TVs; Performance mode downloads 1920px copies. Arrows browse \u00b7 OK chooses the photo and moves on.'
-      ));
+      builtinRow.appendChild(createHint(t('background.builtin.hint')));
       section.appendChild(builtinRow);
 
-      const usbHint = createHint('USB path: ' + BRAND.usbFolder + '/backgrounds/ with images.json. For a single file, enter the filename below.');
+      const usbHint = createHint(t('background.usb.hint', {folder: BRAND.usbFolder}));
       section.appendChild(usbHint);
 
       const usbField = createTextField({
-        label: 'USB filename',
+        label: t('background.usb.file'),
         focusIndex: '930',
-        placeholder: 'living-room.jpg',
+        placeholder: t('background.usb.placeholder'),
         path: 'background.file',
         trim: true,
         binder: ctx.binder
@@ -292,11 +291,11 @@ export function createBackgroundPane(): BackgroundPaneHandle {
         initialRemote = '';
       }
 
-      const urlHint = createHint('Loads over the network (not stored in the app package). Choose a photo below (nature or anime), or pick Custom URL and paste any direct https image link (Unsplash, Pexels, Wallhaven, your own host). TV must be online. Slideshow with no URLs uses the curated set.');
+      const urlHint = createHint(t('background.url.hint'));
       section.appendChild(urlHint);
 
       const urlField = createTextField({
-        label: 'Image URL',
+        label: t('background.url.label'),
         focusIndex: '931',
         placeholder: 'https://images.unsplash.com/photo-…',
         path: 'background.url',
@@ -316,13 +315,13 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       let selectedRemoteId = initialRemote;
       const customHint = document.createElement('span');
       customHint.className = 'photo-picker-custom-hint';
-      customHint.textContent = 'Paste link below';
+      customHint.textContent = t('background.url.customHint');
       customHint.style.pointerEvents = 'none';
       const customEntry: GalleryEntry = {
         id: '',
-        title: 'Custom URL',
+        title: t('background.url.custom'),
         className: 'photo-picker-custom',
-        ariaLabel: 'Custom URL',
+        ariaLabel: t('background.url.custom'),
         extra: customHint,
         onSelect: function () {
           selectRemote('');
@@ -337,7 +336,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
         }
       };
       const remoteGallery = createGallery({
-        heading: 'Choose an online photo (' + REMOTE_BACKGROUNDS.length + ' network images · nature + anime)',
+        heading: t('background.url.heading', {count: REMOTE_BACKGROUNDS.length}),
         focusIndex: indexInRow('settings-photo', 0),
         selectedId: selectedRemoteId,
         entries: REMOTE_BACKGROUNDS.map(function (entry): GalleryEntry {
@@ -386,19 +385,16 @@ export function createBackgroundPane(): BackgroundPaneHandle {
           return;
         }
         if (!/^https?:\/\//i.test(url)) {
-          showUrlStatus('This needs a web link starting with https://', 'error');
+          showUrlStatus(t('background.url.needsHttps'), 'error');
           return;
         }
-        showUrlStatus('Checking the link\u2026', '');
+        showUrlStatus(t('background.url.checking'), '');
         probeImage(jpegForTv(url)).then(function (res) {
           if (gen !== urlCheckGen) return;
           if (res.ok) {
-            showUrlStatus('The link loads as an image (' + res.width + ' \u00d7 ' +
-              res.height + '). Press Save to use it.', 'ok');
+            showUrlStatus(t('background.url.ok', {width: res.width, height: res.height}), 'ok');
           } else {
-            showUrlStatus('That link didn\u2019t load as an image. Use the direct image link: it ' +
-              'usually ends in .jpg or .png (on an image host, \u201cCopy image address\u201d or ' +
-              '\u201cDirect link\u201d). A link to a web page about the photo won\u2019t work.', 'error');
+            showUrlStatus(t('background.url.badLoad'), 'error');
           }
         });
       }
@@ -435,12 +431,12 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       });
 
       const urlsField = createTextField({
-        label: 'Slideshow URLs',
+        label: t('background.urls'),
         focusIndex: '932',
         textarea: true,
         rows: 4,
         block: true,
-        placeholder: 'One https image URL per line (leave empty to use curated online set)',
+        placeholder: t('background.urls.placeholder'),
         path: 'background.urls',
         parse: parseUrlList,
         format: function (value) { return Array.isArray(value) ? value.join('\n') : ''; },
@@ -450,7 +446,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       section.appendChild(urlsRow);
 
       const intervalField = createTextField({
-        label: 'Seconds per slide',
+        label: t('background.interval'),
         focusIndex: '933',
         type: 'number',
         min: '30',
@@ -465,21 +461,18 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       section.appendChild(intervalRow);
 
       const kenBurnsField = createToggle({
-        label: 'Slow zoom background',
+        label: t('background.kenBurns'),
         focusIndex: '934',
         path: 'background.kenBurns',
         binder: ctx.binder
       });
       const kenBurnsRow = kenBurnsField.row;
       section.appendChild(kenBurnsRow);
-      const kenBurnsHint = createHint(
-        'When on, the wallpaper slowly zooms in and drifts a little (like a calm slideshow). When off, the picture stays still. Photos only — not gradients. ' +
-        'While the wallpaper moves, tiles and buttons are tinted instead of frosted glass: blurring a moving picture makes TVs stutter.'
-      );
+      const kenBurnsHint = createHint(t('background.kenBurns.hint'));
       section.appendChild(kenBurnsHint);
 
       const overlayField = createTextField({
-        label: 'Overlay opacity',
+        label: t('background.overlay'),
         focusIndex: '935',
         type: 'range',
         className: 'focusable',
@@ -494,7 +487,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
 
       const oledNote = document.createElement('p');
       oledNote.className = 'oled-note';
-      oledNote.textContent = 'On OLED TVs, prefer slideshow or gradients over a single static photo left on screen for long periods.';
+      oledNote.textContent = t('background.oledNote');
       section.appendChild(oledNote);
       ctx.panes.look.appendChild(section);
 

@@ -1,9 +1,11 @@
 import type {Config, DeepPartial} from '@lib/types.js';
+import type {TranslationKey} from '@lib/i18n.js';
 
-export const PROFILE_OPTIONS = [
-  {id: 'default', label: 'Default'},
-  {id: 'night', label: 'Night'},
-  {id: 'cinema', label: 'Cinema'}
+// The pickers render labelKey through t(); the ids are the stored values.
+export const PROFILE_OPTIONS: Array<{id: string; labelKey: TranslationKey}> = [
+  {id: 'default', labelKey: 'look.profile.default'},
+  {id: 'night', labelKey: 'look.profile.night'},
+  {id: 'cinema', labelKey: 'look.profile.cinema'}
 ];
 
 export const PROFILE_PRESETS: Record<string, DeepPartial<Config>> = {

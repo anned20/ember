@@ -53,6 +53,11 @@ re-rendering: `settings.ts` saves and then restarts when the language differs.
 Console logs, Luna names, config enum values, storage keys and user data (app
 titles, input names) are not translated.
 
+An option table a pane reads from a config module (`PROFILE_OPTIONS`,
+`TIMEZONE_OPTIONS`, `SOURCE_OPTIONS`, `PRESET_OPTIONS`) carries a `labelKey`, not
+a label: the pane translates it while the entry's `value` — the stored config
+value — stays put.
+
 ## Module shapes
 
 Most modules are factories that return a handle: `createX(..., options)` returns

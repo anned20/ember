@@ -38,6 +38,21 @@ Settings `onSave` handler re-applies everything: `refreshAll()`,
 `applyHomeVolume()`, `applyScreensaverSetting()`,
 `customScreensaver.applyConfig()` and `syncRootHooks()`.
 
+### The i18n seam
+
+`lib/i18n.ts` is the one place viewer-facing text is resolved. A module imports
+`t(key, params?)` — or `tn(key, count, params?)` for a counted string — straight
+from `@lib/i18n.js`; there is no i18n framework and nothing is threaded through a
+context. The keys and their English strings live in `lib/i18n-en.ts` (the source
+of truth); `lib/i18n-nl.ts` is typed as a complete record of those keys, so a
+missing translation fails `tsc`. The active language is a module singleton,
+resolved once in `init()` from `launcher.language` (`'auto'` follows the TV, read
+from `navigator`) before `buildModules()`, so a lookup cannot change language
+mid-render. Changing the setting in Settings reloads the app rather than
+re-rendering: `settings.ts` saves and then restarts when the language differs.
+Console logs, Luna names, config enum values, storage keys and user data (app
+titles, input names) are not translated.
+
 ## Module shapes
 
 Most modules are factories that return a handle: `createX(..., options)` returns

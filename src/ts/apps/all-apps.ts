@@ -8,6 +8,7 @@ import {listInstalledApps} from './apps.js';
 import {indexInRow} from '@focus/focus-row.js';
 import {lazyLoadIcon} from './app-catalog.js';
 import {BRAND} from '@lib/brand.js';
+import {t} from '@lib/i18n.js';
 import type {AppRecord} from '@lib/types.js';
 
 const EMBER_ID = BRAND.appId;
@@ -81,15 +82,15 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     panel.className = 'all-apps';
     panel.hidden = true;
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'All apps');
+    panel.setAttribute('aria-label', t('apps.allApps'));
 
     const head = document.createElement('div');
     head.className = 'all-apps-head';
     const title = document.createElement('h2');
-    title.textContent = 'All apps';
+    title.textContent = t('apps.allApps');
     const hint = document.createElement('span');
     hint.className = 'all-apps-hint';
-    hint.textContent = 'OK opens an app · Hold OK for options · Back closes';
+    hint.textContent = t('apps.hint');
     head.appendChild(title);
     head.appendChild(hint);
 
@@ -147,7 +148,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     if (!apps.length) {
       const empty = document.createElement('p');
       empty.className = 'all-apps-note';
-      empty.textContent = 'Couldn’t read the TV’s apps. This needs root (Homebrew Channel).';
+      empty.textContent = t('apps.readFailed');
       grid!.appendChild(empty);
       return;
     }
@@ -225,13 +226,13 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     const pinned = !!(options.isPinned && options.isPinned(app));
     const state = document.createElement('span');
     state.className = 'all-apps-menu-state';
-    state.textContent = pinned ? 'On the home row' : 'Not on the home row';
+    state.textContent = pinned ? t('apps.menu.onHome') : t('apps.menu.offHome');
     head.appendChild(title);
     head.appendChild(id);
     head.appendChild(state);
     card.appendChild(head);
 
-    const pin = menuButton(pinned ? 'Unpin' : 'Pin', pinned ? 'unpin' : 'pin', 0);
+    const pin = menuButton(pinned ? t('apps.menu.unpin') : t('apps.menu.pin'), pinned ? 'unpin' : 'pin', 0);
     pin.addEventListener('click', function () {
       const toggle = pinned ? options.unpin : options.pin;
       if (toggle) toggle(app);
@@ -240,7 +241,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     });
     card.appendChild(pin);
 
-    const restart = menuButton('Restart', 'restart', 1);
+    const restart = menuButton(t('apps.menu.restart'), 'restart', 1);
     restart.addEventListener('click', function () {
       // The host hides the overlay; if it doesn't, close the menu here.
       if (options.restart) options.restart(app);
@@ -249,7 +250,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     card.appendChild(restart);
 
     if (app.removable !== false) {
-      const remove = menuButton('Delete', 'delete', 2);
+      const remove = menuButton(t('apps.menu.delete'), 'delete', 2);
       remove.addEventListener('click', function () {
         renderConfirm(app);
       });
@@ -267,10 +268,10 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     card.className = 'all-apps-menu-card';
     const question = document.createElement('p');
     question.className = 'all-apps-menu-question';
-    question.textContent = 'Delete ' + app.title + '? This can’t be undone.';
+    question.textContent = t('apps.menu.deleteConfirm', {title: app.title});
     card.appendChild(question);
 
-    const confirm = menuButton('Delete', 'delete-confirm', 0);
+    const confirm = menuButton(t('apps.menu.delete'), 'delete-confirm', 0);
     confirm.addEventListener('click', function () {
       if (!options.remove) return;
       Promise.resolve(options.remove(app)).then(function () {
@@ -289,7 +290,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     });
     card.appendChild(confirm);
 
-    const cancel = menuButton('Cancel', 'cancel', 1);
+    const cancel = menuButton(t('apps.menu.cancel'), 'cancel', 1);
     cancel.addEventListener('click', function () {
       renderMenu();
       options.focus.focusWithin('.all-apps-menu');
@@ -309,7 +310,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
     menu = document.createElement('div');
     menu.className = 'all-apps-menu';
     menu.setAttribute('role', 'dialog');
-    menu.setAttribute('aria-label', app.title + ' options');
+    menu.setAttribute('aria-label', t('apps.menu.label', {title: app.title}));
     panel.appendChild(menu);
     setTilesEnabled(false);
     renderMenu();
@@ -343,7 +344,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
       grid!.innerHTML = '';
       const loading = document.createElement('p');
       loading.className = 'all-apps-note';
-      loading.textContent = 'Reading the TV’s apps…';
+      loading.textContent = t('apps.reading');
       grid!.appendChild(loading);
       const gen = ++loadGen;
       const apps = await load();

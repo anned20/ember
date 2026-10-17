@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('@luna/luna.js', () => ({
   listApps: vi.fn(),
@@ -11,6 +11,7 @@ vi.mock('@luna/luna.js', () => ({
 import {launchApp, listApps, getAppInfo} from '@luna/luna.js';
 import {createAppGrid} from '@apps/apps.js';
 import {createAllApps} from '@apps/all-apps.js';
+import {setLanguage} from '@lib/i18n.js';
 import type {Config} from '@lib/types.js';
 
 function makeConfig(pinnedApps: string[], numberKeyLaunch?: boolean): () => Config {
@@ -288,5 +289,68 @@ describe('All apps context menu', () => {
     expect(allApps.handleBack()).toBe(true); // menu -> closed
     expect(mount.querySelector('.all-apps-menu')).toBeNull();
     expect(allApps.handleBack()).toBe(false);
+  });
+});
+
+describe('the dock and All apps in Dutch', () => {
+  beforeEach(() => setLanguage('nl'));
+  afterEach(() => setLanguage('en'));
+
+  it('labels the All apps and TV Settings tiles in Dutch', async () => {
+    mockInstalled(['netflix']);
+    const {container, grid} = buildGrid(['netflix']);
+    await grid.refresh();
+
+    const labels = Array.from(container.querySelectorAll('.app-label'))
+      .map(function (label) { return label.textContent; });
+    // The app's own title is the TV's, not ours.
+    expect(labels).toEqual(['Netflix', 'Alle apps', 'TV-instellingen']);
+    expect(container.querySelector('.all-apps-launcher')!.getAttribute('aria-label')).toBe('Alle apps');
+    expect(container.querySelector('.settings-tile')!.getAttribute('aria-label')).toBe('TV-instellingen');
+  });
+
+  it('reads the overlay, its note and its menu in Dutch', async () => {
+    vi.mocked(listApps).mockResolvedValue({apps: [{id: 'demo.app', title: 'Demo'}]});
+    const mount = document.createElement('div');
+    document.body.appendChild(mount);
+    const allApps = createAllApps({
+      mount: mount,
+      focus: {focusWithin: vi.fn(), focusElement: vi.fn(() => true)},
+      launch: vi.fn(),
+      isPinned: () => false
+    });
+    await allApps.show();
+
+    expect(mount.querySelector('.all-apps-head h2')!.textContent).toBe('Alle apps');
+    expect(mount.querySelector('.all-apps-hint')!.textContent)
+      .toBe('OK opent een app · Houd OK ingedrukt voor opties · Back sluit af');
+
+    allApps.openMenu(mount.querySelector<HTMLElement>('.all-apps-tile')!);
+
+    expect(mount.querySelector('.all-apps-menu-head h3')!.textContent).toBe('Demo');
+    expect(mount.querySelector('.all-apps-menu-state')!.textContent).toBe('Staat niet op de home-rij');
+    expect(mount.querySelector('[data-action="pin"]')!.textContent).toBe('Vastzetten');
+    expect(mount.querySelector('[data-action="restart"]')!.textContent).toBe('Herstarten');
+
+    (mount.querySelector('[data-action="delete"]') as HTMLElement).click();
+    expect(mount.querySelector('.all-apps-menu-question')!.textContent)
+      .toBe('Demo verwijderen? Dit kan niet ongedaan worden gemaakt.');
+    expect(mount.querySelector('[data-action="delete-confirm"]')!.textContent).toBe('Verwijderen');
+    expect(mount.querySelector('[data-action="cancel"]')!.textContent).toBe('Annuleren');
+  });
+
+  it('reads the empty note in Dutch', async () => {
+    vi.mocked(listApps).mockResolvedValue({apps: []});
+    const mount = document.createElement('div');
+    document.body.appendChild(mount);
+    const allApps = createAllApps({
+      mount: mount,
+      focus: {focusWithin: vi.fn()},
+      launch: vi.fn()
+    });
+    await allApps.show();
+
+    expect(mount.querySelector('.all-apps-note')!.textContent)
+      .toBe('Kon de apps van de tv niet lezen. Dit vereist root (Homebrew Channel).');
   });
 });

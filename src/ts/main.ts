@@ -51,6 +51,7 @@ import {activity, noteForeground} from '@lib/activity.js';
 import {settingsBackupText, importLegacySettings} from '@settings/settings-backup.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
+import {setLanguage} from '@lib/i18n.js';
 import type {Config, LauncherConfig, AppRecord, LunaResponse} from '@lib/types.js';
 
 type ErrorLike = {message?: unknown} | null | undefined;
@@ -1255,6 +1256,8 @@ export function createApp(): AppLifecycle {
 
     await importLegacyOnFirstRun();
     if (stopped) return;
+    // The interface language, resolved once, before anything is rendered.
+    setLanguage(baseConfig.launcher.language);
     buildModules();
     built = true;
 

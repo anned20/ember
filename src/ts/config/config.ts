@@ -65,6 +65,10 @@ export const DEFAULT_CONFIG: Config = {
     }
   },
   launcher: {
+    // Interface language: 'auto' follows the TV (nl* → Dutch, else English),
+    // or a fixed 'en' / 'nl'. A normal config field: the deep-merge in
+    // loadConfig gives it to an older config, no migration needed.
+    language: 'auto',
     pinnedApps: [
       'netflix', 'amazon.html', 'youtube.leanback.v4', 'com.apple.appletv',
       'bbc.iplayer.lge', 'com.webos.app.browser', 'com.webos.app.mediadiscovery'

@@ -1,0 +1,24 @@
+CONTEXT.md
+  h_1a6b0cc05bf029 108-114
+docs/agents/architecture.md
+  h_1a6b0cc05bf029 41-55
+src/ts/lib/i18n-en.ts
+  h_1a6b0cc05bf029 1-70
+src/ts/lib/i18n-nl.ts
+  h_1a6b0cc05bf029 1-59
+src/ts/lib/i18n.ts
+  h_1a6b0cc05bf029 1-97
+test/i18n.test.ts
+  h_1a6b0cc05bf029 1-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f36b8d4cd617591d0bda11331b74856e19e10f9e",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+docs/agents/architecture.md
+  h_1a6b0cc05bf029 56-60
+src/ts/background/background-sources.ts
+  h_1a6b0cc05bf029 8,253-259
+src/ts/background/media.ts
+  h_1a6b0cc05bf029 7-8,35-39
+src/ts/config/config.ts
+  h_1a6b0cc05bf029 4,171-190
+src/ts/config/profiles.ts
+  h_1a6b0cc05bf029 2,4-8
+src/ts/lib/i18n-en.ts
+  h_1a6b0cc05bf029 63-193
+src/ts/lib/i18n-nl.ts
+  h_1a6b0cc05bf029 57-182
+src/ts/settings/panes/background.ts
+  h_1a6b0cc05bf029 30,157,170,174-176,185,196-198,203,209-210,218,223,235,250,256,266,269,273,275,294,298,318,322,324,339,388,391,395,397,434,439,449,464,471,475,490
+src/ts/settings/panes/look.ts
+  h_1a6b0cc05bf029 13,39,41-42,46,54,56,64-65,97-100,117-123,130-131,136-144,151-152,157-163,170-171,175,178,188-189,195,198,208-211,220,225-229,235,240-242,255,260,265,270-272,277,282-284,289,294-295,300,313,316,323
+test/settings/panes/background.test.ts
+  h_1a6b0cc05bf029 1,16,95,100-101,222-249
+test/settings/panes/look.test.ts
+  h_1a6b0cc05bf029 1,11,82,85-86,132-181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9381c8c2a49eca6bbebc53e356a27549656c78ac",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

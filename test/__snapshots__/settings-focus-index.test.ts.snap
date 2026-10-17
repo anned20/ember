@@ -272,6 +272,7 @@ exports[`settings panel focus-index allocation > keeps each pane's focus-index m
         "1011": 1,
         "993": 1,
         "994": 1,
+        "995": 1,
       },
       "tab": "system",
     },

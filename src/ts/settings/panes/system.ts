@@ -8,6 +8,7 @@ import {
 import type {StepperOption} from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 import {BRAND} from '@lib/brand.js';
+import {t} from '@lib/i18n.js';
 
 // TV system volume levels (0–100), separate from ambient music slider.
 // '' = "Don't change": leave whatever the remote set (stored as null).
@@ -21,7 +22,7 @@ function volumeLevelParse(raw: string): number | null {
 }
 
 function volumeLevelOptions(selected: string): StepperOption[] {
-  const opts: StepperOption[] = [{value: '', label: 'Don’t change'}];
+  const opts: StepperOption[] = [{value: '', label: t('system.volume.dontChange')}];
   for (let v = 0; v <= 30; v += 1) {
     opts.push({value: String(v), label: String(v)});
   }
@@ -36,13 +37,28 @@ function volumeLevelOptions(selected: string): StepperOption[] {
 }
 
 /**
- * The System pane: the Ember vs app-launch volume levels, performance
- * mode, the rooted Home button watcher and boot-on-start.
+ * The System pane: the interface language, the Ember vs app-launch volume
+ * levels, performance mode, the rooted Home button watcher and boot-on-start.
  */
 export function createSystemPane(): PaneHandle {
   return {
     build: function (ctx: SettingsContext): void {
-      const section = createSection('System');
+      const section = createSection(t('settings.category.system'));
+
+      // The interface language. Automatic follows the TV (see lib/i18n.js);
+      // Save restarts the app so every surface repaints in the new language.
+      const languageSelect = createOptionStepper({
+        focusIndex: 995,
+        choices: [
+          {value: 'auto', label: t('system.language.auto')},
+          {value: 'en', label: t('system.language.en')},
+          {value: 'nl', label: t('system.language.nl')}
+        ],
+        path: 'launcher.language',
+        parse: function (raw) { return raw || 'auto'; },
+        binder: ctx.binder
+      });
+      section.appendChild(labeledControl(t('system.language'), languageSelect));
 
       const volumeAtHomeValue = volumeLevelValue(ctx.rawConfig.launcher.volumeAtHome);
       const volumeAtHomeSelect = createOptionStepper({
@@ -52,7 +68,7 @@ export function createSystemPane(): PaneHandle {
         parse: volumeLevelParse,
         binder: ctx.binder
       });
-      section.appendChild(labeledControl('Volume in ' + BRAND.name, volumeAtHomeSelect));
+      section.appendChild(labeledControl(t('system.volumeAtHome', {brand: BRAND.name}), volumeAtHomeSelect));
 
       const volumeOnAppValue = volumeLevelValue(ctx.rawConfig.launcher.volumeOnAppLaunch);
       const volumeOnAppSelect = createOptionStepper({
@@ -62,29 +78,24 @@ export function createSystemPane(): PaneHandle {
         parse: volumeLevelParse,
         binder: ctx.binder
       });
-      section.appendChild(labeledControl('Volume when apps launch', volumeOnAppSelect));
+      section.appendChild(labeledControl(t('system.volumeOnLaunch'), volumeOnAppSelect));
 
-      section.appendChild(createHint(
-        'TV system volume (0–100). “Don’t change” keeps whatever you set with the remote. Otherwise ' + BRAND.name + ' switches to the first level when you return home, and the second when Netflix / HDMI / other apps launch.'
-      ));
+      section.appendChild(createHint(t('system.volumeHint', {brand: BRAND.name})));
 
       const perfModeField = createToggle({
-        label: 'Performance mode (low-spec TVs)',
+        label: t('system.perfMode'),
         focusIndex: '1009',
         path: 'launcher.perfMode',
         binder: ctx.binder
       });
       section.appendChild(perfModeField.row);
-      section.appendChild(createHint(
-        'Turns off the frosted glass and uses 1920px wallpapers. ' +
-        'With Slow zoom on (Look), the glass is already off while the wallpaper moves.'
-      ));
+      section.appendChild(createHint(t('system.perfModeHint')));
 
       // Off by default: when enabled, stock Home coming to the foreground
       // (Home button press after another app, or an app exiting to home)
       // relaunches Ember.
       const launchOnHomeField = createToggle({
-        label: 'Launch on Home button',
+        label: t('system.launchOnHome'),
         focusIndex: '1010',
         checked: !!(ctx.rawConfig.launcher.launchOnHome || ctx.rawConfig.launcher.returnOnAppExit),
         path: 'launcher.launchOnHome',
@@ -97,21 +108,17 @@ export function createSystemPane(): PaneHandle {
         cfg.launcher.returnOnAppExit = cfg.launcher.launchOnHome;
       });
 
-      section.appendChild(createHint(
-        'When enabled, a root service opens ' + BRAND.name + ' whenever stock Home appears. A brief flash of the LG home screen is normal (the TV opens Home first; we cannot block the key without a separate input-hook app). Requires rooted TV + Homebrew Channel. Toggle off/on and Save after updates if it stops working.'
-      ));
+      section.appendChild(createHint(t('system.launchOnHomeHint', {brand: BRAND.name})));
 
       const bootField = createToggle({
-        label: 'Boot on TV start',
+        label: t('system.bootOnStart'),
         focusIndex: '1011',
         path: 'launcher.bootOnStart',
         binder: ctx.binder
       });
       section.appendChild(bootField.row);
 
-      section.appendChild(createHint(
-        'When enabled, a root init.d script launches ' + BRAND.name + ' after the TV powers on. Requires rooted TV + Homebrew Channel (same as Home button). A short delay on boot is normal while webOS starts. With Quick Start+ on, the TV only wakes from standby and this doesn’t run; turn it off under General → Devices → TV Management.'
-      ));
+      section.appendChild(createHint(t('system.bootOnStartHint', {brand: BRAND.name})));
 
       ctx.panes.system.appendChild(section);
     }

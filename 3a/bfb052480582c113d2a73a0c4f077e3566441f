@@ -1,0 +1,20 @@
+src/ts/config/config.ts
+  h_1a6b0cc05bf029 68-71
+src/ts/lib/types.ts
+  h_1a6b0cc05bf029 87-88
+src/ts/main.ts
+  h_1a6b0cc05bf029 54,1259-1260
+test/config.test.ts
+  h_1a6b0cc05bf029 1,3,6,139-168
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3abfb052480582c113d2a73a0c4f077e3566441f",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

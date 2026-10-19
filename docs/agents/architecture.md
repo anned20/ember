@@ -44,11 +44,13 @@ Settings `onSave` handler re-applies everything: `refreshAll()`,
 `t(key, params?)` — or `tn(key, count, params?)` for a counted string — straight
 from `@lib/i18n.js`; there is no i18n framework and nothing is threaded through a
 context. The keys and their English strings live in `lib/i18n-en.ts` (the source
-of truth); `lib/i18n-nl.ts` is typed as a complete record of those keys, so a
-missing translation fails `tsc`. The active language is a module singleton,
-resolved once in `init()` from `launcher.language` (`'auto'` follows the TV, read
-from `navigator`) before the platform gate and `buildModules()`, so a lookup
-cannot change language mid-render. `setLanguage()` also sets `<html lang>`, and
+of truth); `lib/i18n-nl.ts`, `lib/i18n-de.ts` and `lib/i18n-fr.ts` are typed as
+complete records of those keys, so a missing translation fails `tsc`. The active
+language is a module singleton, resolved once in `init()` from
+`launcher.language` (`'auto'` follows the TV, whose preferred language is read
+from `navigator`: `nl*`, `de*` and `fr*` pick those languages, anything else
+English) before the platform gate and `buildModules()`, so a lookup cannot
+change language mid-render. `setLanguage()` also sets `<html lang>`, and
 the labels baked into `index.html` are worded by `applyMarkupLabels()` in
 `main.ts`, so even the unsupported-TV surface speaks the resolved language.
 Changing the setting in Settings reloads the app rather than re-rendering:

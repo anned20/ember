@@ -363,6 +363,17 @@ describe('tools pane', () => {
     expect(status.textContent).toContain(available);
   });
 
+  it('reads the pane in French', () => {
+    setLanguage('fr');
+    const {pane} = buildTools(makeConfig({version: CONFIG_SCHEMA_VERSION}));
+
+    expect(pane.textContent).toContain('Sauvegarde et restauration');
+    expect(pane.textContent).toContain('Sauvegarder les réglages');
+    expect(pane.textContent).toContain('Diagnostic TV');
+    expect(pane.textContent).toContain('Mises à jour');
+    expect(pane.textContent).toContain('Aucune sauvegarde de ce TV pour l’instant.');
+  });
+
   it('reads the backup descriptions in Dutch', () => {
     setLanguage('nl');
     const text = settingsBackupText(makeConfig({version: CONFIG_SCHEMA_VERSION}), {reason: 'manual'});

@@ -247,7 +247,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
       const aerialRow = aerialGallery.row;
       section.appendChild(aerialRow);
 
-      aerialRow.appendChild(createHint(t('background.aerial.hint')));
+      aerialRow.appendChild(createHint(t('background.aerial.hint', {brand: BRAND.name})));
 
       // Built-in photo gallery (thumbnails) — only visible when Source is Built-in photos.
       // Built empty; the tiles arrive with the manifest in `load`.

@@ -1,5 +1,7 @@
+import {de} from './i18n-de.js';
 import {en} from './i18n-en.js';
 import type {TranslationKey} from './i18n-en.js';
+import {fr} from './i18n-fr.js';
 import {nl} from './i18n-nl.js';
 
 /**
@@ -18,7 +20,7 @@ import {nl} from './i18n-nl.js';
 export type {TranslationKey};
 
 /** A language Ember ships a dictionary for. */
-export type LanguageCode = 'en' | 'nl';
+export type LanguageCode = 'en' | 'nl' | 'de' | 'fr';
 
 /**
  * The base key of a counted pair: the dictionary holds `X.one` and `X.other`,
@@ -31,14 +33,16 @@ export type PluralKey = StripPluralSuffix<TranslationKey>;
 /** The `{name}` placeholders a string can take. */
 export type TranslationParams = Record<string, string | number>;
 
-const DICTIONARIES: Record<LanguageCode, Record<TranslationKey, string>> = {en: en, nl: nl};
+const DICTIONARIES: Record<LanguageCode, Record<TranslationKey, string>> = {en: en, nl: nl, de: de, fr: fr};
+
+const LOCALES: Record<LanguageCode, string> = {en: 'en-GB', nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR'};
 
 let active: LanguageCode = 'en';
 
 /**
- * The language the TV reports: Dutch when the TV's preferred language starts
- * with `nl` (`nl`, `nl-NL`, `nl-BE`), English otherwise — including when there
- * is no TV language at all.
+ * The language the TV reports: Dutch, German or French when the TV's preferred
+ * language starts with `nl`, `de` or `fr` (`nl`, `nl-NL`, `de-AT`, `fr-CA`, …),
+ * English otherwise — including when there is no TV language at all.
  */
 export function detectLanguage(): LanguageCode {
   const tags = typeof navigator === 'undefined'
@@ -47,16 +51,19 @@ export function detectLanguage(): LanguageCode {
       ? navigator.languages
       : [navigator.language]);
   const preferred = String((tags && tags[0]) || '').toLowerCase();
-  return preferred.indexOf('nl') === 0 ? 'nl' : 'en';
+  const prefix = preferred.slice(0, 2);
+  return prefix === 'nl' || prefix === 'de' || prefix === 'fr' ? prefix : 'en';
 }
 
 /**
- * Set the active language from the `launcher.language` setting: `'en'` or
- * `'nl'`, anything else (the `'auto'` default, a value from an older or newer
- * config) follows the TV.
+ * Set the active language from the `launcher.language` setting: one of the
+ * shipped codes, anything else (the `'auto'` default, a value from an older or
+ * newer config) follows the TV.
  */
 export function setLanguage(setting: string | undefined): void {
-  active = setting === 'en' || setting === 'nl' ? setting : detectLanguage();
+  active = setting === 'en' || setting === 'nl' || setting === 'de' || setting === 'fr'
+    ? setting
+    : detectLanguage();
   // Assistive tech and the browser spell the page in the resolved language.
   if (typeof document !== 'undefined') document.documentElement.lang = active;
 }
@@ -71,7 +78,7 @@ export function activeLanguage(): LanguageCode {
  * its dates read exactly as they did before the language setting existed.
  */
 export function activeLocale(): string {
-  return active === 'nl' ? 'nl-NL' : 'en-GB';
+  return LOCALES[active];
 }
 
 function interpolate(template: string, params?: TranslationParams): string {
@@ -98,10 +105,12 @@ export function tn(key: PluralKey, count: number, params?: TranslationParams): s
 }
 
 function pluralCategory(count: number): 'one' | 'other' {
-  // Older webOS builds may have no Intl.PluralRules; English and Dutch only
-  // distinguish one from the rest.
+  // Older webOS builds may have no Intl.PluralRules. Of the shipped languages
+  // only French treats zero as singular; the rest split at one. CLDR's separate
+  // `many` category (French millions) reads as `.other`, which suits every
+  // counted string in the app.
   if (typeof Intl === 'undefined' || typeof Intl.PluralRules !== 'function') {
-    return count === 1 ? 'one' : 'other';
+    return count === 1 || (active === 'fr' && count === 0) ? 'one' : 'other';
   }
   return new Intl.PluralRules(active).select(count) === 'one' ? 'one' : 'other';
 }

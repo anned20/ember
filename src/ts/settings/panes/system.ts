@@ -51,7 +51,9 @@ export function createSystemPane(): PaneHandle {
         focusIndex: 995,
         choices: [
           {value: 'auto', label: t('system.language.auto')},
+          {value: 'de', label: t('system.language.de')},
           {value: 'en', label: t('system.language.en')},
+          {value: 'fr', label: t('system.language.fr')},
           {value: 'nl', label: t('system.language.nl')}
         ],
         path: 'launcher.language',

@@ -11,6 +11,7 @@ import {createBackgroundPane} from '@settings/panes/background.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {loadBuiltinManifest} from '@background/backgrounds.js';
 import {AERIAL_BACKGROUNDS} from '@background/aerials.js';
+import {BRAND} from '@lib/brand.js';
 import {REMOTE_BACKGROUNDS} from '@background/backgrounds.js';
 import type {BackgroundPaneHandle} from '@settings/panes/background.js';
 import {setLanguage, t} from '@lib/i18n.js';
@@ -226,6 +227,7 @@ describe('background pane', () => {
 
     expect(pane.textContent).toContain(t('background.source'));
     expect(pane.textContent).toContain(t('background.usb.hint', {folder: 'ember'}));
+    expect(pane.textContent).toContain(t('background.aerial.hint', {brand: BRAND.name}));
     expect(galleryByHeading(pane, t('background.aerial.heading', {
       count: AERIAL_BACKGROUNDS.length
     }))).toBeTruthy();

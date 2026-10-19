@@ -1,0 +1,38 @@
+CONTEXT.md
+  h_1a6b0cc05bf029 109-115
+docs/agents/architecture.md
+  h_1a6b0cc05bf029 47-53
+src/ts/config/config.ts
+  h_1a6b0cc05bf029 69-72
+src/ts/lib/i18n-de.ts
+  h_1a6b0cc05bf029 1-440
+src/ts/lib/i18n-en.ts
+  h_1a6b0cc05bf029 6-8,51,53
+src/ts/lib/i18n-fr.ts
+  h_1a6b0cc05bf029 1-440
+src/ts/lib/i18n-nl.ts
+  h_1a6b0cc05bf029 44,46
+src/ts/lib/i18n.ts
+  h_1a6b0cc05bf029 1,4,23,36-38,43-45,54-55,59-61,64-66,81,108-111,113
+src/ts/lib/types.ts
+  h_1a6b0cc05bf029 87
+src/ts/settings/panes/system.ts
+  h_1a6b0cc05bf029 54,56
+test/i18n.test.ts
+  h_1a6b0cc05bf029 2-6,25-32,45-58,60,76-78,82-95,105-110,141-158
+test/settings/panes/system.test.ts
+  h_1a6b0cc05bf029 129-142,147-150
+test/settings/panes/tools.test.ts
+  h_1a6b0cc05bf029 366-376
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f4e9d12d86cd943ea5cb8607bddc2e35dff8d5a2",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

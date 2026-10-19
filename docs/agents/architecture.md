@@ -47,9 +47,12 @@ context. The keys and their English strings live in `lib/i18n-en.ts` (the source
 of truth); `lib/i18n-nl.ts` is typed as a complete record of those keys, so a
 missing translation fails `tsc`. The active language is a module singleton,
 resolved once in `init()` from `launcher.language` (`'auto'` follows the TV, read
-from `navigator`) before `buildModules()`, so a lookup cannot change language
-mid-render. Changing the setting in Settings reloads the app rather than
-re-rendering: `settings.ts` saves and then restarts when the language differs.
+from `navigator`) before the platform gate and `buildModules()`, so a lookup
+cannot change language mid-render. `setLanguage()` also sets `<html lang>`, and
+the labels baked into `index.html` are worded by `applyMarkupLabels()` in
+`main.ts`, so even the unsupported-TV surface speaks the resolved language.
+Changing the setting in Settings reloads the app rather than re-rendering:
+`settings.ts` saves and then restarts when the language differs.
 Console logs, Luna names, config enum values, storage keys and user data (app
 titles, input names, geocoded place names) are not translated. Neither are
 stored values that name one of them: the last-backup note keeps the English

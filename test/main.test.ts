@@ -3,6 +3,7 @@ import {resetSdkVersionCache} from '@luna/platform.js';
 import {setLunaAdapter} from '@luna/luna-transport.js';
 import {BRAND} from '@lib/brand.js';
 import {APP_VERSION} from '@lib/version.js';
+import {setLanguage} from '@lib/i18n.js';
 import {loadConfig, saveConfig} from '@config/config.js';
 import type {WebOSServiceRequestOptions} from '@lib/types.js';
 
@@ -35,6 +36,7 @@ vi.mock('@music/music.js', () => ({
 const FIXTURE = `
 <div id="app">
   <div id="background-layer"></div><div id="scrim"></div>
+  <button id="app-settings-btn"></button>
   <nav id="channel-strip" hidden></nav>
   <nav id="input-row"></nav>
   <section id="weather-panel" hidden></section>
@@ -42,7 +44,8 @@ const FIXTURE = `
   <div id="app-grid-shell"><div id="app-grid"></div></div>
   <span id="track-title"></span><button id="mute-btn"></button>
   <input id="volume-slider" type="range"><audio id="ambient-audio"></audio>
-  <div id="custom-screensaver"></div><div id="settings-panel"></div>
+  <div id="custom-screensaver"><div class="custom-screensaver-hint"></div></div>
+  <div id="settings-panel"></div>
 </div>`;
 
 /** Report a webOS sdkVersion as if `window.webOS.deviceInfo` answered. */
@@ -85,6 +88,7 @@ afterEach(() => {
   delete (window as {webOS?: unknown}).webOS;
   document.body.innerHTML = '';
   localStorage.clear();
+  setLanguage('en');
 });
 
 describe('main module', () => {
@@ -107,6 +111,9 @@ describe('platform gate', () => {
   it('renders the unsupported surface and starts nothing on an old TV', async () => {
     document.body.innerHTML = FIXTURE;
     setDeviceInfo('6');
+    const config = loadConfig();
+    config.launcher.language = 'nl';
+    saveConfig(config);
     const sent: WebOSServiceRequestOptions[] = [];
     setLunaAdapter({
       request: function (_uri, options) {
@@ -124,14 +131,44 @@ describe('platform gate', () => {
       expect(document.getElementById('unsupported-tv')).not.toBeNull();
     });
     const surface = document.getElementById('unsupported-tv')!;
+    expect(surface.textContent).toContain('Deze tv is te oud');
     expect(surface.textContent).toContain('webOS 22');
     expect(surface.textContent).toContain('webOS sdk 6');
+    expect(document.documentElement.lang).toBe('nl');
 
     // No timers, and no Luna/root work (so no init.d hooks or watcher).
     expect(setIntervalSpy).not.toHaveBeenCalled();
     expect(sent).toHaveLength(0);
 
     setIntervalSpy.mockRestore();
+    app.stop();
+  });
+
+  it('words the page markup in the chosen language', async () => {
+    document.body.innerHTML = FIXTURE;
+    setDeviceInfo('10');
+    const config = loadConfig();
+    config.launcher.language = 'nl';
+    saveConfig(config);
+    answerEverything([]);
+
+    const {createApp} = await import('../src/ts/main.js');
+    const app = createApp();
+    app.start();
+
+    await vi.waitFor(function () {
+      expect(document.documentElement.lang).toBe('nl');
+    });
+    expect(document.getElementById('weather-panel')!.getAttribute('aria-label')).toBe('Weer');
+    expect(document.getElementById('app-settings-btn')!.getAttribute('aria-label')).toBe('Instellingen');
+    expect(document.getElementById('channel-strip')!.getAttribute('aria-label')).toBe('TV-zenders');
+    expect(document.getElementById('input-row')!.getAttribute('aria-label')).toBe('Ingangen');
+    expect(document.getElementById('app-grid')!.getAttribute('aria-label')).toBe('Apps');
+    expect(document.getElementById('mute-btn')!.getAttribute('aria-label')).toBe('Dempen');
+    expect(document.getElementById('volume-slider')!.getAttribute('aria-label')).toBe('Volume achtergrondmuziek');
+    expect(document.getElementById('custom-screensaver')!.getAttribute('aria-label')).toBe('Schermbeveiliging');
+    expect(document.querySelector('.custom-screensaver-hint')!.textContent).toBe('Druk op een toets');
+
     app.stop();
   });
 

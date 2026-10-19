@@ -8,13 +8,14 @@
  */
 import {MIN_CHROMIUM_MAJOR, MIN_WEBOS_SDK} from '@luna/platform.js';
 import {BRAND} from '@lib/brand.js';
+import {t} from '@lib/i18n.js';
 
 const SURFACE_ID = 'unsupported-tv';
 
 /** Describe a detected webOS sdkVersion in the user's terms. */
 export function describeDetectedPlatform(sdkVersion: number): string {
-  if (sdkVersion > 0) return 'webOS sdk ' + sdkVersion;
-  return 'an unrecognised platform';
+  if (sdkVersion > 0) return t('unsupported.detected.webos', {sdk: sdkVersion});
+  return t('unsupported.detected.unknown');
 }
 
 /**
@@ -45,22 +46,24 @@ export function renderUnsupportedSurface(
   const title = document.createElement('h1');
   title.id = 'unsupported-tv-title';
   title.className = 'unsupported-tv-title';
-  title.textContent = 'This TV is too old';
+  title.textContent = t('unsupported.title');
 
   const body = document.createElement('p');
   body.className = 'unsupported-tv-body';
-  body.appendChild(document.createTextNode(BRAND.name + ' needs webOS 22 or later. This TV reports '));
+  // Split the sentence on the detected platform so it keeps its emphasis.
+  const parts = t('unsupported.body', {brand: BRAND.name, detected: '\u0001'}).split('\u0001');
+  body.appendChild(document.createTextNode(parts[0]));
   const detectedEl = document.createElement('span');
   detectedEl.className = 'unsupported-tv-detected';
   detectedEl.textContent = detected;
   body.appendChild(detectedEl);
-  body.appendChild(document.createTextNode('.'));
+  body.appendChild(document.createTextNode(parts[1] || ''));
 
   const requirement = document.createElement('p');
   requirement.className = 'unsupported-tv-requirement';
-  requirement.textContent =
-    'Required: webOS 22 (sdk ' + MIN_WEBOS_SDK +
-    ', Chromium ' + MIN_CHROMIUM_MAJOR + ') or later.';
+  requirement.textContent = t('unsupported.requirement', {
+    sdk: MIN_WEBOS_SDK, chromium: MIN_CHROMIUM_MAJOR
+  });
 
   card.appendChild(brand);
   card.appendChild(title);

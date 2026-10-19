@@ -57,6 +57,8 @@ export function detectLanguage(): LanguageCode {
  */
 export function setLanguage(setting: string | undefined): void {
   active = setting === 'en' || setting === 'nl' ? setting : detectLanguage();
+  // Assistive tech and the browser spell the page in the resolved language.
+  if (typeof document !== 'undefined') document.documentElement.lang = active;
 }
 
 /** The language lookups currently use. */

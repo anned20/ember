@@ -429,6 +429,24 @@ export const en = {
   'backup.madeBySameSchema': 'Made by {brand}{version}, with the same settings as this version.',
   'backup.restored': 'Restored the settings from {when} ({kind}, {where}{app}).',
 
+  // ── The page markup (index.html) ──────────────────────────────────────────
+  'markup.weather': 'Weather',
+  'markup.settings': 'Settings',
+  'markup.channels': 'TV channels',
+  'markup.inputs': 'Inputs',
+  'markup.apps': 'Apps',
+  'markup.mute': 'Mute',
+  'markup.ambientVolume': 'Ambient volume',
+  'markup.screensaver': 'Screensaver',
+  'markup.pressAnyButton': 'Press any button',
+
+  // ── The unsupported-TV surface (lib/unsupported-surface.ts) ───────────────
+  'unsupported.title': 'This TV is too old',
+  'unsupported.body': '{brand} needs webOS 22 or later. This TV reports {detected}.',
+  'unsupported.requirement': 'Required: webOS 22 (sdk {sdk}, Chromium {chromium}) or later.',
+  'unsupported.detected.webos': 'webOS sdk {sdk}',
+  'unsupported.detected.unknown': 'an unrecognised platform',
+
   // ── Counted strings ───────────────────────────────────────────────────────
   // The USB music scan (panes/music.ts).
   'music.usbScan.found.one': '{count} track found — tick the ones to play.',

@@ -42,6 +42,14 @@ describe('language detection', () => {
     setLanguage('nonsense');
     expect(activeLanguage()).toBe('nl');
   });
+
+  it('sets the document language to the resolved one', () => {
+    setLanguage('nl');
+    expect(document.documentElement.lang).toBe('nl');
+
+    setLanguage('en');
+    expect(document.documentElement.lang).toBe('en');
+  });
 });
 
 describe('translation', () => {

@@ -400,6 +400,22 @@ export const nl: Record<TranslationKey, string> = {
   'backup.madeBySameSchema': 'Gemaakt door {brand}{version}, met dezelfde instellingen als deze versie.',
   'backup.restored': 'Instellingen hersteld van {when} ({kind}, {where}{app}).',
 
+  'markup.weather': 'Weer',
+  'markup.settings': 'Instellingen',
+  'markup.channels': 'TV-zenders',
+  'markup.inputs': 'Ingangen',
+  'markup.apps': 'Apps',
+  'markup.mute': 'Dempen',
+  'markup.ambientVolume': 'Volume achtergrondmuziek',
+  'markup.screensaver': 'Schermbeveiliging',
+  'markup.pressAnyButton': 'Druk op een toets',
+
+  'unsupported.title': 'Deze tv is te oud',
+  'unsupported.body': '{brand} vereist webOS 22 of nieuwer. Deze tv meldt {detected}.',
+  'unsupported.requirement': 'Vereist: webOS 22 (sdk {sdk}, Chromium {chromium}) of nieuwer.',
+  'unsupported.detected.webos': 'webOS sdk {sdk}',
+  'unsupported.detected.unknown': 'een onbekend platform',
+
   'music.usbScan.found.one': '{count} nummer gevonden — vink de nummers aan die je wilt afspelen.',
   'music.usbScan.found.other': '{count} nummers gevonden — vink de nummers aan die je wilt afspelen.',
   'apps.lgAdded.one': '{count} app van het homescreen van LG toegevoegd, in de volgorde van LG, achter de apps die je al had. Verwijder of verplaats ze hierboven en druk op Opslaan om ze te bewaren.',

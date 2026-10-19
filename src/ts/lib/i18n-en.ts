@@ -293,6 +293,23 @@ export const en = {
   'apps.scanNone': 'No apps found on this TV.',
   'apps.scanFailed': 'Could not scan for apps.',
 
+  // ── The Inputs & channels pane (panes/inputs.ts) and the home row ────────
+  'inputs.section': 'Inputs',
+  'inputs.hint': 'Choose which inputs appear and set custom labels. Uncheck all to hide the input row entirely. One missing? Add it at the end of the list.',
+  'inputs.channels': 'TV channels',
+  'inputs.channelsFavourites': 'Favourites (or all)',
+  'inputs.channelsAll': 'All channels',
+  'inputs.channelsOff': 'Off',
+  'inputs.channelsHint': 'Adds a Channels button after the inputs when the TV has Live TV channels tuned: pick one to watch it, or see what’s on now.',
+  'inputs.addInput': 'Add an input',
+  'inputs.liveTv': 'Live TV',
+  'inputs.channelsChip': 'Channels',
+  // The Live TV strip (home/channels.ts).
+  'channels.nowPlaying': 'What’s on now…',
+  'channels.watchLive': 'Watch Live TV',
+  'channels.openFailed': 'Could not open Live TV',
+  'channels.switchFailed': 'Could not switch to {channel}',
+
   // ── Counted strings ───────────────────────────────────────────────────────
   // The USB music scan (panes/music.ts).
   'music.usbScan.found.one': '{count} track found — tick the ones to play.',

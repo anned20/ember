@@ -7,6 +7,7 @@ import {
   labeledControl
 } from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
+import {t} from '@lib/i18n.js';
 import type {Config} from '@lib/types.js';
 
 const DEFAULT_INPUTS = ['HDMI_1', 'HDMI_2', 'HDMI_3', 'TV'];
@@ -101,7 +102,7 @@ async function fillInputs(container: HTMLElement, ctx: SettingsContext): Promise
   addRow.className = 'settings-input-add';
   const addName = document.createElement('span');
   addName.className = 'settings-input-name';
-  addName.textContent = 'Add an input';
+  addName.textContent = t('inputs.addInput');
   addRow.appendChild(addName);
   addable.forEach(function (device, i) {
     const btn = createMiniButton({
@@ -154,8 +155,8 @@ export function createInputsPane(): PaneHandle {
 
   return {
     build: function (ctx: SettingsContext): void {
-      const section = createSection('Inputs');
-      section.appendChild(createHint('Choose which inputs appear and set custom labels. Uncheck all to hide the input row entirely. One missing? Add it at the end of the list.'));
+      const section = createSection(t('inputs.section'));
+      section.appendChild(createHint(t('inputs.hint')));
 
       const list = document.createElement('div');
       list.className = 'settings-inputs';
@@ -167,18 +168,15 @@ export function createInputsPane(): PaneHandle {
       const channelsSelect = createOptionStepper({
         focusIndex: 1095,
         choices: [
-          {value: 'favourites', label: 'Favourites (or all)'},
-          {value: 'all', label: 'All channels'},
-          {value: 'off', label: 'Off'}
+          {value: 'favourites', label: t('inputs.channelsFavourites')},
+          {value: 'all', label: t('inputs.channelsAll')},
+          {value: 'off', label: t('inputs.channelsOff')}
         ],
         path: 'launcher.channels',
         binder: ctx.binder
       });
-      section.appendChild(labeledControl('TV channels', channelsSelect));
-      section.appendChild(createHint(
-        'Adds a Channels button after the inputs when the TV has Live TV ' +
-        'channels tuned: pick one to watch it, or see what\u2019s on now.'
-      ));
+      section.appendChild(labeledControl(t('inputs.channels'), channelsSelect));
+      section.appendChild(createHint(t('inputs.channelsHint')));
 
       // The inputs grid (tick / label / added) is built from the device list.
       ctx.binder.hook(function (cfg) {

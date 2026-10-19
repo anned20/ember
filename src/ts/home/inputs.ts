@@ -1,5 +1,6 @@
 import {getAllInputStatus, getAllInputStatusViaRoot, switchInput} from '@luna/luna.js';
 import {indexInRow} from '@focus/focus-row.js';
+import {t} from '@lib/i18n.js';
 import type {Config, LauncherConfig, LunaResponse} from '@lib/types.js';
 
 const TV_INPUT_IDS = ['TV', 'LIVE_TV', 'TUNER'];
@@ -80,7 +81,7 @@ export function createInputRow(
     const channels = options.channels;
     if (channels && channels.hasChannels() &&
         !all.some(function (d) { return TV_INPUT_IDS.indexOf(d.id) >= 0; })) {
-      all.push(Object.assign({}, LIVE_TV_INPUT));
+      all.push(liveTvInput());
     }
     const visible = all.filter(isConfigured);
     visible.forEach(function (device, index) {
@@ -109,7 +110,7 @@ export function createInputRow(
       button.className = 'input-chip input-chip-channels focusable';
       button.dataset.focusIndex = String(indexInRow('inputs', visible.length));
       button.dataset.channelsChip = '1';
-      button.textContent = 'Channels';
+      button.textContent = t('inputs.channelsChip');
       button.setAttribute('aria-expanded', channels.isOpen() ? 'true' : 'false');
       if (channels.isOpen()) button.classList.add('active');
       button.addEventListener('click', function () {
@@ -151,7 +152,10 @@ export function createInputRow(
   };
 }
 
-const LIVE_TV_INPUT: InputDevice = {id: 'TV', label: 'Live TV', appId: 'com.webos.app.livetv'};
+/** Live TV: our own input, so its label follows the language setting. */
+function liveTvInput(): InputDevice {
+  return {id: 'TV', label: t('inputs.liveTv'), appId: 'com.webos.app.livetv'};
+}
 // Offered when the TV's input list can't be read.
 const FALLBACK_INPUTS = ['HDMI_1', 'HDMI_2', 'HDMI_3'];
 
@@ -163,7 +167,7 @@ export function isTvInputId(id: string): boolean {
 export function inputFromId(id: string): InputDevice | null {
   const m = /^HDMI_(\d+)$/.exec(id || '');
   if (m) return {id: id, label: 'HDMI ' + m[1], appId: 'com.webos.app.hdmi' + m[1]};
-  if (isTvInputId(id)) return Object.assign({}, LIVE_TV_INPUT);
+  if (isTvInputId(id)) return liveTvInput();
   return null;
 }
 

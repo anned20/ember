@@ -84,8 +84,8 @@ describe('translation', () => {
     expect(tn('apps.showInstalled', 2)).toBe('Show installed apps (2)');
 
     setLanguage('nl');
-    expect(tn('music.usbScan.found', 1)).toBe('1 nummer gevonden — vink de nummers aan die je wilt afspelen.');
-    expect(tn('music.usbScan.found', 0)).toBe('0 nummers gevonden — vink de nummers aan die je wilt afspelen.');
+    expect(tn('music.usbScan.found', 1)).toBe('1 nummer gevonden. Vink aan welke je wilt afspelen.');
+    expect(tn('music.usbScan.found', 0)).toBe('0 nummers gevonden. Vink aan welke je wilt afspelen.');
     expect(tn('screensaver.minutes', 5)).toBe('5 minuten');
     expect(tn('screensaver.seconds', 1)).toBe('1 seconde');
     expect(tn('apps.lgAdded', 1)).toBe('1 app van het homescreen van LG toegevoegd, in de volgorde van LG, achter de apps die je al had. Verwijder of verplaats ze hierboven en druk op Opslaan om ze te bewaren.');

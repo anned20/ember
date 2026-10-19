@@ -22,7 +22,7 @@ import {
   openTvChannel,
   switchInput
 } from '@luna/luna.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {TvChannel} from '@luna/luna.js';
 import type {Config} from '@lib/types.js';
 
@@ -83,7 +83,9 @@ describe('the home row in Dutch', () => {
 
     const chips = Array.from(container.querySelectorAll('.input-chip'))
       .map(function (chip) { return chip.textContent; });
-    expect(chips).toEqual(['HDMI 1', 'Blu-ray speler', 'Live tv', 'Zenders']);
+    expect(chips).toEqual([
+      'HDMI 1', 'Blu-ray speler', t('inputs.liveTv'), t('inputs.channelsChip')
+    ]);
   });
 
   it('reads the channel strip and its failures in Dutch', async () => {
@@ -106,23 +108,23 @@ describe('the home row in Dutch', () => {
     handle.toggle();
     const chips = Array.from(strip.querySelectorAll('.channel-chip'));
     expect(chips.length).toBe(3);
-    expect(chips[0].querySelector('.channel-number')!.textContent).toBe('Live tv');
-    expect(chips[0].querySelector('.channel-name')!.textContent).toBe('Wat is er nu…');
+    expect(chips[0].querySelector('.channel-number')!.textContent).toBe(t('inputs.liveTv'));
+    expect(chips[0].querySelector('.channel-name')!.textContent).toBe(t('channels.nowPlaying'));
     expect(chips[1].querySelector('.channel-name')!.textContent).toBe('NPO 1');
 
     // Nothing on now: the first chip falls back to "watch Live TV".
     await flush();
-    expect(chips[0].querySelector('.channel-name')!.textContent).toBe('Live tv kijken');
+    expect(chips[0].querySelector('.channel-name')!.textContent).toBe(t('channels.watchLive'));
 
     vi.mocked(openTvChannel).mockRejectedValue(new Error('no'));
     (chips[1] as HTMLElement).click();
     await flush();
-    expect(toasts).toEqual(['Kon niet overschakelen naar NPO 1']);
+    expect(toasts).toEqual([t('inputs.switchFailed', {input: 'NPO 1'})]);
 
     vi.mocked(launchApp).mockRejectedValue(new Error('no'));
     vi.mocked(launchAppViaRoot).mockRejectedValue(new Error('no'));
     (chips[0] as HTMLElement).click();
     await flush();
-    expect(toasts).toContain('Kon Live tv niet openen');
+    expect(toasts).toContain(t('channels.openFailed'));
   });
 });

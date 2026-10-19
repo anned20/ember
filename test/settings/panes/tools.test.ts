@@ -42,14 +42,14 @@ vi.mock('@lib/update-check.js', async (importOriginal) => {
 import {createToolsPane} from '@settings/panes/tools.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {
-  LAST_BACKUP_KEY, backupLabel, backupWhen, compatibilityNote, lastBackupNote, parseBackup,
-  restoreReport, settingsBackupText
+  LAST_BACKUP_KEY, backupLabel, backupWhen, backupWhereLabel, compatibilityNote, lastBackupNote,
+  parseBackup, restoreReport, settingsBackupText
 } from '@settings/settings-backup.js';
 import {readSettingsBackups, runTvCheck} from '@luna/luna.js';
 import {CONFIG_SCHEMA_VERSION, configFromBackup, saveConfig} from '@config/config.js';
 import {findLoungeRoots} from '@lib/usb.js';
 import {fetchLatestRelease} from '@lib/update-check.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t, tn} from '@lib/i18n.js';
 import {APP_VERSION} from '@lib/version.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
 import type {Config} from '@lib/types.js';
@@ -288,27 +288,32 @@ describe('tools pane', () => {
   it('reads the whole pane in Dutch, through every flow', async () => {
     setLanguage('nl');
     const current = makeConfig({version: CONFIG_SCHEMA_VERSION});
+    const backupText = settingsBackupText(current, {reason: 'manual'});
     vi.mocked(readSettingsBackups).mockResolvedValue([
-      {where: 'TV', text: settingsBackupText(current, {reason: 'manual'})}
+      {where: 'TV', text: backupText}
     ]);
     vi.mocked(runTvCheck).mockResolvedValue('model: OLED\n=== details ===\nnot shown');
     vi.mocked(fetchLatestRelease).mockResolvedValue('v9.9.9');
     const {pane} = buildTools(current);
 
-    expect(pane.textContent).toContain('Back-up en herstel');
-    expect(pane.textContent).toContain('Instellingen back-uppen');
-    expect(pane.textContent).toContain('TV-controle');
-    expect(pane.textContent).toContain('Updates');
-    expect(pane.textContent).toContain('Je gebruikt ' + BRAND.name + ' ' + APP_VERSION + '.');
-    expect(pane.textContent).toContain('Nog geen back-up gemaakt vanaf deze tv.');
-    expect(backupStatus(pane)).toContain('Nog geen back-up gemaakt');
+    expect(pane.textContent).toContain(t('tools.backupSection'));
+    expect(pane.textContent).toContain(t('tools.backUp'));
+    expect(pane.textContent).toContain(t('tools.tvCheckSection'));
+    expect(pane.textContent).toContain(t('tools.updatesSection'));
+    expect(pane.textContent).toContain(
+      t('tools.runningVersion', {brand: BRAND.name, version: APP_VERSION}));
+    expect(pane.textContent).toContain(t('backup.noneYet'));
+    expect(backupStatus(pane)).toContain(t('backup.noneYet'));
 
     // Backing up: the Dutch status line, and the note left behind for later.
     (pane.querySelector('[data-backup-action="backup"]') as HTMLElement).click();
-    await waitFor(function () { return backupStatus(pane).indexOf('Back-up gemaakt') >= 0; });
-    expect(backupStatus(pane)).toContain('naar de tv en USB-stick.');
-    expect(lastBackupNote()).toContain('Laatste back-up:');
-    expect(lastBackupNote()).toContain('(tv en USB-stick)');
+    await waitFor(function () {
+      return backupStatus(pane).indexOf(backupWhereLabel('TV and USB drive')) >= 0;
+    });
+    expect(backupStatus(pane)).toContain(backupWhereLabel('TV and USB drive'));
+    const savedAt = JSON.parse(localStorage.getItem(LAST_BACKUP_KEY) || '{}').savedAt;
+    expect(lastBackupNote()).toContain(backupWhen(savedAt));
+    expect(lastBackupNote()).toContain(backupWhereLabel('TV and USB drive'));
 
     // Restoring: the picker, its description and the report it leaves.
     const restored = makeConfig({version: CONFIG_SCHEMA_VERSION});
@@ -320,18 +325,19 @@ describe('tools pane', () => {
     const restore = second.querySelector('[data-backup-action="restore"]') as HTMLElement;
     restore.click();
     await waitFor(function () { return !pickRow(second).hidden; });
-    expect(restore.textContent).toBe('Deze back-up herstellen');
-    expect(backupStatus(second)).toContain('met dezelfde instellingen als deze versie');
-    expect(backupStatus(second)).toContain('Druk op “Deze back-up herstellen”');
+    const chosen = parseBackup(backupText, 'TV')!;
+    expect(restore.textContent).toBe(t('tools.restoreThis'));
+    expect(backupStatus(second)).toContain(compatibilityNote(chosen));
+    expect(backupStatus(second)).toContain(t('tools.pressRestore'));
     expect((second.querySelector('[data-focus-index="1592"]') as HTMLElement).textContent)
-      .toContain('je back-up · tv');
+      .toContain(t('backup.kindManual') + ' · ' + backupWhereLabel('TV'));
 
     restore.click();
     await waitFor(function () { return vi.mocked(saveConfig).mock.calls.length > 0; });
     // The report the restore leaves behind shows on the rebuilt pane.
     const third = document.createElement('div');
     handle.build(makeContext(restored, third, {}));
-    expect(third.textContent).toContain('Instellingen hersteld van');
+    expect(third.textContent).toContain(restoreReport(chosen, {skipped: []} as never));
 
     // The TV check and the update check, in Dutch.
     let finishCheck: (report: string) => void = function () {};
@@ -339,18 +345,22 @@ describe('tools pane', () => {
       return new Promise(function (resolve) { finishCheck = resolve; });
     });
     (pane.querySelector('[data-focus-index="1600"]') as HTMLElement).click();
-    await waitFor(function () { return tvCheckStatus(pane).indexOf('ongeveer 40 seconden') >= 0; });
-    expect(tvCheckStatus(pane)).toContain('De TV-instellingen openen en sluiten');
+    await waitFor(function () {
+      return tvCheckStatus(pane).indexOf(t('tools.tvCheckRunning')) >= 0;
+    });
+    expect(tvCheckStatus(pane)).toContain(t('tools.tvCheckRunning'));
     const result = pane.querySelector('[data-focus-index="1601"]') as HTMLElement;
     finishCheck('model: OLED\n=== details ===\nnot shown');
     await waitFor(function () { return !result.hidden; });
-    expect(tvCheckStatus(pane)).toContain('Klaar. Scan de code');
+    expect(tvCheckStatus(pane)).toContain(t('tools.tvCheckDone'));
 
     const {btn, status} = updateParts(pane);
     btn.click();
-    await waitFor(function () { return status.textContent.indexOf('is beschikbaar') >= 0; });
-    expect(status.textContent).toContain(BRAND.name + ' 9.9.9 is beschikbaar');
-    expect(status.textContent).toContain('jij hebt ' + APP_VERSION);
+    const available = t('tools.updateAvailable', {
+      brand: BRAND.name, version: '9.9.9', current: APP_VERSION
+    });
+    await waitFor(function () { return status.textContent.indexOf(available) >= 0; });
+    expect(status.textContent).toContain(available);
   });
 
   it('reads the backup descriptions in Dutch', () => {
@@ -358,19 +368,23 @@ describe('tools pane', () => {
     const text = settingsBackupText(makeConfig({version: CONFIG_SCHEMA_VERSION}), {reason: 'manual'});
     const b = parseBackup(text, 'TV')!;
 
-    expect(backupWhen('nonsense')).toBe('een onbekende datum');
-    expect(backupLabel(b)).toContain('je back-up · tv · ' + APP_VERSION);
-    expect(compatibilityNote(b)).toBe(
-      'Gemaakt door ' + BRAND.name + ' ' + APP_VERSION + ', met dezelfde instellingen als deze versie.');
+    expect(backupWhen('nonsense')).toBe(t('backup.unknownDate'));
+    expect(backupLabel(b)).toContain(
+      t('backup.kindManual') + ' · ' + backupWhereLabel('TV') + ' · ' + APP_VERSION);
+    expect(compatibilityNote(b)).toBe(t('backup.madeBySameSchema', {
+      brand: BRAND.name, version: ' ' + APP_VERSION
+    }));
     expect(restoreReport(b, {skipped: [{path: 'look.tint', why: 'type'}]} as never))
-      .toContain('1 instelling paste niet in deze versie en heeft zijn huidige waarde behouden: look.tint.');
+      .toContain(tn('backup.kept', 1, {settings: 'look.tint'}));
     expect(restoreReport(b, {skipped: [
       {path: 'a.b', why: 'newer'}, {path: 'c.d', why: 'newer'}
-    ]} as never)).toContain('2 instellingen zijn van een nieuwere versie en worden hier niet gebruikt');
+    ]} as never)).toContain(tn('backup.unused', 2, {settings: 'a.b, c.d'}));
 
     localStorage.setItem(LAST_BACKUP_KEY, JSON.stringify(
       {savedAt: '2026-10-19T06:30:00.000Z', where: 'TV and USB drive'}));
-    expect(lastBackupNote()).toBe('Laatste back-up: ' + backupWhen('2026-10-19T06:30:00.000Z') +
-      ' (tv en USB-stick).');
+    expect(lastBackupNote()).toBe(t('backup.lastBackup', {
+      when: backupWhen('2026-10-19T06:30:00.000Z'),
+      where: backupWhereLabel('TV and USB drive')
+    }));
   });
 });

@@ -20,7 +20,7 @@ import {createMusicPane} from '@settings/panes/music.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {loadBuiltinMusicManifest} from '@music/builtin-music.js';
 import {discoverMusicTracks} from '@lib/usb.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t, tn} from '@lib/i18n.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
 import type {BuiltinMusicEntry, Config, UsbTrack} from '@lib/types.js';
 
@@ -206,22 +206,21 @@ describe('music pane', () => {
     const {pane} = buildMusic(makeConfig({source: 'usb', path: '/media/usb1/ember/music'}));
     await waitFor(function () { return trackRowCount(pane) === 2; });
 
-    expect(pane.querySelector('.settings-section > h3')!.textContent).toBe('Muziek');
-    expect(pane.textContent).toContain('Achtergrondmuziek');
-    expect(pane.textContent).toContain('Muziekbalk tonen');
-    expect(pane.textContent).toContain('Bron');
-    expect(pane.textContent).toContain('Start met');
-    expect(pane.textContent).toContain('Muziekmap');
-    expect(pane.textContent).toContain('USB-nummers (vink aan om mee te nemen)');
-    expect(pane.textContent).toContain('Volume achtergrondmuziek');
+    expect(pane.querySelector('.settings-section > h3')!.textContent).toBe(t('music.section'));
+    expect(pane.textContent).toContain(t('music.enabled'));
+    expect(pane.textContent).toContain(t('music.showBar'));
+    expect(pane.textContent).toContain(t('music.source'));
+    expect(pane.textContent).toContain(t('music.startWith'));
+    expect(pane.textContent).toContain(t('music.path'));
+    expect(pane.textContent).toContain(t('music.usbPlaylist'));
+    expect(pane.textContent).toContain(t('music.volume'));
     // The USB scan count is a counted string: 2 goes through the other form.
-    expect(pane.textContent).toContain(
-      '2 nummers gevonden — vink de nummers aan die je wilt afspelen.');
+    expect(pane.textContent).toContain(tn('music.usbScan.found', 2));
 
     const source = pane.querySelector('[data-focus-index="941"]') as HTMLElement;
-    expect(source.querySelector('.stepper-label')!.textContent).toBe('Mijn nummers (USB)');
+    expect(source.querySelector('.stepper-label')!.textContent).toBe(t('music.source.usb'));
     const repeat = pane.querySelector('[data-focus-index="991"]') as HTMLElement;
-    expect(repeat.querySelector('.stepper-label')!.textContent).toBe('Alles herhalen');
+    expect(repeat.querySelector('.stepper-label')!.textContent).toBe(t('music.repeat.all'));
   });
 
   it('keeps the stored values while showing the Dutch labels', () => {

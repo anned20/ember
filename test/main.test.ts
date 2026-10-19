@@ -3,7 +3,7 @@ import {resetSdkVersionCache} from '@luna/platform.js';
 import {setLunaAdapter} from '@luna/luna-transport.js';
 import {BRAND} from '@lib/brand.js';
 import {APP_VERSION} from '@lib/version.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import {loadConfig, saveConfig} from '@config/config.js';
 import type {WebOSServiceRequestOptions} from '@lib/types.js';
 
@@ -131,9 +131,11 @@ describe('platform gate', () => {
       expect(document.getElementById('unsupported-tv')).not.toBeNull();
     });
     const surface = document.getElementById('unsupported-tv')!;
-    expect(surface.textContent).toContain('Deze tv is te oud');
-    expect(surface.textContent).toContain('webOS 22');
-    expect(surface.textContent).toContain('webOS sdk 6');
+    expect(surface.textContent).toContain(t('unsupported.title'));
+    expect(surface.textContent).toContain(t('unsupported.body', {
+      brand: BRAND.name,
+      detected: t('unsupported.detected.webos', {sdk: 6})
+    }));
     expect(document.documentElement.lang).toBe('nl');
 
     // No timers, and no Luna/root work (so no init.d hooks or watcher).
@@ -159,15 +161,15 @@ describe('platform gate', () => {
     await vi.waitFor(function () {
       expect(document.documentElement.lang).toBe('nl');
     });
-    expect(document.getElementById('weather-panel')!.getAttribute('aria-label')).toBe('Weer');
-    expect(document.getElementById('app-settings-btn')!.getAttribute('aria-label')).toBe('Instellingen');
-    expect(document.getElementById('channel-strip')!.getAttribute('aria-label')).toBe('TV-zenders');
-    expect(document.getElementById('input-row')!.getAttribute('aria-label')).toBe('Ingangen');
-    expect(document.getElementById('app-grid')!.getAttribute('aria-label')).toBe('Apps');
-    expect(document.getElementById('mute-btn')!.getAttribute('aria-label')).toBe('Dempen');
-    expect(document.getElementById('volume-slider')!.getAttribute('aria-label')).toBe('Volume achtergrondmuziek');
-    expect(document.getElementById('custom-screensaver')!.getAttribute('aria-label')).toBe('Schermbeveiliging');
-    expect(document.querySelector('.custom-screensaver-hint')!.textContent).toBe('Druk op een toets');
+    expect(document.getElementById('weather-panel')!.getAttribute('aria-label')).toBe(t('markup.weather'));
+    expect(document.getElementById('app-settings-btn')!.getAttribute('aria-label')).toBe(t('markup.settings'));
+    expect(document.getElementById('channel-strip')!.getAttribute('aria-label')).toBe(t('markup.channels'));
+    expect(document.getElementById('input-row')!.getAttribute('aria-label')).toBe(t('markup.inputs'));
+    expect(document.getElementById('app-grid')!.getAttribute('aria-label')).toBe(t('markup.apps'));
+    expect(document.getElementById('mute-btn')!.getAttribute('aria-label')).toBe(t('markup.mute'));
+    expect(document.getElementById('volume-slider')!.getAttribute('aria-label')).toBe(t('markup.ambientVolume'));
+    expect(document.getElementById('custom-screensaver')!.getAttribute('aria-label')).toBe(t('markup.screensaver'));
+    expect(document.querySelector('.custom-screensaver-hint')!.textContent).toBe(t('markup.pressAnyButton'));
 
     app.stop();
   });

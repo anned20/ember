@@ -13,7 +13,7 @@ import {loadBuiltinManifest} from '@background/backgrounds.js';
 import {AERIAL_BACKGROUNDS} from '@background/aerials.js';
 import {REMOTE_BACKGROUNDS} from '@background/backgrounds.js';
 import type {BackgroundPaneHandle} from '@settings/panes/background.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
 import type {BuiltinBackground, Config} from '@lib/types.js';
 
@@ -224,15 +224,21 @@ describe('background pane', () => {
     setLanguage('nl');
     const {pane, handle} = buildPane();
 
-    expect(pane.textContent).toContain('Bron');
-    expect(pane.textContent).toContain('USB-pad: ember/backgrounds/ met images.json');
-    expect(galleryByHeading(pane, 'Kies een aerial-clip')).toBeTruthy();
-    expect(galleryByHeading(pane, 'Kies een ingebouwde foto')).toBeTruthy();
-    expect(galleryByHeading(pane, 'Kies een online foto')).toBeTruthy();
+    expect(pane.textContent).toContain(t('background.source'));
+    expect(pane.textContent).toContain(t('background.usb.hint', {folder: 'ember'}));
+    expect(galleryByHeading(pane, t('background.aerial.heading', {
+      count: AERIAL_BACKGROUNDS.length
+    }))).toBeTruthy();
+    expect(galleryByHeading(pane, t('background.builtin.heading'))).toBeTruthy();
+    expect(galleryByHeading(pane, t('background.url.heading', {
+      count: REMOTE_BACKGROUNDS.length
+    }))).toBeTruthy();
 
     handle.setProfile('cinema');
     const note = pane.querySelector('.settings-hint') as HTMLElement;
-    expect(note.textContent).toContain('Het profiel Cinema gebruikt zijn eigen donkere achtergrond');
+    expect(note.textContent).toContain(t('background.profileNote', {
+      profile: t('look.profile.cinema')
+    }));
   });
 
   it('keeps the stored source values while showing the Dutch labels', () => {
@@ -240,7 +246,8 @@ describe('background pane', () => {
     const {pane, config, ctx} = buildPane();
 
     const source = stepper(pane, '902');
-    expect((source.querySelector('.stepper-label') as HTMLElement).textContent).toBe('Verloop');
+    expect((source.querySelector('.stepper-label') as HTMLElement).textContent)
+      .toBe(t('background.source.preset'));
     expect((source as unknown as {value: string}).value).toBe('preset');
     source.__step(2);
     ctx.binder.collect(config);

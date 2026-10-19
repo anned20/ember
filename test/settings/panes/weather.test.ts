@@ -11,7 +11,7 @@ vi.mock('@home/weather.js', async (importOriginal) => {
 import {createWeatherPane} from '@settings/panes/weather.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {searchPlaces} from '@home/weather.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {SettingsContext} from '@settings/pane.js';
 import type {Config, WeatherLocation} from '@lib/types.js';
 
@@ -147,22 +147,23 @@ describe('weather pane', () => {
     const {pane} = buildPane();
 
     const input = pane.querySelector('input[data-focus-index="1022"]') as HTMLInputElement;
-    expect(pane.textContent).toContain('Toon weer');
-    expect(pane.textContent).toContain('Temperatuur');
-    expect(pane.textContent).toContain('Locatie: Berlin');
-    expect(pane.textContent).toContain('Begin een stad of dorp te typen');
-    expect(input.placeholder).toBe('Begin een plaats te typen, bijv. tok');
+    expect(pane.textContent).toContain(t('weather.show'));
+    expect(pane.textContent).toContain(t('weather.temperature'));
+    expect(pane.textContent).toContain(t('weather.location', {place: 'Berlin'}));
+    expect(pane.textContent).toContain(t('weather.idleHint'));
+    expect(input.placeholder).toBe(t('weather.placeholder'));
 
     input.value = 'tok';
     input.dispatchEvent(new Event('input'));
 
-    await waitForText('“tok” opzoeken…', pane);
+    await waitForText(t('weather.lookingUp', {query: 'tok'}), pane);
     resolveSearch([PLACE]);
     const option = await waitFor('.settings-suggestion', pane);
-    expect(pane.textContent).toContain('Sluit het toetsenbord');
+    expect(pane.textContent).toContain(t('weather.choose'));
 
     (option as HTMLButtonElement).click();
-    expect(pane.textContent).toContain('Locatie: Tokyo, Japan — druk op Opslaan om hem te gebruiken');
-    expect(pane.textContent).toContain('Druk op Opslaan om het weer voor Tokyo, Japan te tonen.');
+    expect(pane.textContent).toContain(
+      t('weather.location', {place: PLACE.name}) + t('weather.locationPending'));
+    expect(pane.textContent).toContain(t('weather.pressSave', {place: PLACE.name}));
   });
 });

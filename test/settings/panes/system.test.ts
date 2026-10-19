@@ -3,7 +3,7 @@ import {createSystemPane} from '@settings/panes/system.js';
 import {createBinder} from '@settings/settings-binding.js';
 import type {SettingsContext} from '@settings/pane.js';
 import {BRAND} from '@lib/brand.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {Config} from '@lib/types.js';
 
 function makeConfig(): Config {
@@ -119,11 +119,11 @@ describe('system pane', () => {
 
     const language = stepper(pane, '995');
     expect(language.value).toBe('auto');
-    expect(pane.textContent).toContain('Taal');
-    expect(pane.textContent).toContain('Automatisch');
-    expect(pane.textContent).toContain('Volume in ' + BRAND.name);
-    expect(pane.textContent).toContain('Prestatiemodus (tvs met weinig geheugen)');
-    expect(pane.textContent).toContain('Opstarten met de tv');
+    expect(pane.textContent).toContain(t('system.language'));
+    expect(pane.textContent).toContain(t('system.language.auto'));
+    expect(pane.textContent).toContain(t('system.volumeAtHome', {brand: BRAND.name}));
+    expect(pane.textContent).toContain(t('system.perfMode'));
+    expect(pane.textContent).toContain(t('system.bootOnStart'));
   });
 
   it('offers Automatic, English and Nederlands', () => {

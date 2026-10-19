@@ -1,6 +1,6 @@
 import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
 import {BRAND} from '@lib/brand.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 
 vi.mock('@luna/luna.js', () => ({
   execRoot: vi.fn(async () => ''),
@@ -158,12 +158,13 @@ describe('settings panel integration', () => {
     const systemPane = await waitFor('.settings-tab-pane[data-tab="system"] .option-stepper[data-focus-index="995"]', panel);
 
     expect(panel.querySelector('.settings-header-title h2')?.textContent)
-      .toBe(BRAND.name + ' - "Warm, helder, van jou."');
-    expect(panel.querySelector('.settings-close')?.textContent).toBe('Sluiten');
-    expect(panel.querySelector('.settings-save')?.textContent).toBe('Opslaan');
-    expect(panel.querySelector('.settings-nav')?.textContent).toContain('Weergave');
-    expect(panel.querySelector('.settings-nav')?.textContent).toContain('Ingangen en zenders');
-    expect(systemPane.closest('.settings-tab-pane')?.textContent).toContain('Volume in ' + BRAND.name);
+      .toBe(BRAND.name + ' - "' + t('settings.tagline') + '"');
+    expect(panel.querySelector('.settings-close')?.textContent).toBe(t('settings.close'));
+    expect(panel.querySelector('.settings-save')?.textContent).toBe(t('settings.save'));
+    expect(panel.querySelector('.settings-nav')?.textContent).toContain(t('settings.category.look'));
+    expect(panel.querySelector('.settings-nav')?.textContent).toContain(t('settings.category.inputs'));
+    expect(systemPane.closest('.settings-tab-pane')?.textContent).toContain(
+      t('system.volumeAtHome', {brand: BRAND.name}));
 
     handle.hide();
   });

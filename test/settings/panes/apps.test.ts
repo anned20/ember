@@ -30,7 +30,7 @@ import {listInstalledApps} from '@apps/apps.js';
 import {isAppInstalled, loadAppCatalog, resolvePinnedApp} from '@apps/app-catalog.js';
 import {lgHomeAppsToAdd} from '@apps/lg-home.js';
 import {listLaunchPoints} from '@luna/luna.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t, tn} from '@lib/i18n.js';
 import type {PaneHandle, SettingsAppsState, SettingsContext} from '@settings/pane.js';
 import type {AppCatalog, Config} from '@lib/types.js';
 
@@ -233,27 +233,29 @@ describe('apps pane', () => {
 
     const headings = Array.from(pane.querySelectorAll('.settings-section > h3'))
       .map(function (heading) { return heading.textContent; });
-    expect(headings).toEqual(['Vastgezette apps', 'Eigen app', 'Apps ontdekken']);
-    expect(pane.textContent).toContain('Een app toevoegen');
-    expect(pane.textContent).toContain('Alle-apps-tegel op de home-rij');
-    expect(pane.textContent).toContain('Cijfertoetsen openen tegels op de home-rij');
-    expect(pane.textContent).toContain('Verborgen en systeem-apps tonen');
-    expect(pane.textContent).toContain('Alle apps van het homescreen van LG toevoegen');
-    expect(pane.textContent).toContain('Vind het App ID op je tv');
+    expect(headings).toEqual([
+      t('apps.pinnedSection'), t('apps.customSection'), t('apps.discoverSection')
+    ]);
+    expect(pane.textContent).toContain(t('apps.addHeading'));
+    expect(pane.textContent).toContain(t('apps.allAppsTile'));
+    expect(pane.textContent).toContain(t('apps.numberKeys'));
+    expect(pane.textContent).toContain(t('apps.showHidden'));
+    expect(pane.textContent).toContain(t('apps.lgImport'));
+    expect(pane.textContent).toContain(t('apps.customHint'));
 
     // The TV's title stays; only the note we add to it is Dutch.
     const titles = Array.from(pane.querySelectorAll('.settings-pinned-title'))
       .map(function (title) { return title.textContent; });
-    expect(titles[0]).toBe('Netflix — niet geïnstalleerd op deze tv');
+    expect(titles[0]).toBe('Netflix ' + t('apps.notInstalled'));
     expect(titles[1]).toBe('Custom App');
 
     expect((pane.querySelector('[data-focus-index="1299"]') as HTMLElement).textContent)
-      .toBe('Geïnstalleerde apps tonen (1)');
+      .toBe(tn('apps.showInstalled', 1));
 
     // Discover reports its count through the counted pair.
     (pane.querySelector('[data-focus-index="1500"]') as HTMLElement).click();
-    await waitFor(function () { return pane.textContent!.indexOf('apps gevonden') >= 0; });
-    expect(pane.textContent).toContain('2 apps gevonden.');
+    await waitFor(function () { return pane.textContent!.indexOf(tn('apps.found', 2)) >= 0; });
+    expect(pane.textContent).toContain(tn('apps.found', 2));
   });
 
   it('reports the LG import in Dutch', async () => {
@@ -265,6 +267,6 @@ describe('apps pane', () => {
     (pane.querySelector('[data-focus-index="1298"]') as HTMLElement).click();
 
     await waitFor(function () { return ctx.apps.pinnedOrder.indexOf('com.lg.one') >= 0; });
-    expect(pane.textContent).toContain('1 app van het homescreen van LG toegevoegd');
+    expect(pane.textContent).toContain(tn('apps.lgAdded', 1));
   });
 });

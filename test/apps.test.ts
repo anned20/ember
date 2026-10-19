@@ -11,7 +11,7 @@ vi.mock('@luna/luna.js', () => ({
 import {launchApp, launchAppViaRoot, listApps, getAppInfo} from '@luna/luna.js';
 import {createAppGrid} from '@apps/apps.js';
 import {createAllApps} from '@apps/all-apps.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {Config} from '@lib/types.js';
 
 function makeConfig(pinnedApps: string[], numberKeyLaunch?: boolean): () => Config {
@@ -304,9 +304,9 @@ describe('the dock and All apps in Dutch', () => {
     const labels = Array.from(container.querySelectorAll('.app-label'))
       .map(function (label) { return label.textContent; });
     // The app's own title is the TV's, not ours.
-    expect(labels).toEqual(['Netflix', 'Alle apps', 'TV-instellingen']);
-    expect(container.querySelector('.all-apps-launcher')!.getAttribute('aria-label')).toBe('Alle apps');
-    expect(container.querySelector('.settings-tile')!.getAttribute('aria-label')).toBe('TV-instellingen');
+    expect(labels).toEqual(['Netflix', t('apps.allApps'), t('apps.tvSettings')]);
+    expect(container.querySelector('.all-apps-launcher')!.getAttribute('aria-label')).toBe(t('apps.allApps'));
+    expect(container.querySelector('.settings-tile')!.getAttribute('aria-label')).toBe(t('apps.tvSettings'));
   });
 
   it('reads the overlay, its note and its menu in Dutch', async () => {
@@ -321,22 +321,21 @@ describe('the dock and All apps in Dutch', () => {
     });
     await allApps.show();
 
-    expect(mount.querySelector('.all-apps-head h2')!.textContent).toBe('Alle apps');
-    expect(mount.querySelector('.all-apps-hint')!.textContent)
-      .toBe('OK opent een app · Houd OK ingedrukt voor opties · Back sluit af');
+    expect(mount.querySelector('.all-apps-head h2')!.textContent).toBe(t('apps.allApps'));
+    expect(mount.querySelector('.all-apps-hint')!.textContent).toBe(t('apps.hint'));
 
     allApps.openMenu(mount.querySelector<HTMLElement>('.all-apps-tile')!);
 
     expect(mount.querySelector('.all-apps-menu-head h3')!.textContent).toBe('Demo');
-    expect(mount.querySelector('.all-apps-menu-state')!.textContent).toBe('Staat niet op de home-rij');
-    expect(mount.querySelector('[data-action="pin"]')!.textContent).toBe('Vastzetten');
-    expect(mount.querySelector('[data-action="restart"]')!.textContent).toBe('Herstarten');
+    expect(mount.querySelector('.all-apps-menu-state')!.textContent).toBe(t('apps.menu.offHome'));
+    expect(mount.querySelector('[data-action="pin"]')!.textContent).toBe(t('apps.menu.pin'));
+    expect(mount.querySelector('[data-action="restart"]')!.textContent).toBe(t('apps.menu.restart'));
 
     (mount.querySelector('[data-action="delete"]') as HTMLElement).click();
     expect(mount.querySelector('.all-apps-menu-question')!.textContent)
-      .toBe('Demo verwijderen? Dit kan niet ongedaan worden gemaakt.');
-    expect(mount.querySelector('[data-action="delete-confirm"]')!.textContent).toBe('Verwijderen');
-    expect(mount.querySelector('[data-action="cancel"]')!.textContent).toBe('Annuleren');
+      .toBe(t('apps.menu.deleteConfirm', {title: 'Demo'}));
+    expect(mount.querySelector('[data-action="delete-confirm"]')!.textContent).toBe(t('apps.menu.delete'));
+    expect(mount.querySelector('[data-action="cancel"]')!.textContent).toBe(t('apps.menu.cancel'));
   });
 
   it('reads the empty note in Dutch', async () => {
@@ -351,7 +350,7 @@ describe('the dock and All apps in Dutch', () => {
     await allApps.show();
 
     expect(mount.querySelector('.all-apps-note')!.textContent)
-      .toBe('Kon de apps van de tv niet lezen. Dit vereist root (Homebrew Channel).');
+      .toBe(t('apps.readFailed'));
   });
 
   it('toasts a delete that gives no reason in Dutch', async () => {    vi.mocked(listApps).mockResolvedValue({apps: [{id: 'demo.app', title: 'Demo'}]});
@@ -373,7 +372,7 @@ describe('the dock and All apps in Dutch', () => {
     (mount.querySelector('[data-action="delete-confirm"]') as HTMLElement).click();
     await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-    expect(onToast).toHaveBeenCalledWith('Kon Demo niet verwijderen');
+    expect(onToast).toHaveBeenCalledWith(t('apps.deleteFailed', {app: 'Demo'}));
   });
 
   it('toasts a launch that fails in Dutch', async () => {
@@ -392,6 +391,6 @@ describe('the dock and All apps in Dutch', () => {
     await new Promise(function (resolve) { setTimeout(resolve, 0); });
     await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
-    expect(toasts).toEqual(['Kon Netflix niet starten']);
+    expect(toasts).toEqual([t('apps.launchFailed', {app: 'Netflix'})]);
   });
 });

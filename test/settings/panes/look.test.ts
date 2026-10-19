@@ -8,7 +8,8 @@ import {createLookPane} from '@settings/panes/look.js';
 import {createBinder} from '@settings/settings-binding.js';
 import type {OptionStepperElement} from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
+import {BRAND} from '@lib/brand.js';
 import type {Config} from '@lib/types.js';
 
 function makeConfig(overrides: Record<string, unknown> = {}): Config {
@@ -137,23 +138,23 @@ describe('Look pane', () => {
     const {pane} = buildLook(config);
 
     const titles = sectionTitles(pane);
-    expect(titles).toContain('Profiel');
-    expect(titles).toContain('Glas');
-    expect(titles).toContain('Klok en pictogrammen');
+    expect(titles).toContain(t('look.section.profile'));
+    expect(titles).toContain(t('look.section.glass'));
+    expect(titles).toContain(t('look.section.clockIcons'));
 
     function shown(focusIndex: string): string {
       const control = pane.querySelector('[data-focus-index="' + focusIndex + '"]') as HTMLElement;
       return (control.querySelector('.stepper-label') as HTMLElement).textContent || '';
     }
 
-    expect(shown('901')).toBe('Standaard');
-    expect(shown('1002')).toBe('Midden boven');
-    expect(shown('1004')).toBe('Lokale tijd van de tv');
-    expect(shown('1091')).toBe('Licht (origineel)');
-    expect(pane.textContent).toContain('Actief profiel');
-    expect(pane.textContent).toContain('Klok tonen');
-    expect(pane.textContent).toContain('Pictogrammen per rij (scrollmodus)');
-    expect(pane.textContent).toContain('Gebruik Ember-pictogrammen');
+    expect(shown('901')).toBe(t('look.profile.default'));
+    expect(shown('1002')).toBe(t('look.clock.position.center'));
+    expect(shown('1004')).toBe(t('look.timezone.local'));
+    expect(shown('1091')).toBe(t('look.glass.tint.light'));
+    expect(pane.textContent).toContain(t('look.profile.active'));
+    expect(pane.textContent).toContain(t('look.clock.show'));
+    expect(pane.textContent).toContain(t('look.icon.perRow'));
+    expect(pane.textContent).toContain(t('look.icon.bundled', {brand: BRAND.name}));
   });
 
   it('writes the stored value, not the Dutch label', () => {

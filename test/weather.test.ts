@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {conditionLabel, createWeatherPanel} from '@home/weather.js';
 import {BRAND} from '@lib/brand.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {Config, WeatherLocation} from '@lib/types.js';
 
 const LOCATION: WeatherLocation = {
@@ -59,8 +59,8 @@ describe('the weather panel', () => {
     const el = await paint();
 
     expect(el.querySelector('.weather-place')!.textContent).toBe('Berlin');
-    expect(el.querySelector('.weather-day-label')!.textContent).toBe('Vandaag');
-    expect(el.querySelector('.weather-condition')!.textContent).toBe('Bewolkt');
+    expect(el.querySelector('.weather-day-label')!.textContent).toBe(t('weather.today'));
+    expect(el.querySelector('.weather-condition')!.textContent).toBe(t('weather.condition.overcast'));
     expect(el.querySelector('.weather-now')!.textContent).toBe('12°');
     expect(el.querySelector('.weather-hilo')!.textContent).toContain('H 14°');
     expect(el.querySelector('.weather-hilo')!.textContent).toContain('L 8°');
@@ -90,8 +90,8 @@ describe('the weather panel', () => {
     expect(conditionLabel(95, true)).toBe('Thunderstorm');
 
     setLanguage('nl');
-    expect(conditionLabel(0, true)).toBe('Helder');
-    expect(conditionLabel(0, false)).toBe('Heldere nacht');
-    expect(conditionLabel(95, true)).toBe('Onweer');
+    expect(conditionLabel(0, true)).toBe(t('weather.condition.clear'));
+    expect(conditionLabel(0, false)).toBe(t('weather.condition.clearNight'));
+    expect(conditionLabel(95, true)).toBe(t('weather.condition.thunder'));
   });
 });

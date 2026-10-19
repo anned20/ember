@@ -12,7 +12,7 @@ vi.mock('@home/inputs.js', async (importOriginal) => {
 import {createInputsPane} from '@settings/panes/inputs.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {fetchInputDevices} from '@home/inputs.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
 import type {Config} from '@lib/types.js';
 
@@ -146,11 +146,11 @@ describe('inputs pane', () => {
 
     await handle.load!(ctx);
 
-    expect(pane.textContent).toContain('Kies welke ingangen verschijnen');
-    expect(pane.textContent).toContain('TV-zenders');
-    expect(pane.textContent).toContain('Een ingang toevoegen');
+    expect(pane.textContent).toContain(t('inputs.hint'));
+    expect(pane.textContent).toContain(t('inputs.channels'));
+    expect(pane.textContent).toContain(t('inputs.addInput'));
     expect(pane.querySelector('[data-focus-index="1095"] .stepper-label')!.textContent)
-      .toBe('Alle zenders');
+      .toBe(t('inputs.channelsAll'));
     // The TV's name for the input, and the label the user typed, are not ours.
     expect(pane.querySelector('.settings-input-name')!.textContent).toBe('HDMI 1');
     expect((pane.querySelector('.settings-input-row input[type=text]') as HTMLInputElement).value)

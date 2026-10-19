@@ -1,6 +1,6 @@
 import {afterEach, describe, expect, it} from 'vitest';
 import {clockParts, setClockTime} from '@lib/clock-format.js';
-import {setLanguage} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 
 const MORNING = new Date(2026, 0, 1, 6, 30);
 const EVENING = new Date(2026, 0, 1, 18, 30);
@@ -19,8 +19,8 @@ describe('the clock', () => {
     expect(clockParts(EVENING, '', true)).toEqual({time: '6:30', ampm: 'PM'});
 
     setLanguage('nl');
-    expect(clockParts(MORNING, '', true)).toEqual({time: '6:30', ampm: 'a.m.'});
-    expect(clockParts(EVENING, '', true)).toEqual({time: '6:30', ampm: 'p.m.'});
+    expect(clockParts(MORNING, '', true)).toEqual({time: '6:30', ampm: t('clock.am')});
+    expect(clockParts(EVENING, '', true)).toEqual({time: '6:30', ampm: t('clock.pm')});
   });
 
   it('paints the marker into the element', () => {
@@ -29,7 +29,7 @@ describe('the clock', () => {
 
     setClockTime(el, EVENING, '', true);
 
-    expect(el.textContent).toBe('6:30p.m.');
-    expect(el.querySelector('.clock-ampm')!.textContent).toBe('p.m.');
+    expect(el.textContent).toBe('6:30' + t('clock.pm'));
+    expect(el.querySelector('.clock-ampm')!.textContent).toBe(t('clock.pm'));
   });
 });

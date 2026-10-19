@@ -1,0 +1,40 @@
+docs/agents/architecture.md
+  h_1a6b0cc05bf029 54-57
+src/ts/apps/all-apps.ts
+  h_1a6b0cc05bf029 287
+src/ts/apps/apps.ts
+  h_1a6b0cc05bf029 257
+src/ts/background/background.ts
+  h_1a6b0cc05bf029 8,225
+src/ts/home/inputs.ts
+  h_1a6b0cc05bf029 130
+src/ts/lib/i18n-en.ts
+  h_1a6b0cc05bf029 63-72,203,253-256,310-316,329-330,370-431,443-447
+src/ts/lib/i18n-nl.ts
+  h_1a6b0cc05bf029 56-63,190,237-240,293-298,309,344-402,411-414
+src/ts/main.ts
+  h_1a6b0cc05bf029 54,226,377,597-598,661,668-669,679,686-687,718,1185-1186,1285-1286,1390
+src/ts/music/music.ts
+  h_1a6b0cc05bf029 449,455,484,489
+src/ts/settings/panes/tools.ts
+  h_1a6b0cc05bf029 17,19-20,61-66,70,76,94,110,116,124-125,131,138-144,146-148,151,161-162,166-167,174,180,187-190,195-196,205-207,216-217,220,249,251,272-273,276-278,281,289-294,297,325-326,334-338,342-345,347,350,353
+src/ts/settings/settings-backup.ts
+  h_1a6b0cc05bf029 15,72,77-88,93-98,102,171,173-175,177,183,188,190,193,196,198-201,210-215,221,224
+src/ts/settings/settings.ts
+  h_1a6b0cc05bf029 573,575
+test/apps.test.ts
+  h_1a6b0cc05bf029 11,356-396
+test/settings/panes/tools.test.ts
+  h_1a6b0cc05bf029 44-47,49,52,127-137,151,287-375
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8462070a6cbdb419ff849866c41771ca1448ad16",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

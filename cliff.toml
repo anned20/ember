@@ -1,0 +1,36 @@
+# Release notes, rendered by orhun/git-cliff-action on a v* tag.
+# Only the user-facing types get a section; refactors, docs, tests, build and
+# chore commits stay in the commit history, which the release links to.
+
+[changelog]
+body = """
+{% for group in commits | commit_groups(groups=commit_parsers_groups) %}
+## {{ group.group | striptags | trim }}
+{% for commit in group.commits %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message | split(pat="\n") | first | trim }}
+{% endfor %}
+{% endfor %}
+"""
+footer = """
+{% for release in releases -%}
+{% if release.version and release.previous and release.previous.version -%}
+**Full Changelog**: https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/compare/{{ release.previous.version }}...{{ release.version }}
+{% endif -%}
+{% endfor %}
+"""
+# Normalizes the headings, list markers and blank lines the templates leave.
+format = true
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+commit_parsers = [
+  { message = '^[a-z]+(\([^)]*\))?!:', group = "<!-- 0 -->Breaking changes" },
+  { message = '^feat', group = "<!-- 1 -->Features" },
+  { message = '^fix', group = "<!-- 2 -->Fixes" },
+  { message = '^perf', group = "<!-- 3 -->Performance" },
+  { message = '^revert', group = "<!-- 4 -->Reverts" },
+  { message = '.*', skip = true },
+]
+sort_commits = "oldest"

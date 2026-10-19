@@ -14,6 +14,7 @@ whole tree. Read this after `AGENTS.md`.
 | `docs/` | Human docs (`background-sources.md`), screenshots, and the agent docs in `docs/agents/`. |
 | `dist/` | The generated build output. Never edit or commit it (git-ignored). |
 | `appinfo.json`, `version.md` | App manifest and version, kept in sync by `npm run version`. |
+| `cliff.toml` | Release-note grouping for the release workflow (git-cliff). |
 
 ## `src/ts/`, the application modules
 

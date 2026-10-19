@@ -1,0 +1,16 @@
+src/ts/settings/panes/background.ts
+  h_1a6b0cc05bf029 250
+test/settings/panes/background.test.ts
+  h_1a6b0cc05bf029 14,230
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "03c7d7c43393e4eb005416e5b96f94f757633df3",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

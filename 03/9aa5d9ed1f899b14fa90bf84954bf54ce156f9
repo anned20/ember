@@ -1,0 +1,14 @@
+docs/social-preview.svg
+  h_1a6b0cc05bf029 1-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "039aa5d9ed1f899b14fa90bf84954bf54ce156f9",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

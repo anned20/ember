@@ -14,9 +14,10 @@ import {qrSvgMarkup} from '@lib/qr-svg.js';
 import {RELEASE_PAGE_URL, fetchLatestRelease, updateVerdict} from '@lib/update-check.js';
 import {BRAND} from '@lib/brand.js';
 import {APP_VERSION} from '@lib/version.js';
+import {t} from '@lib/i18n.js';
 import {
-  LAST_BACKUP_KEY, backupLabel, backupWhen, compatibilityNote, lastBackupNote, listBackups,
-  restoreReport, settingsBackupText
+  LAST_BACKUP_KEY, backupLabel, backupWhen, backupWhereLabel, compatibilityNote, lastBackupNote,
+  listBackups, restoreReport, settingsBackupText
 } from '@settings/settings-backup.js';
 import {startLauncherProbe, tvCheckHead, tvCheckSummary} from '@settings/tv-check.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
@@ -57,18 +58,22 @@ export function createToolsPane(): PaneHandle {
       // them to another TV. Ember also keeps copies by itself, before each
       // restore and each update. Backups from other versions restore as far as
       // they fit (config.js, configFromBackup). Needs root (Homebrew Channel).
-      const backupSection = createSection('Backup & restore');
-      backupSection.appendChild(createHint('Saves all your ' + BRAND.name + ' settings: apps, wallpaper, music, clock, weather and profiles. The copy on the TV is kept if you reinstall ' + BRAND.name + '. A plugged-in USB drive gets a copy too (' + BRAND.usbFolder + '/' + BRAND.usbSettingsFile + '), to move your settings to another TV. ' + BRAND.name + ' also keeps a copy by itself before each restore and each update. Backups made by other versions of ' + BRAND.name + ' can be restored too: you’re told what fitted.'));
+      const backupSection = createSection(t('tools.backupSection'));
+      backupSection.appendChild(createHint(t('tools.backupHint', {
+        brand: BRAND.name,
+        usbFolder: BRAND.usbFolder,
+        settingsFile: BRAND.usbSettingsFile
+      })));
       const backupActions = document.createElement('div');
       backupActions.className = 'settings-backup-actions';
       const backupBtn = createMiniButton({
-        label: 'Back up settings',
+        label: t('tools.backUp'),
         focusIndex: '1590',
         className: 'settings-scan-btn',
         dataset: {backupAction: 'backup'}
       });
       const restoreBtn = createMiniButton({
-        label: 'Restore settings',
+        label: t('tools.restore'),
         focusIndex: '1591',
         className: 'settings-scan-btn',
         dataset: {backupAction: 'restore'}
@@ -86,7 +91,7 @@ export function createToolsPane(): PaneHandle {
           showChosenBackup();
         }
       });
-      const backupPickRow = labeledControl('Backup to restore', backupPicker);
+      const backupPickRow = labeledControl(t('tools.backupToRestore'), backupPicker);
       backupPickRow.hidden = true;
       backupSection.appendChild(backupPickRow);
       const backupStatus = createHint(restoreNote || lastBackupNote());
@@ -102,14 +107,13 @@ export function createToolsPane(): PaneHandle {
         const chosen = chosenBackup();
         if (!chosen) return;
         backupStatus.textContent = compatibilityNote(chosen) + (chosen.readable
-          ? ' Press “Restore this backup” to replace your current settings with it; ' +
-            'a copy of them is kept first.'
+          ? t('tools.pressRestore')
           : '');
       }
       function closeBackupPicker(): void {
         backupsFound = [];
         backupPickRow.hidden = true;
-        restoreBtn.textContent = 'Restore settings';
+        restoreBtn.textContent = t('tools.restore');
       }
 
       backupBtn.addEventListener('click', async function () {
@@ -117,29 +121,34 @@ export function createToolsPane(): PaneHandle {
         backupBusy = true;
         closeBackupPicker();
         // Not disabled while busy: a disabled button drops focus.
-        backupBtn.textContent = 'Backing up…';
-        backupStatus.textContent = 'Backing up…';
+        backupBtn.textContent = t('tools.backingUp');
+        backupStatus.textContent = t('tools.backingUp');
         try {
           const roots = (await ctx.withDeadline(findLoungeRoots(), ROOTS_DEADLINE_MS)) || [];
           const text = settingsBackupText(loadConfig(), {reason: 'manual'});
           const res = await writeSettingsBackup(text, roots[0] || '');
           const savedAt = JSON.parse(text).savedAt;
+          // The English token stays in the note; backupWhereLabel() reads it back.
           const where = res.usb ? 'TV and USB drive' : 'TV';
           try {
             localStorage.setItem(LAST_BACKUP_KEY, JSON.stringify({savedAt: savedAt, where: where}));
           } catch (err) {
             // The note is optional.
           }
-          backupStatus.textContent = 'Backed up on ' + backupWhen(savedAt) + ' to the ' + where + '.' +
-            (res.usb === false ? ' The USB drive couldn’t be written' +
-              (res.usbError ? ' (' + res.usbError + ')' : '') + '.' : '') +
-            (res.usb === null ? ' No USB drive plugged in.' : '');
+          backupStatus.textContent = t('tools.backedUpTo', {
+            when: backupWhen(savedAt),
+            where: backupWhereLabel(where)
+          }) +
+            (res.usb === false ? t('tools.usbWriteFailed') +
+              (res.usbError ? t('tools.usbError', {detail: res.usbError}) : '') + '.' : '') +
+            (res.usb === null ? t('tools.noUsb') : '');
         } catch (err: any) {
-          backupStatus.textContent = 'Backup failed: ' +
-            ((err && err.message) || 'it needs root (Homebrew Channel)');
+          backupStatus.textContent = t('tools.backupFailed', {
+            detail: (err && err.message) || t('tools.needsRoot')
+          });
         } finally {
           backupBusy = false;
-          backupBtn.textContent = 'Back up settings';
+          backupBtn.textContent = t('tools.backUp');
         }
       });
 
@@ -149,41 +158,42 @@ export function createToolsPane(): PaneHandle {
         try {
           if (!backupsFound.length) {
             // First press: find the backups and let the user pick one.
-            restoreBtn.textContent = 'Looking…';
-            backupStatus.textContent = 'Looking for backups on the TV and USB drive…';
+            restoreBtn.textContent = t('tools.looking');
+            backupStatus.textContent = t('tools.lookingForBackups');
             const roots = (await ctx.withDeadline(findLoungeRoots(), ROOTS_DEADLINE_MS)) || [];
             backupsFound = listBackups(await readSettingsBackups(roots)) as BackupRecord[];
             if (!backupsFound.length) {
-              restoreBtn.textContent = 'Restore settings';
-              backupStatus.textContent = 'No backup found on the TV or a USB drive.';
+              restoreBtn.textContent = t('tools.restore');
+              backupStatus.textContent = t('tools.noBackupFound');
               return;
             }
             backupPicker.setOptions(backupsFound.map(function (b, i) {
               return {value: String(i), label: backupLabel(b)};
             }), '0');
             backupPickRow.hidden = false;
-            restoreBtn.textContent = 'Restore this backup';
+            restoreBtn.textContent = t('tools.restoreThis');
             showChosenBackup();
             return;
           }
           const chosen = chosenBackup();
           if (!chosen || !chosen.readable) return;
-          restoreBtn.textContent = 'Restoring…';
+          restoreBtn.textContent = t('tools.restoring');
           // Keep the current settings first, so this restore can be undone
           // (it shows up as "before your last restore").
           try {
             await writeAutoBackup('before-restore.json',
               settingsBackupText(loadConfig(), {reason: 'before-restore'}));
           } catch (err: any) {
-            restoreBtn.textContent = 'Restore this backup';
-            backupStatus.textContent = 'Couldn’t keep a copy of your current settings first, so ' +
-              'nothing was changed' + (err && err.message ? ': ' + err.message : '.');
+            restoreBtn.textContent = t('tools.restoreThis');
+            backupStatus.textContent = t('tools.keepCopyFailed', {
+              detail: err && err.message ? ': ' + err.message : '.'
+            });
             return;
           }
           const result = configFromBackup(chosen.data.config, ctx.rawConfig);
           if (!result) {
-            restoreBtn.textContent = 'Restore this backup';
-            backupStatus.textContent = 'That backup has no ' + BRAND.name + ' settings in it.';
+            restoreBtn.textContent = t('tools.restoreThis');
+            backupStatus.textContent = t('tools.noSettingsInBackup', {brand: BRAND.name});
             return;
           }
           saveConfig(result.config);
@@ -192,8 +202,9 @@ export function createToolsPane(): PaneHandle {
           ctx.redraw();
         } catch (err: any) {
           closeBackupPicker();
-          backupStatus.textContent = 'Could not look for backups: ' +
-            ((err && err.message) || 'it needs root (Homebrew Channel)');
+          backupStatus.textContent = t('tools.lookFailed', {
+            detail: (err && err.message) || t('tools.needsRoot')
+          });
         } finally {
           backupBusy = false;
         }
@@ -202,11 +213,11 @@ export function createToolsPane(): PaneHandle {
       // TV check: a root script reports the TV's model, memory, CPU load and
       // background activity, and times how long TV Settings takes to open. The
       // summary is shown with a QR code so it can be sent from a phone.
-      const tvCheckSection = createSection('TV check');
-      tvCheckSection.appendChild(createHint('If the TV or TV Settings feels slow, this collects the TV model, memory, CPU load and what is running in the background, and times how long TV Settings takes to open. TV Settings opens and closes by itself, twice; it takes about 40 seconds. Scan the code with your phone to share the result.'));
+      const tvCheckSection = createSection(t('tools.tvCheckSection'));
+      tvCheckSection.appendChild(createHint(t('tools.tvCheckHint')));
 
       const tvCheckBtn = createMiniButton({
-        label: 'Run TV check',
+        label: t('tools.runTvCheck'),
         focusIndex: '1600',
         className: 'settings-scan-btn'
       });
@@ -235,11 +246,9 @@ export function createToolsPane(): PaneHandle {
         checking = true;
         // Not disabled: a disabled button drops focus, and Settings would jump
         // back to the top when TV Settings closes.
-        tvCheckBtn.textContent = 'Checking…';
+        tvCheckBtn.textContent = t('tools.checking');
         tvCheckResult.hidden = true;
-        tvCheckStatus.textContent =
-          'Checking… about 40 seconds. TV Settings will open and close by itself, twice ' +
-          '(if it stays open, press Exit).';
+        tvCheckStatus.textContent = t('tools.tvCheckRunning');
         try {
           const head = tvCheckHead(ctx.rawConfig);
           const probe = startLauncherProbe();
@@ -260,18 +269,16 @@ export function createToolsPane(): PaneHandle {
           tvCheckResult.hidden = false;
           // Some TVs (webOS 9) keep TV Settings open despite the check's close.
           const stuck = /didn.t close by itself/.test(report);
-          tvCheckStatus.textContent = (stuck
-            ? 'Done, but TV Settings didn\u2019t close by itself on this TV: press Exit or Back ' +
-              'to close it. '
-            : 'Done. ') + 'Scan the code to copy this text. The full report is in ' +
-            DIAGNOSTICS_FILE + ' on the TV.';
+          tvCheckStatus.textContent = (stuck ? t('tools.tvCheckStuck') : t('tools.tvCheckDone')) +
+            t('tools.tvCheckScan', {file: DIAGNOSTICS_FILE});
           ctx.focusNow(tvCheckResult);
         } catch (err: any) {
-          tvCheckStatus.textContent = 'TV check failed: ' +
-            ((err && err.message) || 'it needs root (Homebrew Channel)');
+          tvCheckStatus.textContent = t('tools.tvCheckFailed', {
+            detail: (err && err.message) || t('tools.needsRoot')
+          });
         } finally {
           checking = false;
-          tvCheckBtn.textContent = 'Run TV check';
+          tvCheckBtn.textContent = t('tools.runTvCheck');
         }
       });
 
@@ -279,14 +286,15 @@ export function createToolsPane(): PaneHandle {
       // release. The answer is one sentence and, when there is a release to
       // open, a QR code of its page. Nothing is downloaded or installed, no
       // setting changes, and no root is needed.
-      const updateSection = createSection('Updates');
-      updateSection.appendChild(createHint('Asks GitHub for the newest ' + BRAND.name +
-        ' release. Nothing is downloaded or installed; when there is a newer one, ' +
-        'scan its code to open the release page on your phone.'));
-      updateSection.appendChild(createHint('You are running ' + BRAND.name + ' ' + APP_VERSION + '.'));
+      const updateSection = createSection(t('tools.updatesSection'));
+      updateSection.appendChild(createHint(t('tools.updatesHint', {brand: BRAND.name})));
+      updateSection.appendChild(createHint(t('tools.runningVersion', {
+        brand: BRAND.name,
+        version: APP_VERSION
+      })));
 
       const updateBtn = createMiniButton({
-        label: 'Check for updates',
+        label: t('tools.checkUpdates'),
         focusIndex: '1602',
         className: 'settings-scan-btn',
         dataset: {updateAction: 'check'}
@@ -314,8 +322,8 @@ export function createToolsPane(): PaneHandle {
         if (updateBusy) return;
         updateBusy = true;
         // Not disabled: a disabled button drops focus.
-        updateBtn.textContent = 'Checking…';
-        updateStatus.textContent = 'Asking GitHub…';
+        updateBtn.textContent = t('tools.checking');
+        updateStatus.textContent = t('tools.askingGitHub');
         // No code until there is a release to show: a leftover one could be
         // scanned for the wrong answer.
         updateQr.hidden = true;
@@ -323,23 +331,26 @@ export function createToolsPane(): PaneHandle {
         try {
           const verdict = updateVerdict(APP_VERSION, await fetchLatestRelease());
           if (verdict.state === 'available') {
-            updateStatus.textContent = BRAND.name + ' ' + verdict.latest + ' is available; you have ' +
-              APP_VERSION + '. Update from Homebrew Channel, or scan the code to get the file.';
+            updateStatus.textContent = t('tools.updateAvailable', {
+              brand: BRAND.name,
+              version: verdict.latest,
+              current: APP_VERSION
+            });
             updateQrCode.innerHTML = qrSvgMarkup(RELEASE_PAGE_URL);
             updateQr.hidden = false;
           } else if (verdict.state === 'current') {
-            updateStatus.textContent = 'You are up to date: ' + BRAND.name + ' ' + APP_VERSION +
-              ' is the newest release.';
+            updateStatus.textContent = t('tools.upToDate', {
+              brand: BRAND.name,
+              version: APP_VERSION
+            });
           } else {
-            updateStatus.textContent = 'GitHub\u2019s newest release has no version ' + BRAND.name +
-              ' can read, so it can\u2019t tell whether you are up to date.';
+            updateStatus.textContent = t('tools.updateUnreadable', {brand: BRAND.name});
           }
         } catch (err) {
-          updateStatus.textContent = 'Couldn\u2019t reach GitHub. Check that the TV is connected to ' +
-            'the internet and try again.';
+          updateStatus.textContent = t('tools.githubUnreachable');
         } finally {
           updateBusy = false;
-          updateBtn.textContent = 'Check for updates';
+          updateBtn.textContent = t('tools.checkUpdates');
         }
       });
     }

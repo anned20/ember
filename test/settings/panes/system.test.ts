@@ -1,13 +1,15 @@
-import {describe, expect, it} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {createSystemPane} from '@settings/panes/system.js';
 import {createBinder} from '@settings/settings-binding.js';
 import type {SettingsContext} from '@settings/pane.js';
 import {BRAND} from '@lib/brand.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {Config} from '@lib/types.js';
 
 function makeConfig(): Config {
   return {
     launcher: {
+      language: 'auto',
       volumeAtHome: null,
       volumeOnAppLaunch: 20,
       perfMode: false,
@@ -49,6 +51,9 @@ function buildPane(config?: Config): {pane: HTMLElement; config: Config; ctx: Se
 }
 
 describe('system pane', () => {
+  beforeEach(() => setLanguage('en'));
+  afterEach(() => setLanguage('en'));
+
   it('builds the volume, performance, Home and boot controls from the config', () => {
     const {pane} = buildPane();
 
@@ -93,5 +98,42 @@ describe('system pane', () => {
 
     const home = pane.querySelector('[data-focus-index="1010"]') as HTMLInputElement;
     expect(home.checked).toBe(true);
+  });
+
+  it('reads and writes the Language setting', () => {
+    const config = makeConfig();
+    config.launcher.language = 'nl';
+    const {pane, config: built, ctx} = buildPane(config);
+
+    const language = stepper(pane, '995');
+    expect(language.value).toBe('nl');
+
+    language.setValue('en');
+    ctx.binder.collect(built);
+    expect(built.launcher.language).toBe('en');
+  });
+
+  it('reads in Dutch when the language is Dutch', () => {
+    setLanguage('nl');
+    const {pane} = buildPane();
+
+    const language = stepper(pane, '995');
+    expect(language.value).toBe('auto');
+    expect(pane.textContent).toContain(t('system.language'));
+    expect(pane.textContent).toContain(t('system.language.auto'));
+    expect(pane.textContent).toContain(t('system.volumeAtHome', {brand: BRAND.name}));
+    expect(pane.textContent).toContain(t('system.perfMode'));
+    expect(pane.textContent).toContain(t('system.bootOnStart'));
+  });
+
+  it('offers Automatic, English and Nederlands', () => {
+    const {pane} = buildPane();
+    const language = stepper(pane, '995');
+
+    expect(language.value).toBe('auto');
+    language.setValue('en');
+    expect(language.value).toBe('en');
+    language.setValue('nl');
+    expect(language.value).toBe('nl');
   });
 });

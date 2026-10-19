@@ -15,6 +15,7 @@
  */
 
 import {setClockTime} from '@lib/clock-format.js';
+import {activeLocale} from '@lib/i18n.js';
 import {normalizeBackgroundConfig} from './backgrounds.js';
 import {resolveBackgroundCatalog, resolveBackgroundMedia} from './background-sources.js';
 import {MEDIA_VIDEO, presetGradient, probeImage} from './media.js';
@@ -66,10 +67,10 @@ function formatDate(date: Date, timezone: string): string {
   const options: Intl.DateTimeFormatOptions = {weekday: 'long', day: 'numeric', month: 'long'};
   if (timezone) options.timeZone = timezone;
   try {
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
+    return new Intl.DateTimeFormat(activeLocale(), options).format(date);
   } catch (err) {
     delete options.timeZone;
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
+    return new Intl.DateTimeFormat(activeLocale(), options).format(date);
   }
 }
 

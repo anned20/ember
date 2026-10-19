@@ -1,6 +1,8 @@
-import {describe, expect, it, vi} from 'vitest';
+import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
 import {createScreensaverPane} from '@settings/panes/screensaver.js';
 import {createBinder} from '@settings/settings-binding.js';
+import {setLanguage, t, tn} from '@lib/i18n.js';
+import {BRAND} from '@lib/brand.js';
 import type {SettingsContext} from '@settings/pane.js';
 import type {Config} from '@lib/types.js';
 
@@ -22,6 +24,12 @@ function stepper(pane: HTMLElement, focusIndex: string) {
     value: string;
     setValue(value: string): void;
   };
+}
+
+/** The option the stepper currently shows. */
+function shown(pane: HTMLElement, focusIndex: string): string {
+  const control = pane.querySelector('[data-focus-index="' + focusIndex + '"]') as HTMLElement;
+  return (control.querySelector('.stepper-label') as HTMLElement).textContent || '';
 }
 
 function buildPane(
@@ -50,6 +58,9 @@ function buildPane(
 }
 
 describe('screensaver pane', () => {
+  beforeEach(() => setLanguage('en'));
+  afterEach(() => setLanguage('en'));
+
   it('builds the in-app slideshow and TV screensaver controls from the config', () => {
     const {pane} = buildPane();
 
@@ -99,5 +110,39 @@ describe('screensaver pane', () => {
     ctx.binder.collect(config);
 
     expect(config.launcher.screensaverMinutes).toBe(10);
+  });
+
+  it('reads the whole pane in Dutch and leaves the stored values alone', () => {
+    setLanguage('nl');
+    const {pane, config, ctx} = buildPane();
+
+    expect(pane.querySelector('.settings-section > h3')!.textContent).toBe(t('screensaver.section'));
+    expect(pane.textContent).toContain(t('screensaver.custom', {brand: BRAND.name}));
+    expect(pane.textContent).toContain(t('screensaver.startAfter'));
+    expect(pane.textContent).toContain(t('screensaver.slideEvery'));
+    expect(pane.textContent).toContain(t('screensaver.tv'));
+    expect(pane.textContent).toContain(t('screensaver.preview'));
+
+    expect(shown(pane, '991')).toBe(tn('screensaver.minutes', 5));
+    expect(shown(pane, '992')).toBe(tn('screensaver.seconds', 20));
+    expect(shown(pane, '995')).toBe(tn('screensaver.minutes', 10));
+
+    // The minute strings are counted: the 60-second slide reads as one minute.
+    stepper(pane, '992').setValue('60');
+    expect(shown(pane, '992')).toBe(tn('screensaver.minutes', 1));
+
+    ctx.binder.collect(config);
+    expect(config.launcher.customScreensaverMinutes).toBe(5);
+    expect(config.launcher.customScreensaverSlideSec).toBe(60);
+    expect(config.launcher.screensaverMinutes).toBe(10);
+  });
+
+  it('asks for a save and reopen in Dutch when the host cannot preview', () => {
+    setLanguage('nl');
+    const onToast = vi.fn();
+    const {pane} = buildPane({onToast: onToast});
+
+    (pane.querySelector('.settings-preview-ss-btn') as HTMLElement).click();
+    expect(onToast).toHaveBeenCalledWith(t('screensaver.previewToast', {brand: BRAND.name}));
   });
 });

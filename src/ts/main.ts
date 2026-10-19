@@ -51,6 +51,7 @@ import {activity, noteForeground} from '@lib/activity.js';
 import {settingsBackupText, importLegacySettings} from '@settings/settings-backup.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
+import {activeLocale, setLanguage, t} from '@lib/i18n.js';
 import type {Config, LauncherConfig, AppRecord, LunaResponse} from '@lib/types.js';
 
 type ErrorLike = {message?: unknown} | null | undefined;
@@ -134,11 +135,11 @@ function formatClockDate(date: Date, timezone: string) {
     options.timeZone = timezone;
   }
   try {
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
+    return new Intl.DateTimeFormat(activeLocale(), options).format(date);
   } catch (err) {
     // Invalid timezone — fall back to local date.
     delete options.timeZone;
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
+    return new Intl.DateTimeFormat(activeLocale(), options).format(date);
   }
 }
 
@@ -222,7 +223,7 @@ export function createApp(): AppLifecycle {
   let baseConfig: Config = loadConfig();
   let visible = true;
   // Set when a Launch Home backup was imported on this first start, for the toast.
-  let importedNotice = '';
+  let importedPreviousSettings = false;
 
   let started = false;
   let stopped = false;
@@ -299,6 +300,20 @@ export function createApp(): AppLifecycle {
 
   elements.onToast = showToast;
 
+  // The labels index.html bakes in, worded once the language is known.
+  function applyMarkupLabels() {
+    if (elements.weatherPanel) elements.weatherPanel.setAttribute('aria-label', t('markup.weather'));
+    if (elements.appSettingsBtn) elements.appSettingsBtn.setAttribute('aria-label', t('markup.settings'));
+    if (elements.channelStrip) elements.channelStrip.setAttribute('aria-label', t('markup.channels'));
+    if (elements.inputRow) elements.inputRow.setAttribute('aria-label', t('markup.inputs'));
+    if (elements.appGrid) elements.appGrid.setAttribute('aria-label', t('markup.apps'));
+    if (elements.muteBtn) elements.muteBtn.setAttribute('aria-label', t('markup.mute'));
+    if (elements.volumeSlider) elements.volumeSlider.setAttribute('aria-label', t('markup.ambientVolume'));
+    if (elements.customScreensaver) elements.customScreensaver.setAttribute('aria-label', t('markup.screensaver'));
+    const hint = elements.customScreensaver && elements.customScreensaver.querySelector('.custom-screensaver-hint');
+    if (hint) hint.textContent = t('markup.pressAnyButton');
+  }
+
   // Aerial clip switched by the remote's Channel Up / Channel Down. In Single
   // mode the landed clip becomes the saved choice (the Settings picker reads the
   // base config, so it follows); in Slideshow mode the skip is transient and
@@ -373,7 +388,7 @@ export function createApp(): AppLifecycle {
   function deleteApp(app: AppRecord): Promise<void> {
     return removeApp(app.id).then(function () {
       unpinApp(app);
-      showToast('Deleted ' + app.title);
+      showToast(t('apps.deleted', {app: app.title}));
     });
   }
 
@@ -593,8 +608,8 @@ export function createApp(): AppLifecycle {
       },
       // Long-press menu actions (all-apps.js); the config and Luna live here.
       isPinned: isAppPinned,
-      pin: function (app) { pinApp(app); showToast('Pinned ' + app.title); },
-      unpin: function (app) { unpinApp(app); showToast('Unpinned ' + app.title); },
+      pin: function (app) { pinApp(app); showToast(t('apps.pinned', {app: app.title})); },
+      unpin: function (app) { unpinApp(app); showToast(t('apps.unpinned', {app: app.title})); },
       restart: restartApp,
       remove: deleteApp,
       onToast: showToast
@@ -657,15 +672,15 @@ export function createApp(): AppLifecycle {
       (config.launcher.launchOnHome || config.launcher.returnOnAppExit));
     const apply = on ? enableHomeWatcher : disableHomeWatcher;
     return apply().then(function () {
-      if (on && !quiet) showToast('Home button → ' + BRAND.name + ' is active');
+      if (on && !quiet) showToast(t('system.homeActive', {brand: BRAND.name}));
     }).catch(function (err: ErrorLike) {
       console.error(err);
       if (on) {
         const detail = err && err.message ? String(err.message) : '';
         const short = detail.replace(/\s+/g, ' ').slice(0, 90);
         showToast(short
-          ? 'Home watcher failed: ' + short
-          : 'Home watcher failed — check root / Homebrew Channel');
+          ? t('system.homeFailed', {detail: short})
+          : t('system.homeFailedHint'));
       }
     });
   }
@@ -675,15 +690,15 @@ export function createApp(): AppLifecycle {
     const on = !!(config && config.launcher && config.launcher.bootOnStart);
     const apply = on ? enableBootLaunch : disableBootLaunch;
     return apply().then(function () {
-      if (on && !quiet) showToast('Boot on TV start is active');
+      if (on && !quiet) showToast(t('system.bootActive'));
     }).catch(function (err: ErrorLike) {
       console.error(err);
       if (on) {
         const detail = err && err.message ? String(err.message) : '';
         const short = detail.replace(/\s+/g, ' ').slice(0, 90);
         showToast(short
-          ? 'Boot on start failed: ' + short
-          : 'Boot on start failed — check root / Homebrew Channel');
+          ? t('system.bootFailed', {detail: short})
+          : t('system.bootFailedHint'));
       }
     });
   }
@@ -714,7 +729,7 @@ export function createApp(): AppLifecycle {
         // Try the next candidate id.
       }
     }
-    showToast('Could not open TV Settings');
+    showToast(t('apps.tvSettingsFailed'));
   }
 
   function applyClockStyle() {
@@ -1181,7 +1196,9 @@ export function createApp(): AppLifecycle {
     if (!imported) return;
     setConfig(imported);
     saveConfig(baseConfig);
-    importedNotice = 'Imported your previous settings.';
+    // Flag only: the toast is worded when it shows, after this import's
+    // language setting has been applied.
+    importedPreviousSettings = true;
   }
 
   /**
@@ -1247,6 +1264,10 @@ export function createApp(): AppLifecycle {
     // Luna ladder, root hooks or the foreground watcher. Fail closed, visibly.
     const sdkVersion = await getSdkVersion();
     if (stopped) return;
+    // The interface language, resolved before anything renders: the platform
+    // gate's surface and the page markup follow it too.
+    setLanguage(baseConfig.launcher.language);
+    applyMarkupLabels();
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
     if (!isSupportedPlatform(sdkVersion, userAgent)) {
       renderUnsupportedSurface(describeDetectedPlatform(sdkVersion));
@@ -1255,6 +1276,9 @@ export function createApp(): AppLifecycle {
 
     await importLegacyOnFirstRun();
     if (stopped) return;
+    // An imported backup may carry its own language setting.
+    setLanguage(baseConfig.launcher.language);
+    applyMarkupLabels();
     buildModules();
     built = true;
 
@@ -1278,8 +1302,8 @@ export function createApp(): AppLifecycle {
     if (stopped) return;
 
     // Confirms a first-run import once the home screen is up.
-    if (importedNotice) {
-      laterTracked(function () { showToast(importedNotice); }, 900);
+    if (importedPreviousSettings) {
+      laterTracked(function () { showToast(t('app.importedSettings')); }, 900);
     }
 
     // In-app photo/clock screensaver after idle.
@@ -1383,7 +1407,7 @@ export function createApp(): AppLifecycle {
     if (started) return;
     started = true;
     init().catch(function (err) {
-      showToast('Startup error — check USB paths');
+      showToast(t('app.startupError'));
       console.error(err);
     });
   }

@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('@apps/apps.js', () => ({
   listInstalledApps: vi.fn(async () => [])
@@ -27,9 +27,10 @@ vi.mock('@luna/luna.js', async (importOriginal) => {
 import {createAppsPane} from '@settings/panes/apps.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {listInstalledApps} from '@apps/apps.js';
-import {loadAppCatalog, resolvePinnedApp} from '@apps/app-catalog.js';
+import {isAppInstalled, loadAppCatalog, resolvePinnedApp} from '@apps/app-catalog.js';
 import {lgHomeAppsToAdd} from '@apps/lg-home.js';
 import {listLaunchPoints} from '@luna/luna.js';
+import {setLanguage, t, tn} from '@lib/i18n.js';
 import type {PaneHandle, SettingsAppsState, SettingsContext} from '@settings/pane.js';
 import type {AppCatalog, Config} from '@lib/types.js';
 
@@ -97,6 +98,9 @@ function addRows(pane: HTMLElement): NodeListOf<HTMLElement> {
 describe('apps pane', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    setLanguage('en');
+    vi.mocked(isAppInstalled).mockReset();
+    vi.mocked(isAppInstalled).mockReturnValue(true);
     vi.mocked(loadAppCatalog).mockReset();
     vi.mocked(loadAppCatalog).mockResolvedValue({});
     vi.mocked(listInstalledApps).mockReset();
@@ -108,6 +112,8 @@ describe('apps pane', () => {
     vi.mocked(listLaunchPoints).mockReset();
     vi.mocked(listLaunchPoints).mockResolvedValue([]);
   });
+
+  afterEach(() => setLanguage('en'));
 
   it('builds the pinned, custom and discover controls and seeds the shared state', () => {
     const {pane, ctx} = buildApps();
@@ -209,5 +215,58 @@ describe('apps pane', () => {
 
     (pane.querySelector('[data-focus-index="1510"]') as HTMLElement).click();
     expect(ctx.apps.pinnedOrder).toContain('com.a');
+  });
+
+  it('reads the sections, notes and counts in Dutch, keeping app titles as they are', async () => {
+    setLanguage('nl');
+    vi.mocked(loadAppCatalog).mockResolvedValue({
+      'com.netflix.ninja': {id: 'com.netflix.ninja', title: 'Netflix', icon: 'assets/netflix.png'}
+    } as unknown as AppCatalog);
+    vi.mocked(listInstalledApps).mockResolvedValue([
+      {id: 'com.netflix.ninja', title: 'Netflix', icon: 'assets/netflix.png', hidden: false},
+      {id: 'com.other.app', title: 'Other', icon: 'assets/other.png', hidden: false}
+    ] as unknown as Awaited<ReturnType<typeof listInstalledApps>>);
+    vi.mocked(isAppInstalled).mockReturnValue(false);
+
+    const {pane, ctx, handle} = buildApps();
+    await handle.load!(ctx);
+
+    const headings = Array.from(pane.querySelectorAll('.settings-section > h3'))
+      .map(function (heading) { return heading.textContent; });
+    expect(headings).toEqual([
+      t('apps.pinnedSection'), t('apps.customSection'), t('apps.discoverSection')
+    ]);
+    expect(pane.textContent).toContain(t('apps.addHeading'));
+    expect(pane.textContent).toContain(t('apps.allAppsTile'));
+    expect(pane.textContent).toContain(t('apps.numberKeys'));
+    expect(pane.textContent).toContain(t('apps.showHidden'));
+    expect(pane.textContent).toContain(t('apps.lgImport'));
+    expect(pane.textContent).toContain(t('apps.customHint'));
+
+    // The TV's title stays; only the note we add to it is Dutch.
+    const titles = Array.from(pane.querySelectorAll('.settings-pinned-title'))
+      .map(function (title) { return title.textContent; });
+    expect(titles[0]).toBe('Netflix ' + t('apps.notInstalled'));
+    expect(titles[1]).toBe('Custom App');
+
+    expect((pane.querySelector('[data-focus-index="1299"]') as HTMLElement).textContent)
+      .toBe(tn('apps.showInstalled', 1));
+
+    // Discover reports its count through the counted pair.
+    (pane.querySelector('[data-focus-index="1500"]') as HTMLElement).click();
+    await waitFor(function () { return pane.textContent!.indexOf(tn('apps.found', 2)) >= 0; });
+    expect(pane.textContent).toContain(tn('apps.found', 2));
+  });
+
+  it('reports the LG import in Dutch', async () => {
+    setLanguage('nl');
+    vi.mocked(listLaunchPoints).mockResolvedValue([{id: 'com.lg.one'}]);
+    vi.mocked(lgHomeAppsToAdd).mockReturnValue(['com.lg.one']);
+
+    const {pane, ctx} = buildApps();
+    (pane.querySelector('[data-focus-index="1298"]') as HTMLElement).click();
+
+    await waitFor(function () { return ctx.apps.pinnedOrder.indexOf('com.lg.one') >= 0; });
+    expect(pane.textContent).toContain(tn('apps.lgAdded', 1));
   });
 });

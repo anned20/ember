@@ -5,6 +5,7 @@
 // config (already normalised) into `MediaDescriptor`s that carry their full
 // metadata, including an aerial clip's id and title.
 
+import type {TranslationKey} from '@lib/i18n.js';
 import {AERIAL_BACKGROUNDS} from './aerials.js';
 import {
   builtinImageUrl,
@@ -249,13 +250,13 @@ export function sourceFor(name: string): BackgroundSource {
 }
 
 /** The ordered source list the settings pane reads, so the set lives in one place. */
-export const SOURCE_OPTIONS: Array<{value: string; label: string}> = [
-  {value: 'preset', label: 'Gradient'},
-  {value: 'animated-gradient', label: 'Animated Gradient'},
-  {value: 'builtin', label: 'Built-in photos'},
-  {value: 'usb', label: 'USB folder'},
-  {value: 'url', label: 'Online URL (nature + anime)'},
-  {value: 'aerial', label: 'Aerial videos (Apple)'}
+export const SOURCE_OPTIONS: Array<{value: string; labelKey: TranslationKey}> = [
+  {value: 'preset', labelKey: 'background.source.preset'},
+  {value: 'animated-gradient', labelKey: 'background.source.animatedGradient'},
+  {value: 'builtin', labelKey: 'background.source.builtin'},
+  {value: 'usb', labelKey: 'background.source.usb'},
+  {value: 'url', labelKey: 'background.source.url'},
+  {value: 'aerial', labelKey: 'background.source.aerial'}
 ];
 
 /** The single resolver: the config's source, normalised, decides the adapter. */

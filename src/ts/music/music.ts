@@ -7,6 +7,7 @@ import {
 import {discoverMusicTracks, isAudioFile} from '@lib/usb.js';
 import {subscribeVolume} from '@luna/luna.js';
 import {BRAND} from '@lib/brand.js';
+import {t} from '@lib/i18n.js';
 import type {Config, MusicTrack} from '@lib/types.js';
 
 export interface MusicPlayerElements {
@@ -116,7 +117,7 @@ export function createMusicPlayer(
     if (track.title) return track.title;
 
     const parts = (track.url || '').split('/');
-    const name = parts[parts.length - 1] || 'Unknown track';
+    const name = parts[parts.length - 1] || t('music.bar.unknown');
     return name.replace(/\.[^.]+$/, '');
   }
 
@@ -149,7 +150,7 @@ export function createMusicPlayer(
     let text = '';
     if (track) {
       text = pendingAutoplay
-        ? trackLabel(track) + ' — press OK / any key to play'
+        ? t('music.bar.pressToPlay', {track: trackLabel(track)})
         : trackLabel(track);
     }
     titleEl.textContent = text;
@@ -445,14 +446,13 @@ export function createMusicPlayer(
   function waitForPlayer() {
     if (busyRetry) return;
     if (busyTries === 0 && !document.hidden) {
-      showToast('Music is waiting: the TV\u2019s audio player is busy. It will try again.');
+      showToast(t('music.toastBusy'));
     }
     // Still nothing after ~3 minutes: the TV's media service has likely got
     // stuck (seen after hours of use). Only a full restart fixed it; with
     // Quick Start+ on, the remote's power button just suspends the TV.
     if (busyTries === 3 && !document.hidden) {
-      showToast('Still no sound from the TV\u2019s audio player. A full restart usually fixes it: ' +
-        'unplug the TV for a minute.');
+      showToast(t('music.toastStuck'));
     }
     const delay = BUSY_RETRY_MS[Math.min(busyTries, BUSY_RETRY_MS.length - 1)];
     busyTries += 1;
@@ -481,12 +481,12 @@ export function createMusicPlayer(
     skipCount += 1;
     if (skipCount >= Math.max(queue.length, 1) * 3) {
       // All candidates failed repeatedly — stop the skip storm.
-      showToast('Could not play ambient music');
+      showToast(t('music.toastCannotPlay'));
       pendingAutoplay = false;
       updateNowPlaying();
       return;
     }
-    showToast('Unsupported or missing track — skipping');
+    showToast(t('music.toastUnsupported'));
     nextTrack(true);
   }
 
@@ -726,7 +726,7 @@ export function createMusicPlayer(
     muteBtn.innerHTML = muted ? SOUND_OFF : SOUND_ON;
     muteBtn.classList.toggle('is-muted', muted);
     muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
-    muteBtn.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
+    muteBtn.setAttribute('aria-label', muted ? t('music.bar.unmute') : t('music.bar.mute'));
   }
   paintMute();
 

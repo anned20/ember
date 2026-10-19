@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('@luna/luna.js', () => ({
   listApps: vi.fn(),
@@ -8,9 +8,10 @@ vi.mock('@luna/luna.js', () => ({
   readFileAsDataUrl: vi.fn(async () => '')
 }));
 
-import {launchApp, listApps, getAppInfo} from '@luna/luna.js';
+import {launchApp, launchAppViaRoot, listApps, getAppInfo} from '@luna/luna.js';
 import {createAppGrid} from '@apps/apps.js';
 import {createAllApps} from '@apps/all-apps.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {Config} from '@lib/types.js';
 
 function makeConfig(pinnedApps: string[], numberKeyLaunch?: boolean): () => Config {
@@ -288,5 +289,108 @@ describe('All apps context menu', () => {
     expect(allApps.handleBack()).toBe(true); // menu -> closed
     expect(mount.querySelector('.all-apps-menu')).toBeNull();
     expect(allApps.handleBack()).toBe(false);
+  });
+});
+
+describe('the dock and All apps in Dutch', () => {
+  beforeEach(() => setLanguage('nl'));
+  afterEach(() => setLanguage('en'));
+
+  it('labels the All apps and TV Settings tiles in Dutch', async () => {
+    mockInstalled(['netflix']);
+    const {container, grid} = buildGrid(['netflix']);
+    await grid.refresh();
+
+    const labels = Array.from(container.querySelectorAll('.app-label'))
+      .map(function (label) { return label.textContent; });
+    // The app's own title is the TV's, not ours.
+    expect(labels).toEqual(['Netflix', t('apps.allApps'), t('apps.tvSettings')]);
+    expect(container.querySelector('.all-apps-launcher')!.getAttribute('aria-label')).toBe(t('apps.allApps'));
+    expect(container.querySelector('.settings-tile')!.getAttribute('aria-label')).toBe(t('apps.tvSettings'));
+  });
+
+  it('reads the overlay, its note and its menu in Dutch', async () => {
+    vi.mocked(listApps).mockResolvedValue({apps: [{id: 'demo.app', title: 'Demo'}]});
+    const mount = document.createElement('div');
+    document.body.appendChild(mount);
+    const allApps = createAllApps({
+      mount: mount,
+      focus: {focusWithin: vi.fn(), focusElement: vi.fn(() => true)},
+      launch: vi.fn(),
+      isPinned: () => false
+    });
+    await allApps.show();
+
+    expect(mount.querySelector('.all-apps-head h2')!.textContent).toBe(t('apps.allApps'));
+    expect(mount.querySelector('.all-apps-hint')!.textContent).toBe(t('apps.hint'));
+
+    allApps.openMenu(mount.querySelector<HTMLElement>('.all-apps-tile')!);
+
+    expect(mount.querySelector('.all-apps-menu-head h3')!.textContent).toBe('Demo');
+    expect(mount.querySelector('.all-apps-menu-state')!.textContent).toBe(t('apps.menu.offHome'));
+    expect(mount.querySelector('[data-action="pin"]')!.textContent).toBe(t('apps.menu.pin'));
+    expect(mount.querySelector('[data-action="restart"]')!.textContent).toBe(t('apps.menu.restart'));
+
+    (mount.querySelector('[data-action="delete"]') as HTMLElement).click();
+    expect(mount.querySelector('.all-apps-menu-question')!.textContent)
+      .toBe(t('apps.menu.deleteConfirm', {title: 'Demo'}));
+    expect(mount.querySelector('[data-action="delete-confirm"]')!.textContent).toBe(t('apps.menu.delete'));
+    expect(mount.querySelector('[data-action="cancel"]')!.textContent).toBe(t('apps.menu.cancel'));
+  });
+
+  it('reads the empty note in Dutch', async () => {
+    vi.mocked(listApps).mockResolvedValue({apps: []});
+    const mount = document.createElement('div');
+    document.body.appendChild(mount);
+    const allApps = createAllApps({
+      mount: mount,
+      focus: {focusWithin: vi.fn()},
+      launch: vi.fn()
+    });
+    await allApps.show();
+
+    expect(mount.querySelector('.all-apps-note')!.textContent)
+      .toBe(t('apps.readFailed'));
+  });
+
+  it('toasts a delete that gives no reason in Dutch', async () => {    vi.mocked(listApps).mockResolvedValue({apps: [{id: 'demo.app', title: 'Demo'}]});
+    const onToast = vi.fn();
+    const mount = document.createElement('div');
+    document.body.appendChild(mount);
+    const allApps = createAllApps({
+      mount: mount,
+      focus: {focusWithin: vi.fn(), focusElement: vi.fn(() => true)},
+      launch: vi.fn(),
+      isPinned: function () { return false; },
+      remove: vi.fn(async () => { throw new Error(''); }),
+      onToast: onToast
+    });
+    await allApps.show();
+
+    allApps.openMenu(mount.querySelector<HTMLElement>('.all-apps-tile')!);
+    (mount.querySelector('[data-action="delete"]') as HTMLElement).click();
+    (mount.querySelector('[data-action="delete-confirm"]') as HTMLElement).click();
+    await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+    expect(onToast).toHaveBeenCalledWith(t('apps.deleteFailed', {app: 'Demo'}));
+  });
+
+  it('toasts a launch that fails in Dutch', async () => {
+    mockInstalled(['netflix']);
+    vi.mocked(launchApp).mockRejectedValue(new Error('app is not running') as never);
+    vi.mocked(launchAppViaRoot).mockRejectedValue(new Error('no root') as never);
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const toasts: string[] = [];
+    const grid = createAppGrid(container, makeConfig(['netflix']), {
+      onToast: function (message: string) { toasts.push(message); }
+    });
+    await grid.refresh();
+
+    grid.launchByNumber(1);
+    await new Promise(function (resolve) { setTimeout(resolve, 0); });
+    await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+    expect(toasts).toEqual([t('apps.launchFailed', {app: 'Netflix'})]);
   });
 });

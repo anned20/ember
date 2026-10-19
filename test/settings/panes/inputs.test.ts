@@ -12,6 +12,7 @@ vi.mock('@home/inputs.js', async (importOriginal) => {
 import {createInputsPane} from '@settings/panes/inputs.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {fetchInputDevices} from '@home/inputs.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
 import type {Config} from '@lib/types.js';
 
@@ -68,6 +69,7 @@ function buildPane(
 describe('inputs pane', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    setLanguage('en');
     vi.mocked(fetchInputDevices).mockReset();
     vi.mocked(fetchInputDevices).mockResolvedValue([]);
   });
@@ -135,5 +137,23 @@ describe('inputs pane', () => {
     ctx.binder.collect(config);
     expect(config.launcher.inputs).toEqual(['HDMI_2']);
     expect(config.launcher.addedInputs).toEqual(['HDMI_2']);
+  });
+
+  it('reads the pane in Dutch and keeps the TV’s and the user’s labels', async () => {
+    setLanguage('nl');
+    vi.mocked(fetchInputDevices).mockResolvedValue([{id: 'HDMI_1', label: 'HDMI 1'}]);
+    const {pane, ctx, handle} = buildPane(makeConfig(), {hasTvChannels: () => true});
+
+    await handle.load!(ctx);
+
+    expect(pane.textContent).toContain(t('inputs.hint'));
+    expect(pane.textContent).toContain(t('inputs.channels'));
+    expect(pane.textContent).toContain(t('inputs.addInput'));
+    expect(pane.querySelector('[data-focus-index="1095"] .stepper-label')!.textContent)
+      .toBe(t('inputs.channelsAll'));
+    // The TV's name for the input, and the label the user typed, are not ours.
+    expect(pane.querySelector('.settings-input-name')!.textContent).toBe('HDMI 1');
+    expect((pane.querySelector('.settings-input-row input[type=text]') as HTMLInputElement).value)
+      .toBe('Console');
   });
 });

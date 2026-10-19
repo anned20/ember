@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('@apps/app-catalog.js', () => ({
   setIconSrc: vi.fn()
@@ -8,6 +8,8 @@ import {createLookPane} from '@settings/panes/look.js';
 import {createBinder} from '@settings/settings-binding.js';
 import type {OptionStepperElement} from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
+import {setLanguage, t} from '@lib/i18n.js';
+import {BRAND} from '@lib/brand.js';
 import type {Config} from '@lib/types.js';
 
 function makeConfig(overrides: Record<string, unknown> = {}): Config {
@@ -78,7 +80,10 @@ function sectionTitles(pane: HTMLElement): string[] {
 describe('Look pane', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    setLanguage('en');
   });
+
+  afterEach(() => setLanguage('en'));
 
   it('composes Profile, Background, Glass and Clock & icons in that order', () => {
     const background = makeBackgroundStub();
@@ -124,5 +129,55 @@ describe('Look pane', () => {
 
     expect(config.launcher.showClock).toBe(false);
     expect(config.launcher.glassTint).toBe('dark');
+  });
+
+  it('reads every control, section and choice in Dutch', () => {
+    setLanguage('nl');
+    const config = makeConfig();
+    config.launcher.clockAlign = 'center';
+    const {pane} = buildLook(config);
+
+    const titles = sectionTitles(pane);
+    expect(titles).toContain(t('look.section.profile'));
+    expect(titles).toContain(t('look.section.glass'));
+    expect(titles).toContain(t('look.section.clockIcons'));
+
+    function shown(focusIndex: string): string {
+      const control = pane.querySelector('[data-focus-index="' + focusIndex + '"]') as HTMLElement;
+      return (control.querySelector('.stepper-label') as HTMLElement).textContent || '';
+    }
+
+    expect(shown('901')).toBe(t('look.profile.default'));
+    expect(shown('1002')).toBe(t('look.clock.position.center'));
+    expect(shown('1004')).toBe(t('look.timezone.local'));
+    expect(shown('1091')).toBe(t('look.glass.tint.light'));
+    expect(pane.textContent).toContain(t('look.profile.active'));
+    expect(pane.textContent).toContain(t('look.clock.show'));
+    expect(pane.textContent).toContain(t('look.icon.perRow'));
+    expect(pane.textContent).toContain(t('look.icon.bundled', {brand: BRAND.name}));
+  });
+
+  it('writes the stored value, not the Dutch label', () => {
+    setLanguage('nl');
+    const config = makeConfig();
+    const {pane, ctx} = buildLook(config);
+
+    const profile = pane.querySelector('[data-focus-index="901"]') as OptionStepperElement;
+    expect(profile.value).toBe('default');
+    profile.__step(1);
+    ctx.binder.collect(config);
+
+    expect(config.profile).toBe('night');
+  });
+
+  it('reads English again after switching back', () => {
+    setLanguage('nl');
+    buildLook();
+    setLanguage('en');
+    const {pane} = buildLook();
+
+    expect(sectionTitles(pane)).toContain('Profile');
+    expect((pane.querySelector('[data-focus-index="901"] .stepper-label') as HTMLElement).textContent)
+      .toBe('Default');
   });
 });

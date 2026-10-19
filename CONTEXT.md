@@ -105,6 +105,13 @@ backgrounds and music, all on top of the webOS Luna service bus.
   (`DEVICE_SETTINGS`), kept as-is across a restore (for example
   `terminalChecked`). An old config's `voiceEnabled` key is ignored, not
   migrated: Ember has no voice assistant any more.
+- **Language**: the interface language, the `launcher.language` setting: `auto`,
+  `en` or `nl`. **Automatic** follows the TV: a preferred language starting with
+  `nl` is Dutch, anything else English. **Translation** goes through `t()` /
+  `tn()` (`lib/i18n.ts`), whose keys and English strings live in `lib/i18n-en.ts`
+  (source of truth) and whose Dutch strings live in `lib/i18n-nl.ts`. Only
+  viewer-facing text is translated: never console logs, config values, storage
+  keys or user data.
 - **Launch Home import** (first-run import): on the first start with no stored
   config, Ember imports the newest Launch Home backup it can find, so an upgrade
   keeps its setup (`importLegacySettings`). Launch Home backups also stay

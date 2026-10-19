@@ -16,6 +16,7 @@ import {
   createOptionStepper
 } from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
+import {t, tn} from '@lib/i18n.js';
 import type {AppRecord, CustomApp} from '@lib/types.js';
 
 /** The custom app with this id, or null. */
@@ -71,7 +72,7 @@ export function createAppsPane(): PaneHandle {
         icon: app.icon,
         variant: 'pinned',
         missing: missing,
-        titleSuffix: missing ? ' \u2014 not installed on this TV' : '',
+        titleSuffix: missing ? ' ' + t('apps.notInstalled') : '',
         mountIcon: function (icon) {
           // TV-native icons are file:// paths WAM won't load directly.
           icon.addEventListener('error', function () {
@@ -227,8 +228,8 @@ export function createAppsPane(): PaneHandle {
     addContainer.innerHTML = '';
     if (!remaining.length) {
       addContainer.appendChild(createHint(candidates.length
-        ? 'All available apps are already pinned.'
-        : 'No other apps were found on this TV.'));
+        ? t('apps.allPinned')
+        : t('apps.noneFound')));
     }
 
     remaining.forEach(function (app, index) {
@@ -272,34 +273,29 @@ export function createAppsPane(): PaneHandle {
         return Object.assign({}, entry);
       });
 
-      const appsSection = createSection('Pinned apps');
-      appsSection.appendChild(createHint('Reorder or remove apps pinned to the home row.'));
+      const appsSection = createSection(t('apps.pinnedSection'));
+      appsSection.appendChild(createHint(t('apps.pinnedHint')));
 
       // All apps: a tile on the home row that opens every app on the TV.
       const allAppsTileField = createToggle({
-        label: 'All apps tile on the home row',
+        label: t('apps.allAppsTile'),
         focusIndex: '1190',
         path: 'launcher.allAppsTile',
         binder: ctx.binder
       });
       appsSection.appendChild(allAppsTileField.row);
-      appsSection.appendChild(createHint(
-        'Opens a grid of every app on the TV: open any app without pinning it here.'
-      ));
+      appsSection.appendChild(createHint(t('apps.allAppsTileHint')));
 
       // Number keys: press 1-9 on the remote to open the home row tile at that
       // position (apps.js numbers the tiles and launches by number).
       const numberKeyField = createToggle({
-        label: 'Number keys open home row tiles',
+        label: t('apps.numberKeys'),
         focusIndex: '1191',
         path: 'launcher.numberKeyLaunch',
         binder: ctx.binder
       });
       appsSection.appendChild(numberKeyField.row);
-      appsSection.appendChild(createHint(
-        'Press 1\u20139 on the remote to open the tile at that position ' +
-        '(1 is the first); each tile shows its number.'
-      ));
+      appsSection.appendChild(createHint(t('apps.numberKeysHint')));
 
       pinnedList = document.createElement('div');
       pinnedList.className = 'settings-pinned-list';
@@ -307,18 +303,15 @@ export function createAppsPane(): PaneHandle {
 
       const addHeading = document.createElement('h4');
       addHeading.className = 'settings-subheading';
-      addHeading.textContent = 'Add an app';
+      addHeading.textContent = t('apps.addHeading');
       appsSection.appendChild(addHeading);
 
-      appsSection.appendChild(createHint(
-        'Add every app from LG\u2019s home screen at once, or open the list and ' +
-        'press + next to an app to pin it to the home row.'
-      ));
+      appsSection.appendChild(createHint(t('apps.addHint')));
 
       // Every app on LG's own home screen in one press, in LG's order, after
       // the ones already here (instead of adding them one by one).
       const importLgBtn = createMiniButton({
-        label: 'Add all apps from LG\u2019s home screen',
+        label: t('apps.lgImport'),
         focusIndex: '1298'
       });
       appsSection.appendChild(importLgBtn);
@@ -330,7 +323,7 @@ export function createAppsPane(): PaneHandle {
         if (importingLg) return;
         importingLg = true;
         // Not disabled while busy: a disabled button drops focus.
-        importLgBtn.textContent = 'Reading LG\u2019s home screen\u2026';
+        importLgBtn.textContent = t('apps.lgReading');
         importLgStatus.hidden = false;
         importLgStatus.textContent = '';
         try {
@@ -338,26 +331,24 @@ export function createAppsPane(): PaneHandle {
           // Their names and icons, for when the TV can't be asked later.
           rememberApps(points);
           if (!points.length) {
-            importLgStatus.textContent = 'Couldn\u2019t read LG\u2019s home screen. It needs root ' +
-              '(Homebrew Channel).';
+            importLgStatus.textContent = t('apps.lgReadFailed');
             return;
           }
           const toAdd = lgHomeAppsToAdd(points, ctx.apps.pinnedOrder, ctx.apps.customApps);
           if (!toAdd.length) {
-            importLgStatus.textContent = 'Every app on LG\u2019s home screen is already here.';
+            importLgStatus.textContent = t('apps.lgNone');
             return;
           }
           toAdd.forEach(function (id) { ctx.apps.pinnedOrder.push(id); });
           await loadAppsLists(ctx, pinnedList, addAppsList);
-          importLgStatus.textContent = 'Added ' + toAdd.length + (toAdd.length === 1 ? ' app' : ' apps') +
-            ' from LG\u2019s home screen, in LG\u2019s order, after the ones you had. Remove or move ' +
-            'any of them above, then press Save to keep them.';
+          importLgStatus.textContent = tn('apps.lgAdded', toAdd.length);
         } catch (err: any) {
-          importLgStatus.textContent = 'Couldn\u2019t read LG\u2019s home screen: ' +
-            ((err && err.message) || 'it needs root (Homebrew Channel)');
+          importLgStatus.textContent = t('apps.lgFailed', {
+            reason: (err && err.message) || t('apps.lgRootRequired')
+          });
         } finally {
           importingLg = false;
-          importLgBtn.textContent = 'Add all apps from LG\u2019s home screen';
+          importLgBtn.textContent = t('apps.lgImport');
         }
       });
 
@@ -371,7 +362,7 @@ export function createAppsPane(): PaneHandle {
       appsSection.appendChild(addAppsToggle);
 
       const showHiddenField = createToggle({
-        label: 'Show hidden and system apps',
+        label: t('apps.showHidden'),
         focusIndex: '1280',
         checked: showHiddenApps,
         onChange: function (checked) {
@@ -398,8 +389,8 @@ export function createAppsPane(): PaneHandle {
         addAppsToggle.hidden = !count;
         addAppsList.hidden = !!count && !addAppsExpanded;
         addAppsToggle.textContent = addAppsExpanded
-          ? 'Hide installed apps'
-          : 'Show installed apps (' + count + ')';
+          ? t('apps.hideInstalled')
+          : tn('apps.showInstalled', count);
       };
       addAppsToggle.addEventListener('click', function () {
         addAppsExpanded = !addAppsExpanded;
@@ -407,21 +398,21 @@ export function createAppsPane(): PaneHandle {
       });
       syncAddAppsToggle();
 
-      const customSection = createSection('Custom app');
-      customSection.appendChild(createHint('Pin any installed app by its App ID and choose a bundled icon. Find the App ID on your TV or in the Homebrew app list.'));
+      const customSection = createSection(t('apps.customSection'));
+      customSection.appendChild(createHint(t('apps.customHint')));
 
       const customAppIdField = createTextField({
-        label: 'App ID',
+        label: t('apps.appId'),
         focusIndex: '1400',
-        placeholder: 'e.g. com.spotify.tv'
+        placeholder: t('apps.appIdPlaceholder')
       });
       const customAppIdInput = customAppIdField.input;
       customSection.appendChild(customAppIdField.row);
 
       const customNameField = createTextField({
-        label: 'Name',
+        label: t('apps.name'),
         focusIndex: '1401',
-        placeholder: 'e.g. Spotify'
+        placeholder: t('apps.namePlaceholder')
       });
       const customNameInput = customNameField.input;
       customSection.appendChild(customNameField.row);
@@ -440,18 +431,18 @@ export function createAppsPane(): PaneHandle {
         }
       });
 
-      const iconRow = labeledControl('Icon', iconSelect);
+      const iconRow = labeledControl(t('apps.icon'), iconSelect);
       iconRow.insertBefore(iconPreview, iconRow.lastChild);
       customSection.appendChild(iconRow);
 
       const addCustomBtn = createMiniButton({
-        label: 'Add custom app',
+        label: t('apps.addCustom'),
         focusIndex: '1403',
         className: 'settings-add-custom',
         onClick: function () {
           const launchId = customAppIdInput.value.trim();
           if (!launchId) {
-            if (ctx.options.onToast) ctx.options.onToast('Enter an App ID first');
+            if (ctx.options.onToast) ctx.options.onToast(t('apps.needAppId'));
             return;
           }
 
@@ -470,11 +461,11 @@ export function createAppsPane(): PaneHandle {
       customSection.appendChild(addCustomBtn);
       ctx.panes.apps.appendChild(customSection);
 
-      const discoverSection = createSection('Discover apps');
-      discoverSection.appendChild(createHint('Scan this TV for installed apps, then add any of them to the dock. Discovered apps keep their own icon unless you pick a bundled one below.'));
+      const discoverSection = createSection(t('apps.discoverSection'));
+      discoverSection.appendChild(createHint(t('apps.discoverHint')));
 
       const scanBtn = createMiniButton({
-        label: 'Scan for apps',
+        label: t('apps.scan'),
         focusIndex: '1500',
         className: 'settings-scan-btn'
       });
@@ -482,10 +473,10 @@ export function createAppsPane(): PaneHandle {
 
       const discoverIconSelect = createOptionStepper({
         focusIndex: 1501,
-        choices: [{value: '', label: 'Use native icon'}].concat(BUILTIN_ICON_CHOICES),
+        choices: [{value: '', label: t('apps.useNativeIcon')}].concat(BUILTIN_ICON_CHOICES),
         value: ''
       });
-      discoverSection.appendChild(labeledControl('Icon override', discoverIconSelect));
+      discoverSection.appendChild(labeledControl(t('apps.iconOverride'), discoverIconSelect));
 
       const discoverStatus = createHint('');
       discoverSection.appendChild(discoverStatus);
@@ -514,8 +505,8 @@ export function createAppsPane(): PaneHandle {
         });
 
         discoverStatus.textContent = available.length
-          ? 'Found ' + discovered.length + ' apps.'
-          : 'All discovered apps are already in your dock.';
+          ? tn('apps.found', discovered.length)
+          : t('apps.discoverAllPinned');
 
         available.forEach(function (app, index) {
           const iconSrc = app.icon;
@@ -558,19 +549,19 @@ export function createAppsPane(): PaneHandle {
         if (scanning) return;
         scanning = true;
         scanBtn.disabled = true;
-        discoverStatus.textContent = 'Scanning\u2026';
+        discoverStatus.textContent = t('apps.scanning');
         try {
           discovered = await listInstalledApps({includeHidden: true});
           discovered.sort(function (a, b) {
             return (a.title || a.id).localeCompare(b.title || b.id);
           });
           if (!discovered.length) {
-            discoverStatus.textContent = 'No apps found on this TV.';
+            discoverStatus.textContent = t('apps.scanNone');
           } else {
             renderDiscoverList();
           }
         } catch (err) {
-          discoverStatus.textContent = 'Could not scan for apps.';
+          discoverStatus.textContent = t('apps.scanFailed');
         } finally {
           scanning = false;
           scanBtn.disabled = false;

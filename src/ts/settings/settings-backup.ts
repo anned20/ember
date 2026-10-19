@@ -12,6 +12,7 @@
 import {CONFIG_SCHEMA_VERSION, configFromBackup} from '@config/config.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
+import {activeLocale, t, tn} from '@lib/i18n.js';
 import type {BackupFitResult, Config} from '@lib/types.js';
 
 // Layout of the backup file itself. Bump only if the wrapper changes (not for
@@ -68,20 +69,37 @@ export interface SettingsBackupFound {
 
 export function backupWhen(iso: string): string {
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return 'an unknown date';
-  return d.toLocaleString([], {day: 'numeric', month: 'short', year: 'numeric',
+  if (isNaN(d.getTime())) return t('backup.unknownDate');
+  return d.toLocaleString(activeLocale(), {day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'});
+}
+
+/**
+ * A backup's location in the active language. The note under the buttons stores
+ * the English tokens ('TV', 'TV and USB drive') and a found file reports 'TV' or
+ * 'USB', so a later language switch re-reads them instead of showing a
+ * translated copy that is now wrong.
+ */
+export function backupWhereLabel(where: string): string {
+  if (where === 'USB' || where === 'USB drive') return t('backup.whereUsbDrive');
+  if (where === 'TV and USB drive') return t('backup.whereTvAndUsb');
+  return t('backup.whereTv');
 }
 
 export function lastBackupNote(): string {
   try {
     const last: {savedAt?: string; where?: string} | null =
       JSON.parse(localStorage.getItem(LAST_BACKUP_KEY) || 'null');
-    if (last && last.savedAt) return 'Last backup: ' + backupWhen(last.savedAt) + ' (' + last.where + ').';
+    if (last && last.savedAt) {
+      return t('backup.lastBackup', {
+        when: backupWhen(last.savedAt),
+        where: backupWhereLabel(last.where || '')
+      });
+    }
   } catch (err) {
     // No note yet.
   }
-  return 'No backup made from this TV yet.';
+  return t('backup.noneYet');
 }
 
 /**
@@ -150,39 +168,37 @@ export function listBackups(found?: SettingsBackupFound[]): ParsedBackup[] {
 }
 
 function backupKind(b: ParsedBackup): string {
-  if (b.reason === 'before-restore') return 'before your last restore';
+  if (b.reason === 'before-restore') return t('backup.kindBeforeRestore');
   if (b.reason === 'before-update') {
-    return 'before updating' + (b.data.updatedTo ? ' to ' + b.data.updatedTo : '');
+    return b.data.updatedTo
+      ? t('backup.kindBeforeUpdateTo', {version: b.data.updatedTo})
+      : t('backup.kindBeforeUpdate');
   }
-  return 'your backup';
+  return t('backup.kindManual');
 }
 
 /** One line to choose a backup by: when, what kind, where, which version. */
 export function backupLabel(b: ParsedBackup): string {
   return backupWhen(b.data.savedAt || '') + ' · ' + backupKind(b) + ' · ' +
-    (b.where === 'USB' ? 'USB drive' : 'TV') + (b.appVersion ? ' · ' + b.appVersion : '');
-}
-
-function madeBy(b: ParsedBackup): string {
-  return b.appVersion ? ' (' + b.appVersion + ')' : '';
+    backupWhereLabel(b.where) + (b.appVersion ? ' · ' + b.appVersion : '');
 }
 
 /** How a backup relates to this version of Ember, in words. */
 export function compatibilityNote(b: ParsedBackup): string {
+  const by = b.appVersion ? ' (' + b.appVersion + ')' : '';
   if (!b.readable) {
-    return 'Made by a newer ' + BRAND.name + madeBy(b) + ' in a format this version can’t ' +
-      'read. Update ' + BRAND.name + ' to restore it.';
+    return t('backup.madeByNewerUnreadable', {brand: BRAND.name, by: by});
   }
   if (b.schema > CONFIG_SCHEMA_VERSION) {
-    return 'Made by a newer ' + BRAND.name + madeBy(b) + '. Settings this version doesn’t ' +
-      'have are kept but not used.';
+    return t('backup.madeByNewerSchema', {brand: BRAND.name, by: by});
   }
   if (b.schema < CONFIG_SCHEMA_VERSION) {
-    return 'Made by an older ' + BRAND.name + madeBy(b) + '. Its settings are updated for ' +
-      'this version.';
+    return t('backup.madeByOlderSchema', {brand: BRAND.name, by: by});
   }
-  return 'Made by ' + BRAND.name + (b.appVersion ? ' ' + b.appVersion : '') +
-    ', with the same settings as this version.';
+  return t('backup.madeBySameSchema', {
+    brand: BRAND.name,
+    version: b.appVersion ? ' ' + b.appVersion : ''
+  });
 }
 
 function listSome(paths: string[]): string {
@@ -191,20 +207,21 @@ function listSome(paths: string[]): string {
 
 /** What a restore did (`result` from configFromBackup), for the status line. */
 export function restoreReport(b: ParsedBackup, result: BackupFitResult): string {
-  let text = 'Restored the settings from ' + backupWhen(b.data.savedAt || '') + ' (' + backupKind(b) +
-    ', ' + (b.where === 'USB' ? 'USB drive' : 'TV') +
-    (b.appVersion ? ', ' + BRAND.name + ' ' + b.appVersion : '') + ').';
+  let text = t('backup.restored', {
+    when: backupWhen(b.data.savedAt || ''),
+    kind: backupKind(b),
+    where: backupWhereLabel(b.where),
+    app: b.appVersion ? ', ' + BRAND.name + ' ' + b.appVersion : ''
+  });
   const kept = result.skipped.filter(function (s) { return s.why === 'type'; })
     .map(function (s) { return s.path; });
   const unused = result.skipped.filter(function (s) { return s.why === 'newer'; })
     .map(function (s) { return s.path; });
   if (kept.length) {
-    text += ' ' + kept.length + (kept.length === 1 ? ' setting didn’t' : ' settings didn’t') +
-      ' fit this version and kept its current value: ' + listSome(kept) + '.';
+    text += ' ' + tn('backup.kept', kept.length, {settings: listSome(kept)});
   }
   if (unused.length) {
-    text += ' ' + unused.length + (unused.length === 1 ? ' setting is' : ' settings are') +
-      ' from a newer version and not used here: ' + listSome(unused) + '.';
+    text += ' ' + tn('backup.unused', unused.length, {settings: listSome(unused)});
   }
   return text;
 }

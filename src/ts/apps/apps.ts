@@ -12,6 +12,7 @@ import {
 import {getAppIdCandidates, getBuiltinAppIcon} from './app-icons.js';
 import {indexInRow} from '@focus/focus-row.js';
 import {BRAND} from '@lib/brand.js';
+import {t} from '@lib/i18n.js';
 import type {AppCatalog, AppRecord, Config, CustomApp} from '@lib/types.js';
 
 const BUNDLED_SETTINGS_ICON = 'assets/app-icons/tv-settings.png';
@@ -172,7 +173,7 @@ export function createAppGrid(
     button.className = 'app-tile settings-tile focusable';
     button.dataset.focusIndex = String(indexInRow('apps', index));
     button.dataset.action = 'tv-settings';
-    button.setAttribute('aria-label', 'TV Settings');
+    button.setAttribute('aria-label', t('apps.tvSettings'));
 
     const img = document.createElement('img');
     img.className = 'app-icon';
@@ -193,7 +194,7 @@ export function createAppGrid(
 
     const label = document.createElement('span');
     label.className = 'app-label';
-    label.textContent = 'TV Settings';
+    label.textContent = t('apps.tvSettings');
     button.appendChild(label);
 
     button.addEventListener('click', function () {
@@ -217,7 +218,7 @@ export function createAppGrid(
     button.className = 'app-tile all-apps-launcher focusable';
     button.dataset.focusIndex = String(indexInRow('apps', index));
     button.dataset.action = 'all-apps';
-    button.setAttribute('aria-label', 'All apps');
+    button.setAttribute('aria-label', t('apps.allApps'));
 
     const icon = document.createElement('span');
     icon.className = 'app-fallback all-apps-icon';
@@ -226,7 +227,7 @@ export function createAppGrid(
 
     const label = document.createElement('span');
     label.className = 'app-label';
-    label.textContent = 'All apps';
+    label.textContent = t('apps.allApps');
     button.appendChild(label);
 
     button.addEventListener('click', function () {
@@ -253,7 +254,7 @@ export function createAppGrid(
     if (launched) return launched;
 
     const label = app && app.title ? app.title : (app && app.id) || 'app';
-    if (options.onToast) options.onToast('Could not launch ' + label);
+    if (options.onToast) options.onToast(t('apps.launchFailed', {app: label}));
     return '';
   }
 

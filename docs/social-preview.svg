@@ -1,0 +1,56 @@
+<!-- GitHub social preview (1280x640). Render:
+     rsvg-convert -w 1280 docs/social-preview.svg -o docs/social-preview.png
+     The dock art is assets/icon-source.svg cropped and scaled; the palette is
+     the app icon's. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0e3d47"/>
+      <stop offset="0.55" stop-color="#294c60"/>
+      <stop offset="1" stop-color="#6e4379"/>
+    </linearGradient>
+    <radialGradient id="pool">
+      <stop offset="0" stop-color="#ffb673" stop-opacity="0.5"/>
+      <stop offset="0.55" stop-color="#ff8a4a" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#ff7a3d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ember" x1="0" y1="0" x2="0.2" y2="1">
+      <stop offset="0" stop-color="#ffdcae"/>
+      <stop offset="0.5" stop-color="#ffab5e"/>
+      <stop offset="1" stop-color="#ff7a3d"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff7e8" stop-opacity="0.44"/>
+      <stop offset="1" stop-color="#f2e6c9" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="rail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3d8" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#ffc98f" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- The glow is wider than the crop, so it is reshaped here to fade out
+       inside the viewBox instead of ending on a hard edge. -->
+  <svg x="64" y="162" width="560" height="371" viewBox="150 405 724 480">
+    <ellipse cx="512" cy="676" rx="360" ry="170" fill="url(#pool)"/>
+    <rect x="166" y="686" width="692" height="38" rx="19" fill="url(#rail)"/>
+
+    <rect x="174" y="496" width="190" height="190" rx="48" fill="url(#glass)"
+          stroke="#fff7e8" stroke-opacity="0.45" stroke-width="4"/>
+    <rect x="660" y="496" width="190" height="190" rx="48" fill="url(#glass)"
+          stroke="#fff7e8" stroke-opacity="0.45" stroke-width="4"/>
+
+    <circle cx="512" cy="590" r="185" fill="url(#pool)"/>
+    <rect x="392" y="424" width="240" height="240" rx="62" fill="url(#ember)"/>
+  </svg>
+
+  <text x="700" y="280" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="94" font-weight="700" letter-spacing="-2" fill="#ecdeb9">Ember</text>
+  <text font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="34"
+        fill="#ecdeb9" fill-opacity="0.78" y="350">
+    <tspan x="700">A fullscreen home screen for</tspan>
+    <tspan x="700" dy="46">rooted LG webOS TVs</tspan>
+  </text>
+</svg>

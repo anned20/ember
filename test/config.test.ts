@@ -1,8 +1,9 @@
-import {describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {
-  CONFIG_MIGRATIONS, CONFIG_SCHEMA_VERSION, DEFAULT_CONFIG, migrateConfig
+  CONFIG_MIGRATIONS, CONFIG_SCHEMA_VERSION, DEFAULT_CONFIG, configFromBackup, loadConfig, migrateConfig
 } from '@config/config.js';
 import {importLegacySettings, parseBackup} from '@settings/settings-backup.js';
+import {BRAND} from '@lib/brand.js';
 import type {Config} from '@lib/types.js';
 
 /** A config tree at `version`, built on the current defaults. */
@@ -133,5 +134,35 @@ describe('first-run import', () => {
   it('ignores a backup that has no Ember or Launch Home settings', async () => {
     const foreign = JSON.stringify({app: 'com.other.app', config: {launcher: {}}});
     expect(await importLegacySettings('', DEFAULT_CONFIG, async () => [{where: 'TV', text: foreign}])).toBeNull();
+  });
+});
+
+describe('the Language setting', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  it('defaults to Automatic', () => {
+    expect(DEFAULT_CONFIG.launcher.language).toBe('auto');
+  });
+
+  it('is filled in for a config stored before it existed, leaving the rest alone', () => {
+    const stored = JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as Config;
+    delete (stored.launcher as Partial<Config['launcher']>).language;
+    stored.launcher.clockShadow = 'soft';
+    localStorage.setItem(BRAND.storage.config, JSON.stringify(stored));
+
+    const loaded = loadConfig();
+    expect(loaded.launcher.language).toBe('auto');
+    expect(loaded.launcher.clockShadow).toBe('soft');
+  });
+
+  it('travels with a backup', () => {
+    const current = JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as Config;
+    current.launcher.language = 'en';
+    const backup = JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as Config;
+    backup.launcher.language = 'nl';
+
+    const fitted = configFromBackup(backup, current);
+    expect(fitted?.config.launcher.language).toBe('nl');
   });
 });

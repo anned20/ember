@@ -4,6 +4,8 @@
 // hosts (the wallpaper and the in-app screensaver) and the settings pane all
 // read these, so a preset or a "loads?" timeout is defined once.
 
+import type {TranslationKey} from '@lib/i18n.js';
+
 export type MediaKind = 'image' | 'video' | 'gradient';
 
 export const MEDIA_IMAGE: MediaKind = 'image';
@@ -30,11 +32,11 @@ export const PRESETS: Record<string, string> = {
 };
 
 /** The gradient labels the settings pane reads from the same table. */
-export const PRESET_OPTIONS: Array<{value: string; label: string}> = [
-  {value: 'warm-gradient', label: 'Warm gradient'},
-  {value: 'cool-gradient', label: 'Cool gradient'},
-  {value: 'midnight', label: 'Midnight'},
-  {value: 'ember', label: 'Ember'}
+export const PRESET_OPTIONS: Array<{value: string; labelKey: TranslationKey}> = [
+  {value: 'warm-gradient', labelKey: 'background.preset.warm-gradient'},
+  {value: 'cool-gradient', labelKey: 'background.preset.cool-gradient'},
+  {value: 'midnight', labelKey: 'background.preset.midnight'},
+  {value: 'ember', labelKey: 'background.preset.ember'}
 ];
 
 /** The CSS for a named preset, falling back to the default. */

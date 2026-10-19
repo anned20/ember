@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('@music/builtin-music.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@music/builtin-music.js')>();
@@ -20,6 +20,7 @@ import {createMusicPane} from '@settings/panes/music.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {loadBuiltinMusicManifest} from '@music/builtin-music.js';
 import {discoverMusicTracks} from '@lib/usb.js';
+import {setLanguage, t, tn} from '@lib/i18n.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
 import type {BuiltinMusicEntry, Config, UsbTrack} from '@lib/types.js';
 
@@ -98,11 +99,14 @@ function trackRowCount(pane: HTMLElement): number {
 describe('music pane', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    setLanguage('en');
     vi.mocked(loadBuiltinMusicManifest).mockReset();
     vi.mocked(loadBuiltinMusicManifest).mockResolvedValue([]);
     vi.mocked(discoverMusicTracks).mockReset();
     vi.mocked(discoverMusicTracks).mockResolvedValue([]);
   });
+
+  afterEach(() => setLanguage('en'));
 
   it('builds the ambient controls with the configured source', () => {
     const {pane} = buildMusic(makeConfig({source: 'builtin'}));
@@ -189,5 +193,48 @@ describe('music pane', () => {
 
     ctx.binder.collect(config);
     expect(config.music.usbPlaylist).toEqual(['u1']);
+  });
+
+  it('reads every control, choice and status line in Dutch', async () => {
+    setLanguage('nl');
+    const tracks: UsbTrack[] = [
+      {url: 'u1', title: 'One', artist: 'A'},
+      {url: 'u2', title: 'Two', artist: 'B'}
+    ];
+    vi.mocked(discoverMusicTracks).mockResolvedValue(tracks);
+
+    const {pane} = buildMusic(makeConfig({source: 'usb', path: '/media/usb1/ember/music'}));
+    await waitFor(function () { return trackRowCount(pane) === 2; });
+
+    expect(pane.querySelector('.settings-section > h3')!.textContent).toBe(t('music.section'));
+    expect(pane.textContent).toContain(t('music.enabled'));
+    expect(pane.textContent).toContain(t('music.showBar'));
+    expect(pane.textContent).toContain(t('music.source'));
+    expect(pane.textContent).toContain(t('music.startWith'));
+    expect(pane.textContent).toContain(t('music.path'));
+    expect(pane.textContent).toContain(t('music.usbPlaylist'));
+    expect(pane.textContent).toContain(t('music.volume'));
+    // The USB scan count is a counted string: 2 goes through the other form.
+    expect(pane.textContent).toContain(tn('music.usbScan.found', 2));
+
+    const source = pane.querySelector('[data-focus-index="941"]') as HTMLElement;
+    expect(source.querySelector('.stepper-label')!.textContent).toBe(t('music.source.usb'));
+    const repeat = pane.querySelector('[data-focus-index="991"]') as HTMLElement;
+    expect(repeat.querySelector('.stepper-label')!.textContent).toBe(t('music.repeat.all'));
+  });
+
+  it('keeps the stored values while showing the Dutch labels', () => {
+    setLanguage('nl');
+    const {pane, config, ctx} = buildMusic(makeConfig({source: 'builtin', repeat: 'one'}));
+
+    const source = pane.querySelector('[data-focus-index="941"]') as unknown as {value: string};
+    const repeat = pane.querySelector('[data-focus-index="991"]') as unknown as {value: string};
+    expect(source.value).toBe('builtin');
+    expect(repeat.value).toBe('one');
+
+    source.value = 'usb';
+    ctx.binder.collect(config);
+    expect(config.music.source).toBe('usb');
+    expect(config.music.repeat).toBe('one');
   });
 });

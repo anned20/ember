@@ -5,6 +5,7 @@ import {whoAmI} from '@luna/luna.js';
 import {attachInputScrollHelpers} from './text-gate.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
+import {t} from '@lib/i18n.js';
 import {createWeatherPane} from './panes/weather.js';
 import {createInputsPane} from './panes/inputs.js';
 import {createMusicPane} from './panes/music.js';
@@ -20,10 +21,13 @@ import {createHint} from './components/index.js';
 import {createBinder} from './settings-binding.js';
 import type {Config} from '@lib/types.js';
 
-const HEADER_TITLE = BRAND.name + ' - "' + BRAND.tagline + '"';
-
 // How long a pane's asynchronous fill may take before it is abandoned.
 const PANE_LOAD_MS = 8000;
+
+/** The panel title: the brand with its (translated) tagline. */
+function headerTitle(): string {
+  return BRAND.name + ' - "' + t('settings.tagline') + '"';
+}
 
 /** The handle createSettingsPanel returns. */
 export interface SettingsPanelHandle {
@@ -98,6 +102,19 @@ export function createSettingsPanel(
     if (options.onClose) options.onClose();
   }
 
+  /**
+   * Restart the app so every surface repaints in a newly chosen language. The
+   * choice is already saved, so a webOS build that refuses the reload still
+   * comes up in it on the next start.
+   */
+  function reloadApp(): void {
+    try {
+      window.location.reload();
+    } catch (err) {
+      /* the saved language applies on the next start */
+    }
+  }
+
   /** Immediate shell so the panel is visible even while async lists load. */
   function paintLoadingShell(): void {
     panel.innerHTML = '';
@@ -107,9 +124,9 @@ export function createSettingsPanel(
 
     const headerTitleWrap = document.createElement('div');
     headerTitleWrap.className = 'settings-header-title';
-    const headerTitle = document.createElement('h2');
-    headerTitle.textContent = HEADER_TITLE;
-    headerTitleWrap.appendChild(headerTitle);
+    const headerTitleEl = document.createElement('h2');
+    headerTitleEl.textContent = headerTitle();
+    headerTitleWrap.appendChild(headerTitleEl);
 
     const headerActions = document.createElement('div');
     headerActions.className = 'settings-header-actions';
@@ -117,7 +134,7 @@ export function createSettingsPanel(
     closeBtn.type = 'button';
     closeBtn.className = 'settings-close focusable';
     closeBtn.dataset.focusIndex = String(indexInRow('settings-header', 1));
-    closeBtn.textContent = 'Close';
+    closeBtn.textContent = t('settings.close');
     closeBtn.addEventListener('click', requestHide);
     headerActions.appendChild(closeBtn);
 
@@ -126,7 +143,7 @@ export function createSettingsPanel(
 
     const body = document.createElement('div');
     body.className = 'settings-body';
-    body.appendChild(createHint('Loading settings…', 'settings-loading'));
+    body.appendChild(createHint(t('settings.loading'), 'settings-loading'));
 
     panel.appendChild(header);
     panel.appendChild(body);
@@ -140,7 +157,7 @@ export function createSettingsPanel(
     const body = panel.querySelector('.settings-body');
     if (body) {
       body.innerHTML = '';
-      body.appendChild(createHint(message || 'Could not load settings. Press Close and try again.'));
+      body.appendChild(createHint(message || t('settings.loadFailed')));
     }
   }
 
@@ -178,14 +195,14 @@ export function createSettingsPanel(
       opening = false;
       // If render bailed early without sections, keep a usable shell.
       if (!panel.querySelector('.settings-section') && !panel.querySelector('.settings-tabs')) {
-        showErrorState('Settings did not finish loading. Close and open again.');
+        showErrorState(t('settings.loadUnfinished'));
       }
       if (options.onRendered) options.onRendered();
     }).catch(function (err) {
       console.error(err);
       if (!visible || gen !== renderGen) return;
       opening = false;
-      showErrorState('Could not load settings. Close and try again.');
+      showErrorState(t('settings.loadFailed'));
       if (options.onRendered) options.onRendered();
     });
   }
@@ -295,43 +312,42 @@ export function createSettingsPanel(
     const headerTitleWrap = document.createElement('div');
     headerTitleWrap.className = 'settings-header-title';
 
-    const headerTitle = document.createElement('h2');
-    headerTitle.textContent = HEADER_TITLE;
+    const headerTitleEl = document.createElement('h2');
+    headerTitleEl.textContent = headerTitle();
 
     const versionLabel = document.createElement('p');
     versionLabel.className = 'settings-version';
-    versionLabel.textContent = 'Settings · Version ' + APP_VERSION;
+    versionLabel.textContent = t('settings.version', {version: APP_VERSION});
 
     // Effective user the launcher runs privileged calls as (root when the
     // Homebrew Channel service is elevated). Tells the user whether app scanning,
     // which needs root, will work. Populated asynchronously via the Luna bus.
     const runUserLabel = document.createElement('p');
     runUserLabel.className = 'settings-run-user run-user-checking';
-    runUserLabel.textContent = 'Running as: checking…';
+    runUserLabel.textContent = t('settings.runUser.checking');
     // Root through Homebrew Channel can stop answering: say so after a while
     // rather than "checking…" for good. A late answer still updates this.
     const runUserSlow = setTimeout(function () {
-      runUserLabel.textContent = 'Running as: no answer from Homebrew Channel (root)';
+      runUserLabel.textContent = t('settings.runUser.slow');
       runUserLabel.className = 'settings-run-user run-user-limited';
     }, 10000);
     whoAmI().then(function (user) {
       clearTimeout(runUserSlow);
       if (!user) {
-        runUserLabel.textContent = 'Running as: unknown (not rooted / no Homebrew Channel)';
+        runUserLabel.textContent = t('settings.runUser.unrooted');
         runUserLabel.className = 'settings-run-user run-user-limited';
         return;
       }
       const isRoot = user === 'root';
-      runUserLabel.textContent = 'Running as: ' + user +
-        (isRoot ? ' — app scanning available' : ' — not root, app scanning may be limited');
+      runUserLabel.textContent = t(isRoot ? 'settings.runUser.root' : 'settings.runUser.limited', {user: user});
       runUserLabel.className = 'settings-run-user ' + (isRoot ? 'run-user-root' : 'run-user-limited');
     }).catch(function () {
       clearTimeout(runUserSlow);
-      runUserLabel.textContent = 'Running as: unknown';
+      runUserLabel.textContent = t('settings.runUser.unknown');
       runUserLabel.className = 'settings-run-user run-user-limited';
     });
 
-    headerTitleWrap.appendChild(headerTitle);
+    headerTitleWrap.appendChild(headerTitleEl);
     headerTitleWrap.appendChild(versionLabel);
     headerTitleWrap.appendChild(runUserLabel);
 
@@ -342,7 +358,7 @@ export function createSettingsPanel(
     closeBtn.type = 'button';
     closeBtn.className = 'settings-close focusable';
     closeBtn.dataset.focusIndex = String(indexInRow('settings-header', 1));
-    closeBtn.textContent = 'Close';
+    closeBtn.textContent = t('settings.close');
     closeBtn.addEventListener('click', requestHide);
     headerActions.appendChild(closeBtn);
 
@@ -369,14 +385,18 @@ export function createSettingsPanel(
     // Settings categories, in list order. Each is a pane; sections below are
     // appended to the pane they belong to.
     const CATEGORIES = [
-      {id: 'look', label: 'Look', sub: 'Profile, wallpaper, clock, icons'},
-      {id: 'music', label: 'Music', sub: 'Ambient music and its volume'},
-      {id: 'screensaver', label: 'Screensaver', sub: BRAND.name + ' and TV screensavers'},
-      {id: 'apps', label: 'Apps', sub: 'Pinned apps, add or import apps'},
-      {id: 'inputs', label: 'Inputs & channels', sub: 'HDMI inputs, Live TV channels'},
-      {id: 'weather', label: 'Weather', sub: 'Forecast and location'},
-      {id: 'system', label: 'System', sub: 'Volume levels, Home button, boot, performance'},
-      {id: 'tools', label: 'Tools', sub: 'Backup & restore, TV check, updates'}
+      {id: 'look', label: t('settings.category.look'), sub: t('settings.category.look.sub')},
+      {id: 'music', label: t('settings.category.music'), sub: t('settings.category.music.sub')},
+      {
+        id: 'screensaver',
+        label: t('settings.category.screensaver'),
+        sub: t('settings.category.screensaver.sub', {brand: BRAND.name})
+      },
+      {id: 'apps', label: t('settings.category.apps'), sub: t('settings.category.apps.sub')},
+      {id: 'inputs', label: t('settings.category.inputs'), sub: t('settings.category.inputs.sub')},
+      {id: 'weather', label: t('settings.category.weather'), sub: t('settings.category.weather.sub')},
+      {id: 'system', label: t('settings.category.system'), sub: t('settings.category.system.sub')},
+      {id: 'tools', label: t('settings.category.tools'), sub: t('settings.category.tools.sub')}
     ];
     let activeSettingsTab = 'look';
     const tabButtons: Record<string, HTMLButtonElement> = {};
@@ -456,9 +476,7 @@ export function createSettingsPanel(
       });
       // Each category starts at its top.
       if (changed) body.scrollTop = 0;
-      if (saveBtn && saveBtn.textContent !== 'Save' && saveBtn.textContent !== 'Saving…') {
-        saveBtn.textContent = 'Save';
-      }
+      if (saveBtn) saveBtn.textContent = t('settings.save');
       // Only dive into pane content when the user enters the category
       // (OK / Right), not when Up/Down merely highlights it.
       if (tabOpts.focusContent) {
@@ -530,7 +548,7 @@ export function createSettingsPanel(
     saveBtn.type = 'button';
     saveBtn.className = 'settings-save focusable';
     saveBtn.dataset.focusIndex = String(indexInRow('settings-header', 0));
-    saveBtn.textContent = 'Save';
+    saveBtn.textContent = t('settings.save');
     saveBtn.addEventListener('click', function () {
       // A pane with its own write path handles Save first and says whether it
       // did; the rest collect the plain field table.
@@ -539,15 +557,22 @@ export function createSettingsPanel(
         return;
       }
 
+      const languageBefore = config.launcher.language;
       // One pass over the field table, then the derived-field hooks.
       binder.collect(config);
 
       saveConfig(config);
       if (options.onSave) options.onSave(config);
+      // A language change repaints every surface, so restart the app instead of
+      // re-rendering half of it (the new language is already saved).
+      if (config.launcher.language !== languageBefore) {
+        reloadApp();
+        return;
+      }
       if (config.launcher.launchOnHome && options.onToast) {
-        options.onToast('Enabling Home → ' + BRAND.name + ' watcher…');
+        options.onToast(t('system.homeEnabling', {brand: BRAND.name}));
       } else if (config.launcher.bootOnStart && options.onToast) {
-        options.onToast('Enabling boot on TV start…');
+        options.onToast(t('system.bootEnabling'));
       }
       hide();
     });

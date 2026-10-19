@@ -1,5 +1,6 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {beforeEach, afterEach, describe, expect, it, vi} from 'vitest';
 import {BRAND} from '@lib/brand.js';
+import {setLanguage, t} from '@lib/i18n.js';
 
 vi.mock('@luna/luna.js', () => ({
   execRoot: vi.fn(async () => ''),
@@ -55,7 +56,10 @@ describe('settings panel integration', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
     localStorage.clear();
+    setLanguage('en');
   });
+
+  afterEach(() => setLanguage('en'));
 
   it('renders the panel from the control kit without throwing', async () => {
     const panel = document.createElement('div');
@@ -139,5 +143,66 @@ describe('settings panel integration', () => {
 
     expect(saved.length).toBe(1);
     expect(saved[0].launcher.clockShadow).toBe('soft');
+  });
+
+  it('renders the panel shell in Dutch when the language is Dutch', async () => {
+    setLanguage('nl');
+
+    const panel = document.createElement('div');
+    panel.id = 'settings-panel';
+    document.body.appendChild(panel);
+
+    const handle = createSettingsPanel(panel, loadConfig, {});
+    handle.show();
+    await waitFor('.settings-tab-pane.is-active', panel);
+    const systemPane = await waitFor('.settings-tab-pane[data-tab="system"] .option-stepper[data-focus-index="995"]', panel);
+
+    expect(panel.querySelector('.settings-header-title h2')?.textContent)
+      .toBe(BRAND.name + ' - "' + t('settings.tagline') + '"');
+    expect(panel.querySelector('.settings-close')?.textContent).toBe(t('settings.close'));
+    expect(panel.querySelector('.settings-save')?.textContent).toBe(t('settings.save'));
+    expect(panel.querySelector('.settings-nav')?.textContent).toContain(t('settings.category.look'));
+    expect(panel.querySelector('.settings-nav')?.textContent).toContain(t('settings.category.inputs'));
+    expect(systemPane.closest('.settings-tab-pane')?.textContent).toContain(
+      t('system.volumeAtHome', {brand: BRAND.name}));
+
+    handle.hide();
+  });
+
+  it('saves a changed language and restarts the app for it', async () => {
+    const config = loadConfig();
+    config.launcher.language = 'en';
+    localStorage.setItem(BRAND.storage.config, JSON.stringify(config));
+    const reload = vi.fn();
+    const reloadable = window as unknown as {location: {reload: () => void}};
+    const realLocation = reloadable.location;
+    reloadable.location = Object.assign({}, realLocation, {reload: reload});
+
+    try {
+      const panel = document.createElement('div');
+      panel.id = 'settings-panel';
+      document.body.appendChild(panel);
+
+      const handle = createSettingsPanel(panel, loadConfig, {});
+      handle.show();
+
+      const language = await waitFor(
+        '.settings-tab-pane[data-tab="system"] .option-stepper[data-focus-index="995"]', panel
+      ) as OptionStepperElement;
+      expect(language.value).toBe('en');
+      language.setValue('nl');
+
+      const saveBtn = await waitFor('.settings-save', panel);
+      // Wait out the open guard, which swallows the click sequence that opened us.
+      await new Promise(function (resolve) { setTimeout(resolve, 800); });
+      (saveBtn as HTMLButtonElement).click();
+
+      const stored = JSON.parse(localStorage.getItem(BRAND.storage.config) || '{}');
+      expect(stored.launcher.language).toBe('nl');
+      expect(reload).toHaveBeenCalledTimes(1);
+      handle.hide();
+    } finally {
+      reloadable.location = realLocation;
+    }
   });
 });

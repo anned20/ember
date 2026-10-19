@@ -11,6 +11,7 @@
 import {getTvChannelNow, getTvChannels, launchApp, launchAppViaRoot, openTvChannel} from '@luna/luna.js';
 import {indexInRow} from '@focus/focus-row.js';
 import {BRAND} from '@lib/brand.js';
+import {t} from '@lib/i18n.js';
 import type {TvChannel} from '@luna/luna.js';
 import type {Config, LauncherConfig} from '@lib/types.js';
 
@@ -150,7 +151,7 @@ export function createChannelStrip(
     return launchApp(LIVE_TV_ID).catch(function () {
       return launchAppViaRoot(LIVE_TV_ID);
     }).catch(function () {
-      if (opts.onToast) opts.onToast('Could not open Live TV');
+      if (opts.onToast) opts.onToast(t('channels.openFailed'));
     });
   }
 
@@ -158,23 +159,23 @@ export function createChannelStrip(
     if (opts.onBeforeLaunch) opts.onBeforeLaunch();
     close();
     openTvChannel(channel).catch(function () {
-      if (opts.onToast) opts.onToast('Could not switch to ' + channel.name);
+      if (opts.onToast) opts.onToast(t('channels.switchFailed', {channel: channel.name}));
     });
   }
 
   function render(): HTMLButtonElement {
     strip!.innerHTML = '';
     // What's on now: a text preview (a web app can't show the tuner's picture).
-    const now = chip('Live TV', 'What’s on now…', 'channel-chip-now');
+    const now = chip(t('inputs.liveTv'), t('channels.nowPlaying'), 'channel-chip-now');
     now.button.addEventListener('click', openLiveTv);
     getTvChannelNow().then(function (info) {
       if (!open) return;
       const channel = [info.number, info.name].filter(Boolean).join(' ');
       now.label.textContent = channel
         ? channel + (info.programme ? ' · ' + info.programme : '')
-        : 'Watch Live TV';
+        : t('channels.watchLive');
     }).catch(function () {
-      now.label.textContent = 'Watch Live TV';
+      now.label.textContent = t('channels.watchLive');
     });
     shown().forEach(function (channel) {
       const c = chip(channel.number, channel.name);

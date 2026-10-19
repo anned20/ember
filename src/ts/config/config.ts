@@ -1,6 +1,7 @@
 import {normalizeBackgroundConfig} from '@background/backgrounds.js';
 import {normalizeMusicConfig} from '@music/builtin-music.js';
 import {BRAND} from '@lib/brand.js';
+import type {TranslationKey} from '@lib/i18n.js';
 import type {BackgroundConfig, BackupFitResult, BackupSkip, Config, MusicConfig} from '@lib/types.js';
 
 const STORAGE_KEY = BRAND.storage.config;
@@ -65,6 +66,10 @@ export const DEFAULT_CONFIG: Config = {
     }
   },
   launcher: {
+    // Interface language: 'auto' follows the TV (nl* → Dutch, else English),
+    // or a fixed 'en' / 'nl'. A normal config field: the deep-merge in
+    // loadConfig gives it to an older config, no migration needed.
+    language: 'auto',
     pinnedApps: [
       'netflix', 'amazon.html', 'youtube.leanback.v4', 'com.apple.appletv',
       'bbc.iplayer.lge', 'com.webos.app.browser', 'com.webos.app.mediadiscovery'
@@ -163,25 +168,26 @@ export function coerceScreensaverMinutes(minutes: unknown): number {
   return best;
 }
 
-export const TIMEZONE_OPTIONS = [
-  {value: '', label: 'TV local time'},
-  {value: 'America/Los_Angeles', label: 'Pacific (US)'},
-  {value: 'America/Denver', label: 'Mountain (US)'},
-  {value: 'America/Chicago', label: 'Central (US)'},
-  {value: 'America/New_York', label: 'Eastern (US)'},
-  {value: 'America/Anchorage', label: 'Alaska (US)'},
-  {value: 'Pacific/Honolulu', label: 'Hawaii (US)'},
-  {value: 'America/Toronto', label: 'Eastern (Canada)'},
-  {value: 'America/Vancouver', label: 'Pacific (Canada)'},
-  {value: 'Europe/London', label: 'London'},
-  {value: 'Europe/Paris', label: 'Paris'},
-  {value: 'Europe/Berlin', label: 'Berlin'},
-  {value: 'Europe/Helsinki', label: 'Helsinki'},
-  {value: 'Asia/Tokyo', label: 'Tokyo'},
-  {value: 'Asia/Seoul', label: 'Seoul'},
-  {value: 'Asia/Singapore', label: 'Singapore'},
-  {value: 'Australia/Sydney', label: 'Sydney'},
-  {value: 'UTC', label: 'UTC'}
+// The label is a dictionary key: the pane translates it, the value is stored.
+export const TIMEZONE_OPTIONS: Array<{value: string; labelKey: TranslationKey}> = [
+  {value: '', labelKey: 'look.timezone.local'},
+  {value: 'America/Los_Angeles', labelKey: 'look.timezone.pacific-us'},
+  {value: 'America/Denver', labelKey: 'look.timezone.mountain-us'},
+  {value: 'America/Chicago', labelKey: 'look.timezone.central-us'},
+  {value: 'America/New_York', labelKey: 'look.timezone.eastern-us'},
+  {value: 'America/Anchorage', labelKey: 'look.timezone.alaska-us'},
+  {value: 'Pacific/Honolulu', labelKey: 'look.timezone.hawaii-us'},
+  {value: 'America/Toronto', labelKey: 'look.timezone.eastern-ca'},
+  {value: 'America/Vancouver', labelKey: 'look.timezone.pacific-ca'},
+  {value: 'Europe/London', labelKey: 'look.timezone.london'},
+  {value: 'Europe/Paris', labelKey: 'look.timezone.paris'},
+  {value: 'Europe/Berlin', labelKey: 'look.timezone.berlin'},
+  {value: 'Europe/Helsinki', labelKey: 'look.timezone.helsinki'},
+  {value: 'Asia/Tokyo', labelKey: 'look.timezone.tokyo'},
+  {value: 'Asia/Seoul', labelKey: 'look.timezone.seoul'},
+  {value: 'Asia/Singapore', labelKey: 'look.timezone.singapore'},
+  {value: 'Australia/Sydney', labelKey: 'look.timezone.sydney'},
+  {value: 'UTC', labelKey: 'look.timezone.utc'}
 ];
 
 function deepMerge<T>(target: unknown, source: unknown): T {

@@ -64,6 +64,14 @@ export function activeLanguage(): LanguageCode {
   return active;
 }
 
+/**
+ * The BCP 47 tag the date and time formatters use. English keeps `en-GB`, so
+ * its dates read exactly as they did before the language setting existed.
+ */
+export function activeLocale(): string {
+  return active === 'nl' ? 'nl-NL' : 'en-GB';
+}
+
 function interpolate(template: string, params?: TranslationParams): string {
   if (!params) return template;
   return template.replace(/\{(\w+)\}/g, function (whole, name: string) {

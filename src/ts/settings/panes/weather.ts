@@ -7,6 +7,7 @@ import {
   labeledControl
 } from '@settings/components/index.js';
 import {foldPlaceText, normalizeWeatherConfig, searchPlaces} from '@home/weather.js';
+import {t} from '@lib/i18n.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 import type {WeatherLocation} from '@lib/types.js';
 
@@ -17,21 +18,17 @@ const PLACE_LOOKUP_DEBOUNCE_MS = 300;
 const PLACE_RESULT_LIMIT = 6;
 const SUGGESTION_FOCUS_INDEX = '1023';
 
-const IDLE_HINT = 'Start typing a town or city — matching places appear as you type. ' +
-  'Forecast from Open-Meteo (no account needed); needs the TV to be online. ' +
-  'Untick Show weather to hide it — nothing is downloaded while it’s off.';
-
 /** The Weather pane: show/hide, units, and the place type-ahead. */
 export function createWeatherPane(): PaneHandle {
   return {
     build: function (ctx: SettingsContext): void {
-      const section = createSection('Weather');
+      const section = createSection(t('weather.section'));
 
       const cfg = normalizeWeatherConfig(ctx.rawConfig.weather);
       let place: WeatherLocation = Object.assign({}, cfg.location);
 
       const enabledField = createToggle({
-        label: 'Show weather',
+        label: t('weather.show'),
         focusIndex: '1020',
         path: 'weather.enabled',
         binder: ctx.binder
@@ -48,20 +45,20 @@ export function createWeatherPane(): PaneHandle {
         parse: function (raw) { return raw === 'f' ? 'f' : 'c'; },
         binder: ctx.binder
       });
-      section.appendChild(labeledControl('Temperature', unitsSelect));
+      section.appendChild(labeledControl(t('weather.temperature'), unitsSelect));
 
       const placeHint = createHint('');
       function paintPlace(pending: boolean): void {
-        placeHint.textContent = 'Location: ' + place.name +
-          (pending ? ' — press Save to use it' : '');
+        placeHint.textContent = t('weather.location', {place: place.name}) +
+          (pending ? t('weather.locationPending') : '');
       }
       paintPlace(false);
       section.appendChild(placeHint);
 
       const searchField = createTextField({
-        label: 'Change location',
+        label: t('weather.changeLocation'),
         focusIndex: '1022',
-        placeholder: 'Start typing a place, e.g. tok',
+        placeholder: t('weather.placeholder'),
         autocomplete: 'off'
       });
       const searchInput = searchField.input;
@@ -75,7 +72,7 @@ export function createWeatherPane(): PaneHandle {
       suggestions.hidden = true;
       section.appendChild(suggestions);
 
-      const status = createHint(IDLE_HINT);
+      const status = createHint(t('weather.idleHint'));
       section.appendChild(status);
 
       function clearSuggestions(): void {
@@ -110,7 +107,7 @@ export function createWeatherPane(): PaneHandle {
         searchInput.value = chosen.name;
         clearSuggestions();
         paintPlace(true);
-        status.textContent = 'Press Save to show the weather for ' + chosen.name + '.';
+        status.textContent = t('weather.pressSave', {place: chosen.name});
         ctx.focusControl(searchInput);
       }
 
@@ -136,23 +133,23 @@ export function createWeatherPane(): PaneHandle {
         const seq = ++lookupSeq;
         if (query.length < 2) {
           clearSuggestions();
-          status.textContent = IDLE_HINT;
+          status.textContent = t('weather.idleHint');
           return;
         }
         // Short pause so each keystroke doesn't fire a request.
         lookupTimer = setTimeout(function () {
-          status.textContent = 'Looking up “' + query + '”…';
+          status.textContent = t('weather.lookingUp', {query: query});
           ctx.withDeadline(searchPlaces(query, PLACE_RESULT_LIMIT), PLACE_LOOKUP_MS)
             .then(function (places) {
               if (seq !== lookupSeq) return; // a newer keystroke won
               if (!places) {
-                status.textContent = 'Could not look up places — check the TV is online.';
+                status.textContent = t('weather.lookupFailed');
                 return;
               }
               renderSuggestions(places, query);
               status.textContent = places.length
-                ? 'Close the keyboard, then press ↓ and OK to pick a place (or point and click).'
-                : 'No places match “' + query + '” — check the spelling.';
+                ? t('weather.choose')
+                : t('weather.noPlaces', {query: query});
             });
         }, PLACE_LOOKUP_DEBOUNCE_MS);
       }

@@ -310,6 +310,39 @@ export const en = {
   'channels.openFailed': 'Could not open Live TV',
   'channels.switchFailed': 'Could not switch to {channel}',
 
+  // ── The Weather pane (panes/weather.ts) and the home panel (home/weather.ts) ─
+  'weather.section': 'Weather',
+  'weather.show': 'Show weather',
+  'weather.temperature': 'Temperature',
+  'weather.location': 'Location: {place}',
+  'weather.locationPending': ' — press Save to use it',
+  'weather.changeLocation': 'Change location',
+  'weather.placeholder': 'Start typing a place, e.g. tok',
+  'weather.idleHint': 'Start typing a town or city — matching places appear as you type. Forecast from Open-Meteo (no account needed); needs the TV to be online. Untick Show weather to hide it — nothing is downloaded while it’s off.',
+  'weather.pressSave': 'Press Save to show the weather for {place}.',
+  'weather.lookingUp': 'Looking up “{query}”…',
+  'weather.lookupFailed': 'Could not look up places — check the TV is online.',
+  'weather.choose': 'Close the keyboard, then press ↓ and OK to pick a place (or point and click).',
+  'weather.noPlaces': 'No places match “{query}” — check the spelling.',
+  'weather.selectedLocation': 'Selected location',
+  'weather.today': 'Today',
+  'weather.condition.clear': 'Clear',
+  'weather.condition.clearNight': 'Clear night',
+  'weather.condition.mainlyClear': 'Mostly clear',
+  'weather.condition.mainlyClearNight': 'Mostly clear night',
+  'weather.condition.partlyCloudy': 'Partly cloudy',
+  'weather.condition.overcast': 'Overcast',
+  'weather.condition.fog': 'Fog',
+  'weather.condition.drizzle': 'Drizzle',
+  'weather.condition.rain': 'Rain',
+  'weather.condition.snow': 'Snow',
+  'weather.condition.thunder': 'Thunderstorm',
+  'weather.aria': '{day}, {condition}, high {high}, low {low}',
+
+  // ── The clock's AM/PM marker (lib/clock-format.ts) ────────────────────────
+  'clock.am': 'AM',
+  'clock.pm': 'PM',
+
   // ── Counted strings ───────────────────────────────────────────────────────
   // The USB music scan (panes/music.ts).
   'music.usbScan.found.one': '{count} track found — tick the ones to play.',

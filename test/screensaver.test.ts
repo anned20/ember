@@ -2,6 +2,7 @@ import {afterEach, describe, expect, it, vi} from 'vitest';
 import {createCustomScreensaver} from '@background/screensaver.js';
 import type {CustomScreensaver} from '@background/screensaver.js';
 import {AERIAL_BACKGROUNDS} from '@background/aerials.js';
+import {setLanguage} from '@lib/i18n.js';
 import type {Config} from '@lib/types.js';
 
 const FIXTURE = `
@@ -22,6 +23,7 @@ afterEach(() => {
   saver = null;
   document.body.innerHTML = '';
   document.body.className = '';
+  setLanguage('en');
 });
 
 function config(background: Record<string, unknown>): Config {
@@ -83,5 +85,14 @@ describe('screensaver: the aerial reuse decision', () => {
     });
     expect(root().querySelector('video')).toBeNull();
     expect(root().classList.contains('reuses-wallpaper')).toBe(false);
+  });
+
+  it('writes the date in the chosen language', () => {
+    setLanguage('nl');
+    mount(config({source: 'preset', preset: 'cool-gradient'}), false);
+
+    const date = root().querySelector('.custom-screensaver-date')!.textContent || '';
+    expect(date).toMatch(/dag/);
+    expect(date).toMatch(/januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december/);
   });
 });

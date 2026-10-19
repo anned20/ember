@@ -12,6 +12,7 @@
 import {CONFIG_SCHEMA_VERSION, configFromBackup} from '@config/config.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
+import {activeLocale} from '@lib/i18n.js';
 import type {BackupFitResult, Config} from '@lib/types.js';
 
 // Layout of the backup file itself. Bump only if the wrapper changes (not for
@@ -69,7 +70,7 @@ export interface SettingsBackupFound {
 export function backupWhen(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return 'an unknown date';
-  return d.toLocaleString([], {day: 'numeric', month: 'short', year: 'numeric',
+  return d.toLocaleString(activeLocale(), {day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'});
 }
 

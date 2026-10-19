@@ -11,6 +11,7 @@ vi.mock('@home/weather.js', async (importOriginal) => {
 import {createWeatherPane} from '@settings/panes/weather.js';
 import {createBinder} from '@settings/settings-binding.js';
 import {searchPlaces} from '@home/weather.js';
+import {setLanguage} from '@lib/i18n.js';
 import type {SettingsContext} from '@settings/pane.js';
 import type {Config, WeatherLocation} from '@lib/types.js';
 
@@ -88,6 +89,7 @@ async function waitForText(text: string, root: ParentNode, ms = 2000): Promise<v
 describe('weather pane', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    setLanguage('en');
     vi.mocked(searchPlaces).mockReset();
     vi.mocked(searchPlaces).mockResolvedValue([]);
   });
@@ -134,5 +136,33 @@ describe('weather pane', () => {
     input.dispatchEvent(new Event('input'));
 
     await waitForText('Could not look up places', pane);
+  });
+
+  it('reads the pane in Dutch, leaving the place name alone', async () => {
+    setLanguage('nl');
+    let resolveSearch: (places: WeatherLocation[]) => void = function () {};
+    vi.mocked(searchPlaces).mockImplementation(function () {
+      return new Promise(function (resolve) { resolveSearch = resolve; });
+    });
+    const {pane} = buildPane();
+
+    const input = pane.querySelector('input[data-focus-index="1022"]') as HTMLInputElement;
+    expect(pane.textContent).toContain('Toon weer');
+    expect(pane.textContent).toContain('Temperatuur');
+    expect(pane.textContent).toContain('Locatie: Berlin');
+    expect(pane.textContent).toContain('Begin een stad of dorp te typen');
+    expect(input.placeholder).toBe('Begin een plaats te typen, bijv. tok');
+
+    input.value = 'tok';
+    input.dispatchEvent(new Event('input'));
+
+    await waitForText('“tok” opzoeken…', pane);
+    resolveSearch([PLACE]);
+    const option = await waitFor('.settings-suggestion', pane);
+    expect(pane.textContent).toContain('Sluit het toetsenbord');
+
+    (option as HTMLButtonElement).click();
+    expect(pane.textContent).toContain('Locatie: Tokyo, Japan — druk op Opslaan om hem te gebruiken');
+    expect(pane.textContent).toContain('Druk op Opslaan om het weer voor Tokyo, Japan te tonen.');
   });
 });

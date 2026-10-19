@@ -51,7 +51,7 @@ import {activity, noteForeground} from '@lib/activity.js';
 import {settingsBackupText, importLegacySettings} from '@settings/settings-backup.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
-import {setLanguage} from '@lib/i18n.js';
+import {activeLocale, setLanguage} from '@lib/i18n.js';
 import type {Config, LauncherConfig, AppRecord, LunaResponse} from '@lib/types.js';
 
 type ErrorLike = {message?: unknown} | null | undefined;
@@ -135,11 +135,11 @@ function formatClockDate(date: Date, timezone: string) {
     options.timeZone = timezone;
   }
   try {
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
+    return new Intl.DateTimeFormat(activeLocale(), options).format(date);
   } catch (err) {
     // Invalid timezone — fall back to local date.
     delete options.timeZone;
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
+    return new Intl.DateTimeFormat(activeLocale(), options).format(date);
   }
 }
 

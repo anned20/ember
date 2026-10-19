@@ -8,6 +8,7 @@
  */
 
 import {BRAND} from '@lib/brand.js';
+import {activeLocale, t} from '@lib/i18n.js';
 import type {Config, WeatherConfig, WeatherLocation} from '@lib/types.js';
 
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -99,7 +100,7 @@ export function normalizeWeatherConfig(raw: unknown): WeatherConfig {
     units: cfg.units === 'f' ? 'f' : 'c',
     location: hasCoords
       ? {
-        name: loc.name || 'Selected location',
+        name: loc.name || t('weather.selectedLocation'),
         latitude: loc.latitude as number,
         longitude: loc.longitude as number,
         countryCode: loc.countryCode || ''
@@ -128,16 +129,16 @@ export function conditionOf(code: number): WeatherCondition {
 export function conditionLabel(code: number, isDay?: boolean): string {
   const day = isDay !== false;
   switch (conditionOf(code)) {
-    case 'clear': return day ? 'Clear' : 'Clear night';
-    case 'mainly-clear': return day ? 'Mostly clear' : 'Mostly clear night';
-    case 'partly-cloudy': return 'Partly cloudy';
-    case 'overcast': return 'Overcast';
-    case 'fog': return 'Fog';
-    case 'drizzle': return 'Drizzle';
-    case 'rain': return 'Rain';
-    case 'snow': return 'Snow';
-    case 'thunder': return 'Thunderstorm';
-    default: return 'Partly cloudy';
+    case 'clear': return t(day ? 'weather.condition.clear' : 'weather.condition.clearNight');
+    case 'mainly-clear': return t(day ? 'weather.condition.mainlyClear' : 'weather.condition.mainlyClearNight');
+    case 'partly-cloudy': return t('weather.condition.partlyCloudy');
+    case 'overcast': return t('weather.condition.overcast');
+    case 'fog': return t('weather.condition.fog');
+    case 'drizzle': return t('weather.condition.drizzle');
+    case 'rain': return t('weather.condition.rain');
+    case 'snow': return t('weather.condition.snow');
+    case 'thunder': return t('weather.condition.thunder');
+    default: return t('weather.condition.partlyCloudy');
   }
 }
 
@@ -420,7 +421,7 @@ function locationToday(data: any): string {
 function weekdayShort(isoDate: unknown): string {
   const parts = String(isoDate).split('-');
   const d = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
-  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getUTCDay()];
+  return new Intl.DateTimeFormat(activeLocale(), {weekday: 'short', timeZone: 'UTC'}).format(d);
 }
 
 /** Town and country only: "Manchester, England, United Kingdom" → "Manchester, United Kingdom". */
@@ -474,7 +475,7 @@ function renderPanel(el: HTMLElement | null, data: any, cfg: WeatherConfig): boo
     '<div class="weather-row">' +
     '<div class="weather-today">' +
     '<div class="weather-today-head">' +
-      '<span class="weather-day-label">' + (built.isToday ? 'Today' : weekdayShort(today.date)) + '</span>' +
+      '<span class="weather-day-label">' + (built.isToday ? t('weather.today') : weekdayShort(today.date)) + '</span>' +
     '</div>' +
     '<div class="weather-today-main">' +
       weatherGlyphSvg(nowCode, nowIsDay) +
@@ -490,9 +491,12 @@ function renderPanel(el: HTMLElement | null, data: any, cfg: WeatherConfig): boo
 
   for (let i = 1; i < days.length; i += 1) {
     const d = days[i];
-    html += '<div class="weather-day" aria-label="' + escapeHtml(weekdayShort(d.date) + ', ' +
-      conditionLabel(d.code, true) + ', high ' + formatTemp(d.high, units) + ', low ' +
-      formatTemp(d.low, units)) + '">' +
+    html += '<div class="weather-day" aria-label="' + escapeHtml(t('weather.aria', {
+      day: weekdayShort(d.date),
+      condition: conditionLabel(d.code, true),
+      high: formatTemp(d.high, units),
+      low: formatTemp(d.low, units)
+    })) + '">' +
       '<span class="weather-day-label">' + weekdayShort(d.date) + '</span>' +
       weatherGlyphSvg(d.code, true) +
       '<span class="weather-high">' + formatTemp(d.high, units) + '</span>' +

@@ -4,6 +4,8 @@
  * format). `timezone` is Settings -> Look -> Timezone ('' = the TV's own).
  */
 
+import {activeLocale, t} from './i18n.js';
+
 function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
@@ -13,7 +15,7 @@ export function clockParts(date: Date, timezone: string, hour12: boolean): {time
   let minutes = date.getMinutes();
   if (timezone && typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
     try {
-      const parts = new Intl.DateTimeFormat('en-GB', {
+      const parts = new Intl.DateTimeFormat(activeLocale(), {
         timeZone: timezone,
         hour: 'numeric',
         minute: '2-digit',
@@ -34,7 +36,7 @@ export function clockParts(date: Date, timezone: string, hour12: boolean): {time
     }
   }
   if (!hour12) return {time: hours + ':' + pad(minutes), ampm: ''};
-  return {time: ((hours % 12) || 12) + ':' + pad(minutes), ampm: hours < 12 ? 'AM' : 'PM'};
+  return {time: ((hours % 12) || 12) + ':' + pad(minutes), ampm: hours < 12 ? t('clock.am') : t('clock.pm')};
 }
 
 /** Show the time in `el`; a 12-hour clock gets a smaller AM/PM after it. */

@@ -1,0 +1,26 @@
+src/ts/home/channels.ts
+  h_1a6b0cc05bf029 14,154,162,169,176,178
+src/ts/home/inputs.ts
+  h_1a6b0cc05bf029 3,84,113,155-158,170
+src/ts/lib/i18n-en.ts
+  h_1a6b0cc05bf029 296-312
+src/ts/lib/i18n-nl.ts
+  h_1a6b0cc05bf029 280-293
+src/ts/settings/panes/inputs.ts
+  h_1a6b0cc05bf029 10,105,158-159,171-173,178-179
+test/inputs-channels.test.ts
+  h_1a6b0cc05bf029 1-128
+test/settings/panes/inputs.test.ts
+  h_1a6b0cc05bf029 15,72,141-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c7d6d2b3150a99108b6da0d35922b374ae84320c",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

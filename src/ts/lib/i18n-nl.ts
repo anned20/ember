@@ -41,7 +41,9 @@ export const nl: Record<TranslationKey, string> = {
 
   'system.language': 'Taal',
   'system.language.auto': 'Automatisch',
+  'system.language.de': 'Deutsch',
   'system.language.en': 'English',
+  'system.language.fr': 'Français',
   'system.language.nl': 'Nederlands',
   'system.volumeAtHome': 'Volume in {brand}',
   'system.volumeOnLaunch': 'Volume als apps starten',

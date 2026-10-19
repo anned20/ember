@@ -84,7 +84,7 @@ export interface CustomApp {
 }
 
 export interface LauncherConfig {
-  /** Interface language: 'auto' (follow the TV), 'en' or 'nl'. */
+  /** Interface language: 'auto' (follow the TV), 'en', 'nl', 'de' or 'fr'. */
   language: string;
   pinnedApps: string[];
   customApps: CustomApp[];

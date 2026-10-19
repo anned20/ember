@@ -3,8 +3,9 @@
  *
  * Keys are flat and prefixed by area, so a key names the surface it belongs to
  * (`settings.*` the Settings panel shell, `settings.category.*` its category
- * list, `system.*` the System pane, and so on). `nl.ts` is typed as a complete
- * record of these keys, so a forgotten translation fails the typecheck.
+ * list, `system.*` the System pane, and so on). The other dictionaries are
+ * typed as complete records of these keys, so a forgotten translation fails
+ * the typecheck.
  *
  * `{name}` placeholders are filled in by `t()`; a counted string uses a
  * `…​.one` / `…​.other` pair (see `tn`). Keep the values as they read today: the
@@ -47,7 +48,9 @@ export const en = {
   // ── The System pane (panes/system.ts) ─────────────────────────────────────
   'system.language': 'Language',
   'system.language.auto': 'Automatic',
+  'system.language.de': 'Deutsch',
   'system.language.en': 'English',
+  'system.language.fr': 'Français',
   'system.language.nl': 'Nederlands',
   'system.volumeAtHome': 'Volume in {brand}',
   'system.volumeOnLaunch': 'Volume when apps launch',

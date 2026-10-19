@@ -1,5 +1,9 @@
 import {afterEach, describe, expect, it, vi} from 'vitest';
-import {activeLanguage, detectLanguage, setLanguage, t, tn} from '@lib/i18n.js';
+import {activeLanguage, activeLocale, detectLanguage, setLanguage, t, tn} from '@lib/i18n.js';
+import {de} from '@lib/i18n-de.js';
+import {en} from '@lib/i18n-en.js';
+import {fr} from '@lib/i18n-fr.js';
+import {nl} from '@lib/i18n-nl.js';
 
 /** Report a TV language (and preference list) to the detector. */
 function withTvLanguages(languages: string[], language?: string): void {
@@ -18,6 +22,14 @@ describe('language detection', () => {
     setLanguage('auto');
     expect(activeLanguage()).toBe('nl');
 
+    withTvLanguages(['de-DE']);
+    setLanguage('auto');
+    expect(activeLanguage()).toBe('de');
+
+    withTvLanguages(['fr-FR']);
+    setLanguage('auto');
+    expect(activeLanguage()).toBe('fr');
+
     withTvLanguages(['en-GB']);
     setLanguage('auto');
     expect(activeLanguage()).toBe('en');
@@ -30,8 +42,22 @@ describe('language detection', () => {
     });
   });
 
+  it('treats every de language as German', () => {
+    ['de', 'de-DE', 'de-AT', 'de-CH', 'DE-de'].forEach(function (tag) {
+      withTvLanguages([tag]);
+      expect(detectLanguage()).toBe('de');
+    });
+  });
+
+  it('treats every fr language as French', () => {
+    ['fr', 'fr-FR', 'fr-BE', 'fr-CA', 'FR-fr'].forEach(function (tag) {
+      withTvLanguages([tag]);
+      expect(detectLanguage()).toBe('fr');
+    });
+  });
+
   it('falls back to English for any other language, or none at all', () => {
-    ['en', 'en-GB', 'de-DE', 'fr', 'af-ZA', ''].forEach(function (tag) {
+    ['en', 'en-GB', 'it-IT', 'af-ZA', ''].forEach(function (tag) {
       withTvLanguages(tag ? [tag] : [], tag);
       expect(detectLanguage()).toBe('en');
     });
@@ -47,8 +73,25 @@ describe('language detection', () => {
     setLanguage('nl');
     expect(document.documentElement.lang).toBe('nl');
 
+    setLanguage('de');
+    expect(document.documentElement.lang).toBe('de');
+
     setLanguage('en');
     expect(document.documentElement.lang).toBe('en');
+  });
+
+  it('uses the language locale for dates', () => {
+    setLanguage('de');
+    expect(activeLocale()).toBe('de-DE');
+
+    setLanguage('fr');
+    expect(activeLocale()).toBe('fr-FR');
+
+    setLanguage('nl');
+    expect(activeLocale()).toBe('nl-NL');
+
+    setLanguage('en');
+    expect(activeLocale()).toBe('en-GB');
   });
 });
 
@@ -59,6 +102,12 @@ describe('translation', () => {
 
     setLanguage('nl');
     expect(t('settings.save')).toBe('Opslaan');
+
+    setLanguage('de');
+    expect(t('settings.save')).toBe('Speichern');
+
+    setLanguage('fr');
+    expect(t('settings.save')).toBe('Enregistrer');
   });
 
   it('fills {name} placeholders', () => {
@@ -89,5 +138,23 @@ describe('translation', () => {
     expect(tn('screensaver.minutes', 5)).toBe('5 minuten');
     expect(tn('screensaver.seconds', 1)).toBe('1 seconde');
     expect(tn('apps.lgAdded', 1)).toBe('1 app van het homescreen van LG toegevoegd, in de volgorde van LG, achter de apps die je al had. Verwijder of verplaats ze hierboven en druk op Opslaan om ze te bewaren.');
+
+    setLanguage('de');
+    expect(tn('apps.found', 1)).toBe('1 App gefunden.');
+    expect(tn('apps.found', 4)).toBe('4 Apps gefunden.');
+    expect(tn('screensaver.minutes', 5)).toBe('5 Minuten');
+
+    setLanguage('fr');
+    expect(tn('apps.found', 1)).toBe('1 appli trouvée.');
+    expect(tn('apps.found', 0)).toBe('0 appli trouvée.');
+    expect(tn('apps.found', 4)).toBe('4 applis trouvées.');
+    expect(tn('screensaver.minutes', 5)).toBe('5 minutes');
+  });
+
+  it('has a string for every English key in every dictionary', () => {
+    [nl, de, fr].forEach(function (dictionary) {
+      expect(Object.keys(dictionary).sort()).toEqual(Object.keys(en).sort());
+      expect(Object.values(dictionary).every(function (value) { return value.trim().length > 0; })).toBe(true);
+    });
   });
 });

@@ -126,14 +126,27 @@ describe('system pane', () => {
     expect(pane.textContent).toContain(t('system.bootOnStart'));
   });
 
-  it('offers Automatic, English and Nederlands', () => {
+  it('reads in German when the language is German', () => {
+    setLanguage('de');
+    const {pane} = buildPane();
+
+    const language = stepper(pane, '995');
+    expect(language.value).toBe('auto');
+    expect(pane.textContent).toContain(t('system.language'));
+    expect(pane.textContent).toContain(t('system.language.auto'));
+    expect(pane.textContent).toContain(t('system.volumeAtHome', {brand: BRAND.name}));
+    expect(pane.textContent).toContain(t('system.perfMode'));
+    expect(pane.textContent).toContain(t('system.bootOnStart'));
+  });
+
+  it('offers Automatic, Deutsch, English, Français and Nederlands', () => {
     const {pane} = buildPane();
     const language = stepper(pane, '995');
 
     expect(language.value).toBe('auto');
-    language.setValue('en');
-    expect(language.value).toBe('en');
-    language.setValue('nl');
-    expect(language.value).toBe('nl');
+    ['de', 'en', 'fr', 'nl'].forEach(function (value) {
+      language.setValue(value);
+      expect(language.value).toBe(value);
+    });
   });
 });

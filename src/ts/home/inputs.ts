@@ -127,7 +127,7 @@ export function createInputRow(
       currentInputId = device.id;
       render();
     } catch (err) {
-      if (options.onToast) options.onToast('Could not switch to ' + labelFor(device));
+      if (options.onToast) options.onToast(t('inputs.switchFailed', {input: labelFor(device)}));
     }
   }
 

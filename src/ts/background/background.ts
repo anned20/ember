@@ -5,6 +5,7 @@ import {presetGradient, probeImage} from './media.js';
 import type {AerialChange} from './media-playback.js';
 import type {MediaDescriptor} from './media.js';
 import {resolveLoungePaths} from '@lib/usb.js';
+import {t} from '@lib/i18n.js';
 import type {BackgroundConfig, Config} from '@lib/types.js';
 
 export type {AerialChange} from './media-playback.js';
@@ -221,8 +222,7 @@ export function createBackgroundController(
     if (key === reportedFailure) return;
     reportedFailure = key;
     if (elements.onToast) {
-      elements.onToast('The wallpaper link didn\u2019t load as an image. Use a direct image link ' +
-        '(it usually ends in .jpg or .png), and check the TV is online.');
+      elements.onToast(t('background.linkFailed'));
     }
   }
 

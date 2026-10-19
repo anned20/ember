@@ -570,9 +570,9 @@ export function createSettingsPanel(
         return;
       }
       if (config.launcher.launchOnHome && options.onToast) {
-        options.onToast('Enabling Home → ' + BRAND.name + ' watcher…');
+        options.onToast(t('system.homeEnabling', {brand: BRAND.name}));
       } else if (config.launcher.bootOnStart && options.onToast) {
-        options.onToast('Enabling boot on TV start…');
+        options.onToast(t('system.bootEnabling'));
       }
       hide();
     });

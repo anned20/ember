@@ -51,7 +51,10 @@ from `navigator`) before `buildModules()`, so a lookup cannot change language
 mid-render. Changing the setting in Settings reloads the app rather than
 re-rendering: `settings.ts` saves and then restarts when the language differs.
 Console logs, Luna names, config enum values, storage keys and user data (app
-titles, input names, geocoded place names) are not translated.
+titles, input names, geocoded place names) are not translated. Neither are
+stored values that name one of them: the last-backup note keeps the English
+`TV` / `USB drive` / `TV and USB drive`, which `backupWhereLabel()` words at
+render time.
 
 Dates and times are formatted with `activeLocale()` (also from `@lib/i18n.js`):
 `en-GB` for English, so its output never moved, and `nl-NL` for Dutch. The

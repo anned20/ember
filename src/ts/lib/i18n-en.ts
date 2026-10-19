@@ -60,6 +60,16 @@ export const en = {
   'system.bootOnStart': 'Boot on TV start',
   'system.bootOnStartHint': 'When enabled, a root init.d script launches {brand} after the TV powers on. Requires rooted TV + Homebrew Channel (same as Home button). A short delay on boot is normal while webOS starts. With Quick Start+ on, the TV only wakes from standby and this doesn’t run; turn it off under General → Devices → TV Management.',
 
+  // The Home-button watcher and boot-on-start, as their toasts (main.ts, settings.ts).
+  'system.homeActive': 'Home button → {brand} is active',
+  'system.homeFailed': 'Home watcher failed: {detail}',
+  'system.homeFailedHint': 'Home watcher failed — check root / Homebrew Channel',
+  'system.bootActive': 'Boot on TV start is active',
+  'system.bootFailed': 'Boot on start failed: {detail}',
+  'system.bootFailedHint': 'Boot on start failed — check root / Homebrew Channel',
+  'system.homeEnabling': 'Enabling Home → {brand} watcher…',
+  'system.bootEnabling': 'Enabling boot on TV start…',
+
   // ── The Look pane (panes/look.ts) ─────────────────────────────────────────
   'look.section.profile': 'Profile',
   'look.section.glass': 'Glass',
@@ -190,6 +200,7 @@ export const en = {
   'background.kenBurns.hint': 'When on, the wallpaper slowly zooms in and drifts a little (like a calm slideshow). When off, the picture stays still. Photos only — not gradients. While the wallpaper moves, tiles and buttons are tinted instead of frosted glass: blurring a moving picture makes TVs stutter.',
   'background.overlay': 'Overlay opacity',
   'background.oledNote': 'On OLED TVs, prefer slideshow or gradients over a single static photo left on screen for long periods.',
+  'background.linkFailed': 'The wallpaper link didn’t load as an image. Use a direct image link (it usually ends in .jpg or .png), and check the TV is online.',
 
   // ── The Music pane (panes/music.ts) ───────────────────────────────────────
   'music.section': 'Music',
@@ -239,6 +250,10 @@ export const en = {
   'music.bar.pressToPlay': '{track} — press OK / any key to play',
   'music.bar.mute': 'Mute',
   'music.bar.unmute': 'Unmute',
+  'music.toastBusy': 'Music is waiting: the TV’s audio player is busy. It will try again.',
+  'music.toastStuck': 'Still no sound from the TV’s audio player. A full restart usually fixes it: unplug the TV for a minute.',
+  'music.toastCannotPlay': 'Could not play ambient music',
+  'music.toastUnsupported': 'Unsupported or missing track — skipping',
 
   // ── The Apps pane (panes/apps.ts), the dock and All apps (apps/*.ts) ──────
   'apps.allApps': 'All apps',
@@ -292,6 +307,13 @@ export const en = {
   'apps.scanning': 'Scanning…',
   'apps.scanNone': 'No apps found on this TV.',
   'apps.scanFailed': 'Could not scan for apps.',
+  // The dock and All apps' messages (main.ts, apps/*.ts).
+  'apps.pinned': 'Pinned {app}',
+  'apps.unpinned': 'Unpinned {app}',
+  'apps.deleted': 'Deleted {app}',
+  'apps.launchFailed': 'Could not launch {app}',
+  'apps.deleteFailed': 'Could not delete {app}',
+  'apps.tvSettingsFailed': 'Could not open TV Settings',
 
   // ── The Inputs & channels pane (panes/inputs.ts) and the home row ────────
   'inputs.section': 'Inputs',
@@ -304,6 +326,8 @@ export const en = {
   'inputs.addInput': 'Add an input',
   'inputs.liveTv': 'Live TV',
   'inputs.channelsChip': 'Channels',
+  // The input row's own failure (home/inputs.ts).
+  'inputs.switchFailed': 'Could not switch to {input}',
   // The Live TV strip (home/channels.ts).
   'channels.nowPlaying': 'What’s on now…',
   'channels.watchLive': 'Watch Live TV',
@@ -343,6 +367,68 @@ export const en = {
   'clock.am': 'AM',
   'clock.pm': 'PM',
 
+  // ── The composition root (main.ts) ────────────────────────────────────────
+  'app.startupError': 'Startup error — check USB paths',
+  'app.importedSettings': 'Imported your previous settings.',
+
+  // ── The Tools pane (panes/tools.ts) ───────────────────────────────────────
+  'tools.backupSection': 'Backup & restore',
+  'tools.backupHint': 'Saves all your {brand} settings: apps, wallpaper, music, clock, weather and profiles. The copy on the TV is kept if you reinstall {brand}. A plugged-in USB drive gets a copy too ({usbFolder}/{settingsFile}), to move your settings to another TV. {brand} also keeps a copy by itself before each restore and each update. Backups made by other versions of {brand} can be restored too: you’re told what fitted.',
+  'tools.backUp': 'Back up settings',
+  'tools.restore': 'Restore settings',
+  'tools.backupToRestore': 'Backup to restore',
+  'tools.pressRestore': ' Press “Restore this backup” to replace your current settings with it; a copy of them is kept first.',
+  'tools.backingUp': 'Backing up…',
+  'tools.backedUpTo': 'Backed up on {when} to the {where}.',
+  'tools.usbWriteFailed': ' The USB drive couldn’t be written',
+  'tools.usbError': ' ({detail})',
+  'tools.noUsb': ' No USB drive plugged in.',
+  'tools.backupFailed': 'Backup failed: {detail}',
+  'tools.needsRoot': 'it needs root (Homebrew Channel)',
+  'tools.looking': 'Looking…',
+  'tools.lookingForBackups': 'Looking for backups on the TV and USB drive…',
+  'tools.noBackupFound': 'No backup found on the TV or a USB drive.',
+  'tools.restoreThis': 'Restore this backup',
+  'tools.restoring': 'Restoring…',
+  'tools.keepCopyFailed': 'Couldn’t keep a copy of your current settings first, so nothing was changed{detail}',
+  'tools.noSettingsInBackup': 'That backup has no {brand} settings in it.',
+  'tools.lookFailed': 'Could not look for backups: {detail}',
+  'tools.tvCheckSection': 'TV check',
+  'tools.tvCheckHint': 'If the TV or TV Settings feels slow, this collects the TV model, memory, CPU load and what is running in the background, and times how long TV Settings takes to open. TV Settings opens and closes by itself, twice; it takes about 40 seconds. Scan the code with your phone to share the result.',
+  'tools.runTvCheck': 'Run TV check',
+  'tools.checking': 'Checking…',
+  'tools.tvCheckRunning': 'Checking… about 40 seconds. TV Settings will open and close by itself, twice (if it stays open, press Exit).',
+  'tools.tvCheckStuck': 'Done, but TV Settings didn’t close by itself on this TV: press Exit or Back to close it. ',
+  'tools.tvCheckDone': 'Done. ',
+  'tools.tvCheckScan': 'Scan the code to copy this text. The full report is in {file} on the TV.',
+  'tools.tvCheckFailed': 'TV check failed: {detail}',
+  'tools.updatesSection': 'Updates',
+  'tools.updatesHint': 'Asks GitHub for the newest {brand} release. Nothing is downloaded or installed; when there is a newer one, scan its code to open the release page on your phone.',
+  'tools.runningVersion': 'You are running {brand} {version}.',
+  'tools.checkUpdates': 'Check for updates',
+  'tools.askingGitHub': 'Asking GitHub…',
+  'tools.updateAvailable': '{brand} {version} is available; you have {current}. Update from Homebrew Channel, or scan the code to get the file.',
+  'tools.upToDate': 'You are up to date: {brand} {version} is the newest release.',
+  'tools.updateUnreadable': 'GitHub’s newest release has no version {brand} can read, so it can’t tell whether you are up to date.',
+  'tools.githubUnreachable': 'Couldn’t reach GitHub. Check that the TV is connected to the internet and try again.',
+
+  // ── Backup descriptions (settings-backup.ts) ──────────────────────────────
+  'backup.unknownDate': 'an unknown date',
+  'backup.lastBackup': 'Last backup: {when} ({where}).',
+  'backup.noneYet': 'No backup made from this TV yet.',
+  'backup.kindBeforeRestore': 'before your last restore',
+  'backup.kindBeforeUpdate': 'before updating',
+  'backup.kindBeforeUpdateTo': 'before updating to {version}',
+  'backup.kindManual': 'your backup',
+  'backup.whereTv': 'TV',
+  'backup.whereUsbDrive': 'USB drive',
+  'backup.whereTvAndUsb': 'TV and USB drive',
+  'backup.madeByNewerUnreadable': 'Made by a newer {brand}{by} in a format this version can’t read. Update {brand} to restore it.',
+  'backup.madeByNewerSchema': 'Made by a newer {brand}{by}. Settings this version doesn’t have are kept but not used.',
+  'backup.madeByOlderSchema': 'Made by an older {brand}{by}. Its settings are updated for this version.',
+  'backup.madeBySameSchema': 'Made by {brand}{version}, with the same settings as this version.',
+  'backup.restored': 'Restored the settings from {when} ({kind}, {where}{app}).',
+
   // ── Counted strings ───────────────────────────────────────────────────────
   // The USB music scan (panes/music.ts).
   'music.usbScan.found.one': '{count} track found — tick the ones to play.',
@@ -354,6 +440,11 @@ export const en = {
   'apps.showInstalled.other': 'Show installed apps ({count})',
   'apps.found.one': 'Found {count} app.',
   'apps.found.other': 'Found {count} apps.',
+  // What a restore left out (settings-backup.ts).
+  'backup.kept.one': '{count} setting didn’t fit this version and kept its current value: {settings}.',
+  'backup.kept.other': '{count} settings didn’t fit this version and kept its current value: {settings}.',
+  'backup.unused.one': '{count} setting is from a newer version and not used here: {settings}.',
+  'backup.unused.other': '{count} settings are from a newer version and not used here: {settings}.',
   // The screensaver delays (panes/screensaver.ts); the slide list mixes the two.
   'screensaver.minutes.one': '1 minute',
   'screensaver.minutes.other': '{count} minutes',

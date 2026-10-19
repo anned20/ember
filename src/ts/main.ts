@@ -51,7 +51,7 @@ import {activity, noteForeground} from '@lib/activity.js';
 import {settingsBackupText, importLegacySettings} from '@settings/settings-backup.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
-import {activeLocale, setLanguage} from '@lib/i18n.js';
+import {activeLocale, setLanguage, t} from '@lib/i18n.js';
 import type {Config, LauncherConfig, AppRecord, LunaResponse} from '@lib/types.js';
 
 type ErrorLike = {message?: unknown} | null | undefined;
@@ -223,7 +223,7 @@ export function createApp(): AppLifecycle {
   let baseConfig: Config = loadConfig();
   let visible = true;
   // Set when a Launch Home backup was imported on this first start, for the toast.
-  let importedNotice = '';
+  let importedPreviousSettings = false;
 
   let started = false;
   let stopped = false;
@@ -374,7 +374,7 @@ export function createApp(): AppLifecycle {
   function deleteApp(app: AppRecord): Promise<void> {
     return removeApp(app.id).then(function () {
       unpinApp(app);
-      showToast('Deleted ' + app.title);
+      showToast(t('apps.deleted', {app: app.title}));
     });
   }
 
@@ -594,8 +594,8 @@ export function createApp(): AppLifecycle {
       },
       // Long-press menu actions (all-apps.js); the config and Luna live here.
       isPinned: isAppPinned,
-      pin: function (app) { pinApp(app); showToast('Pinned ' + app.title); },
-      unpin: function (app) { unpinApp(app); showToast('Unpinned ' + app.title); },
+      pin: function (app) { pinApp(app); showToast(t('apps.pinned', {app: app.title})); },
+      unpin: function (app) { unpinApp(app); showToast(t('apps.unpinned', {app: app.title})); },
       restart: restartApp,
       remove: deleteApp,
       onToast: showToast
@@ -658,15 +658,15 @@ export function createApp(): AppLifecycle {
       (config.launcher.launchOnHome || config.launcher.returnOnAppExit));
     const apply = on ? enableHomeWatcher : disableHomeWatcher;
     return apply().then(function () {
-      if (on && !quiet) showToast('Home button → ' + BRAND.name + ' is active');
+      if (on && !quiet) showToast(t('system.homeActive', {brand: BRAND.name}));
     }).catch(function (err: ErrorLike) {
       console.error(err);
       if (on) {
         const detail = err && err.message ? String(err.message) : '';
         const short = detail.replace(/\s+/g, ' ').slice(0, 90);
         showToast(short
-          ? 'Home watcher failed: ' + short
-          : 'Home watcher failed — check root / Homebrew Channel');
+          ? t('system.homeFailed', {detail: short})
+          : t('system.homeFailedHint'));
       }
     });
   }
@@ -676,15 +676,15 @@ export function createApp(): AppLifecycle {
     const on = !!(config && config.launcher && config.launcher.bootOnStart);
     const apply = on ? enableBootLaunch : disableBootLaunch;
     return apply().then(function () {
-      if (on && !quiet) showToast('Boot on TV start is active');
+      if (on && !quiet) showToast(t('system.bootActive'));
     }).catch(function (err: ErrorLike) {
       console.error(err);
       if (on) {
         const detail = err && err.message ? String(err.message) : '';
         const short = detail.replace(/\s+/g, ' ').slice(0, 90);
         showToast(short
-          ? 'Boot on start failed: ' + short
-          : 'Boot on start failed — check root / Homebrew Channel');
+          ? t('system.bootFailed', {detail: short})
+          : t('system.bootFailedHint'));
       }
     });
   }
@@ -715,7 +715,7 @@ export function createApp(): AppLifecycle {
         // Try the next candidate id.
       }
     }
-    showToast('Could not open TV Settings');
+    showToast(t('apps.tvSettingsFailed'));
   }
 
   function applyClockStyle() {
@@ -1182,7 +1182,8 @@ export function createApp(): AppLifecycle {
     if (!imported) return;
     setConfig(imported);
     saveConfig(baseConfig);
-    importedNotice = 'Imported your previous settings.';
+    // The toast is worded when it shows: this runs before setLanguage().
+    importedPreviousSettings = true;
   }
 
   /**
@@ -1281,8 +1282,8 @@ export function createApp(): AppLifecycle {
     if (stopped) return;
 
     // Confirms a first-run import once the home screen is up.
-    if (importedNotice) {
-      laterTracked(function () { showToast(importedNotice); }, 900);
+    if (importedPreviousSettings) {
+      laterTracked(function () { showToast(t('app.importedSettings')); }, 900);
     }
 
     // In-app photo/clock screensaver after idle.
@@ -1386,7 +1387,7 @@ export function createApp(): AppLifecycle {
     if (started) return;
     started = true;
     init().catch(function (err) {
-      showToast('Startup error — check USB paths');
+      showToast(t('app.startupError'));
       console.error(err);
     });
   }

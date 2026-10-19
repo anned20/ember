@@ -284,7 +284,7 @@ export function createAllApps(options: AllAppsOptions): AllApps {
       }, function (err: ErrorLike) {
         if (options.onToast) {
           const reason = err && err.message ? String(err.message) : '';
-          options.onToast(reason || 'Could not delete ' + app.title);
+          options.onToast(reason || t('apps.deleteFailed', {app: app.title}));
         }
       });
     });

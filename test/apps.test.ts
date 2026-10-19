@@ -8,7 +8,7 @@ vi.mock('@luna/luna.js', () => ({
   readFileAsDataUrl: vi.fn(async () => '')
 }));
 
-import {launchApp, listApps, getAppInfo} from '@luna/luna.js';
+import {launchApp, launchAppViaRoot, listApps, getAppInfo} from '@luna/luna.js';
 import {createAppGrid} from '@apps/apps.js';
 import {createAllApps} from '@apps/all-apps.js';
 import {setLanguage} from '@lib/i18n.js';
@@ -352,5 +352,46 @@ describe('the dock and All apps in Dutch', () => {
 
     expect(mount.querySelector('.all-apps-note')!.textContent)
       .toBe('Kon de apps van de tv niet lezen. Dit vereist root (Homebrew Channel).');
+  });
+
+  it('toasts a delete that gives no reason in Dutch', async () => {    vi.mocked(listApps).mockResolvedValue({apps: [{id: 'demo.app', title: 'Demo'}]});
+    const onToast = vi.fn();
+    const mount = document.createElement('div');
+    document.body.appendChild(mount);
+    const allApps = createAllApps({
+      mount: mount,
+      focus: {focusWithin: vi.fn(), focusElement: vi.fn(() => true)},
+      launch: vi.fn(),
+      isPinned: function () { return false; },
+      remove: vi.fn(async () => { throw new Error(''); }),
+      onToast: onToast
+    });
+    await allApps.show();
+
+    allApps.openMenu(mount.querySelector<HTMLElement>('.all-apps-tile')!);
+    (mount.querySelector('[data-action="delete"]') as HTMLElement).click();
+    (mount.querySelector('[data-action="delete-confirm"]') as HTMLElement).click();
+    await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+    expect(onToast).toHaveBeenCalledWith('Kon Demo niet verwijderen');
+  });
+
+  it('toasts a launch that fails in Dutch', async () => {
+    mockInstalled(['netflix']);
+    vi.mocked(launchApp).mockRejectedValue(new Error('app is not running') as never);
+    vi.mocked(launchAppViaRoot).mockRejectedValue(new Error('no root') as never);
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const toasts: string[] = [];
+    const grid = createAppGrid(container, makeConfig(['netflix']), {
+      onToast: function (message: string) { toasts.push(message); }
+    });
+    await grid.refresh();
+
+    grid.launchByNumber(1);
+    await new Promise(function (resolve) { setTimeout(resolve, 0); });
+    await new Promise(function (resolve) { setTimeout(resolve, 0); });
+
+    expect(toasts).toEqual(['Kon Netflix niet starten']);
   });
 });

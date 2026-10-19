@@ -41,11 +41,15 @@ vi.mock('@lib/update-check.js', async (importOriginal) => {
 
 import {createToolsPane} from '@settings/panes/tools.js';
 import {createBinder} from '@settings/settings-binding.js';
-import {settingsBackupText} from '@settings/settings-backup.js';
+import {
+  LAST_BACKUP_KEY, backupLabel, backupWhen, compatibilityNote, lastBackupNote, parseBackup,
+  restoreReport, settingsBackupText
+} from '@settings/settings-backup.js';
 import {readSettingsBackups, runTvCheck} from '@luna/luna.js';
-import {configFromBackup, saveConfig} from '@config/config.js';
+import {CONFIG_SCHEMA_VERSION, configFromBackup, saveConfig} from '@config/config.js';
 import {findLoungeRoots} from '@lib/usb.js';
 import {fetchLatestRelease} from '@lib/update-check.js';
+import {setLanguage} from '@lib/i18n.js';
 import {APP_VERSION} from '@lib/version.js';
 import type {PaneHandle, SettingsContext, SettingsPanelOptions} from '@settings/pane.js';
 import type {Config} from '@lib/types.js';
@@ -120,6 +124,17 @@ function pickRow(pane: HTMLElement): HTMLElement {
   return (pane.querySelector('[data-focus-index="1592"]') as HTMLElement).closest('.settings-row') as HTMLElement;
 }
 
+/** The backup section's status line (the pane's second hint). */
+function backupStatus(pane: HTMLElement): string {
+  return (pane.querySelectorAll('.settings-hint')[1] as HTMLElement).textContent || '';
+}
+
+/** The TV check's status line, right under its button. */
+function tvCheckStatus(pane: HTMLElement): string {
+  const btn = pane.querySelector('[data-focus-index="1600"]') as HTMLElement;
+  return (btn.nextElementSibling as HTMLElement).textContent || '';
+}
+
 /** The Updates section's check button, result line and release-page code. */
 function updateParts(pane: HTMLElement): {btn: HTMLButtonElement; status: HTMLElement; qr: HTMLElement} {
   return {
@@ -133,6 +148,7 @@ describe('tools pane', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
     localStorage.clear();
+    setLanguage('en');
     vi.mocked(readSettingsBackups).mockReset();
     vi.mocked(readSettingsBackups).mockResolvedValue([]);
     vi.mocked(runTvCheck).mockReset();
@@ -267,5 +283,94 @@ describe('tools pane', () => {
     expect(status.textContent).not.toContain('up to date');
     expect(qr.hidden).toBe(true);
     expect(qr.querySelector('svg')).toBeNull();
+  });
+
+  it('reads the whole pane in Dutch, through every flow', async () => {
+    setLanguage('nl');
+    const current = makeConfig({version: CONFIG_SCHEMA_VERSION});
+    vi.mocked(readSettingsBackups).mockResolvedValue([
+      {where: 'TV', text: settingsBackupText(current, {reason: 'manual'})}
+    ]);
+    vi.mocked(runTvCheck).mockResolvedValue('model: OLED\n=== details ===\nnot shown');
+    vi.mocked(fetchLatestRelease).mockResolvedValue('v9.9.9');
+    const {pane} = buildTools(current);
+
+    expect(pane.textContent).toContain('Back-up en herstel');
+    expect(pane.textContent).toContain('Instellingen back-uppen');
+    expect(pane.textContent).toContain('TV-controle');
+    expect(pane.textContent).toContain('Updates');
+    expect(pane.textContent).toContain('Je gebruikt ' + BRAND.name + ' ' + APP_VERSION + '.');
+    expect(pane.textContent).toContain('Nog geen back-up gemaakt vanaf deze tv.');
+    expect(backupStatus(pane)).toContain('Nog geen back-up gemaakt');
+
+    // Backing up: the Dutch status line, and the note left behind for later.
+    (pane.querySelector('[data-backup-action="backup"]') as HTMLElement).click();
+    await waitFor(function () { return backupStatus(pane).indexOf('Back-up gemaakt') >= 0; });
+    expect(backupStatus(pane)).toContain('naar de tv en USB-stick.');
+    expect(lastBackupNote()).toContain('Laatste back-up:');
+    expect(lastBackupNote()).toContain('(tv en USB-stick)');
+
+    // Restoring: the picker, its description and the report it leaves.
+    const restored = makeConfig({version: CONFIG_SCHEMA_VERSION});
+    vi.mocked(configFromBackup).mockReturnValue({config: restored, skipped: []} as never);
+    const second = document.createElement('div');
+    const ctx = makeContext(current, second, {});
+    const handle = createToolsPane();
+    handle.build(ctx);
+    const restore = second.querySelector('[data-backup-action="restore"]') as HTMLElement;
+    restore.click();
+    await waitFor(function () { return !pickRow(second).hidden; });
+    expect(restore.textContent).toBe('Deze back-up herstellen');
+    expect(backupStatus(second)).toContain('met dezelfde instellingen als deze versie');
+    expect(backupStatus(second)).toContain('Druk op “Deze back-up herstellen”');
+    expect((second.querySelector('[data-focus-index="1592"]') as HTMLElement).textContent)
+      .toContain('je back-up · tv');
+
+    restore.click();
+    await waitFor(function () { return vi.mocked(saveConfig).mock.calls.length > 0; });
+    // The report the restore leaves behind shows on the rebuilt pane.
+    const third = document.createElement('div');
+    handle.build(makeContext(restored, third, {}));
+    expect(third.textContent).toContain('Instellingen hersteld van');
+
+    // The TV check and the update check, in Dutch.
+    let finishCheck: (report: string) => void = function () {};
+    vi.mocked(runTvCheck).mockImplementation(function () {
+      return new Promise(function (resolve) { finishCheck = resolve; });
+    });
+    (pane.querySelector('[data-focus-index="1600"]') as HTMLElement).click();
+    await waitFor(function () { return tvCheckStatus(pane).indexOf('ongeveer 40 seconden') >= 0; });
+    expect(tvCheckStatus(pane)).toContain('De TV-instellingen openen en sluiten');
+    const result = pane.querySelector('[data-focus-index="1601"]') as HTMLElement;
+    finishCheck('model: OLED\n=== details ===\nnot shown');
+    await waitFor(function () { return !result.hidden; });
+    expect(tvCheckStatus(pane)).toContain('Klaar. Scan de code');
+
+    const {btn, status} = updateParts(pane);
+    btn.click();
+    await waitFor(function () { return status.textContent.indexOf('is beschikbaar') >= 0; });
+    expect(status.textContent).toContain(BRAND.name + ' 9.9.9 is beschikbaar');
+    expect(status.textContent).toContain('jij hebt ' + APP_VERSION);
+  });
+
+  it('reads the backup descriptions in Dutch', () => {
+    setLanguage('nl');
+    const text = settingsBackupText(makeConfig({version: CONFIG_SCHEMA_VERSION}), {reason: 'manual'});
+    const b = parseBackup(text, 'TV')!;
+
+    expect(backupWhen('nonsense')).toBe('een onbekende datum');
+    expect(backupLabel(b)).toContain('je back-up · tv · ' + APP_VERSION);
+    expect(compatibilityNote(b)).toBe(
+      'Gemaakt door ' + BRAND.name + ' ' + APP_VERSION + ', met dezelfde instellingen als deze versie.');
+    expect(restoreReport(b, {skipped: [{path: 'look.tint', why: 'type'}]} as never))
+      .toContain('1 instelling paste niet in deze versie en heeft zijn huidige waarde behouden: look.tint.');
+    expect(restoreReport(b, {skipped: [
+      {path: 'a.b', why: 'newer'}, {path: 'c.d', why: 'newer'}
+    ]} as never)).toContain('2 instellingen zijn van een nieuwere versie en worden hier niet gebruikt');
+
+    localStorage.setItem(LAST_BACKUP_KEY, JSON.stringify(
+      {savedAt: '2026-10-19T06:30:00.000Z', where: 'TV and USB drive'}));
+    expect(lastBackupNote()).toBe('Laatste back-up: ' + backupWhen('2026-10-19T06:30:00.000Z') +
+      ' (tv en USB-stick).');
   });
 });

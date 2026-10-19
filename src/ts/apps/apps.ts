@@ -254,7 +254,7 @@ export function createAppGrid(
     if (launched) return launched;
 
     const label = app && app.title ? app.title : (app && app.id) || 'app';
-    if (options.onToast) options.onToast('Could not launch ' + label);
+    if (options.onToast) options.onToast(t('apps.launchFailed', {app: label}));
     return '';
   }
 

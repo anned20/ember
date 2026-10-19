@@ -1,0 +1,40 @@
+docs/agents/architecture.md
+  h_1a6b0cc05bf029 54-59
+src/ts/background/screensaver.ts
+  h_1a6b0cc05bf029 18,70,73
+src/ts/home/weather.ts
+  h_1a6b0cc05bf029 11,103,132-141,424,478,494-499
+src/ts/lib/clock-format.ts
+  h_1a6b0cc05bf029 7-8,18,39
+src/ts/lib/i18n-en.ts
+  h_1a6b0cc05bf029 313-345
+src/ts/lib/i18n-nl.ts
+  h_1a6b0cc05bf029 294-322
+src/ts/lib/i18n.ts
+  h_1a6b0cc05bf029 67-74
+src/ts/main.ts
+  h_1a6b0cc05bf029 54,138,142
+src/ts/settings/panes/weather.ts
+  h_1a6b0cc05bf029 10,25,31,48,52-53,59,61,75,110,136,141,146,151-152
+src/ts/settings/settings-backup.ts
+  h_1a6b0cc05bf029 15,73
+test/clock-format.test.ts
+  h_1a6b0cc05bf029 1-35
+test/screensaver.test.ts
+  h_1a6b0cc05bf029 5,26,89-97
+test/settings/panes/weather.test.ts
+  h_1a6b0cc05bf029 14,92,140-167
+test/weather.test.ts
+  h_1a6b0cc05bf029 1-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "db6051f1334a70a5f5cb4c14f6f99ab5ada14978",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

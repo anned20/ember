@@ -10,9 +10,10 @@ const FIXTURE = `
     <div class="custom-screensaver-bg custom-screensaver-bg-a is-front" aria-hidden="true"></div>
     <div class="custom-screensaver-bg custom-screensaver-bg-b is-back" aria-hidden="true"></div>
     <div class="custom-screensaver-scrim" aria-hidden="true"></div>
-    <div class="custom-screensaver-clock">
-      <div class="custom-screensaver-time"></div>
-      <div class="custom-screensaver-date"></div>
+    <div class="custom-screensaver-clock clock-stack">
+      <div class="custom-screensaver-time clock"></div>
+      <div class="custom-screensaver-date clock-date"></div>
+      <div id="screensaver-weather" class="clock-weather"></div>
     </div>
   </div>`;
 
@@ -26,8 +27,17 @@ afterEach(() => {
   setLanguage('en');
 });
 
-function config(background: Record<string, unknown>): Config {
-  return {profile: 'default', launcher: {}, background: background} as unknown as Config;
+function config(background: Record<string, unknown>, launcher: Record<string, unknown> = {}): Config {
+  return {
+    profile: 'default',
+    launcher: Object.assign({
+      showClock: true,
+      showDate: true,
+      clockFormat: '24',
+      customScreensaverInfo: true
+    }, launcher),
+    background: background
+  } as unknown as Config;
 }
 
 function aerialConfig(overrides: Record<string, unknown> = {}): Config {
@@ -94,5 +104,24 @@ describe('screensaver: the aerial reuse decision', () => {
     const date = root().querySelector('.custom-screensaver-date')!.textContent || '';
     expect(date).toMatch(/dag/);
     expect(date).toMatch(/januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december/);
+  });
+
+  it('hides the whole block when the saver info switch is off', () => {
+    mount(config({source: 'preset', preset: 'cool-gradient'}, {customScreensaverInfo: false}), false);
+
+    expect((root().querySelector('.custom-screensaver-clock') as HTMLElement).hidden).toBe(true);
+  });
+
+  it('mirrors the home clock and date switches', () => {
+    mount(config({source: 'preset', preset: 'cool-gradient'}, {showClock: false, showDate: true}), false);
+
+    expect(root().querySelector('.custom-screensaver-time')!.textContent).toBe('');
+    expect(root().querySelector('.custom-screensaver-date')!.textContent).not.toBe('');
+  });
+
+  it('uses the home clock format in the saver', () => {
+    mount(config({source: 'preset', preset: 'cool-gradient'}, {clockFormat: '12'}), false);
+
+    expect(root().querySelector('.custom-screensaver-time')!.textContent).toMatch(/AM|PM/);
   });
 });

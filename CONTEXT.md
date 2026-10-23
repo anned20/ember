@@ -26,7 +26,8 @@ backgrounds and music, all on top of the webOS Luna service bus.
 - **Channels**: Live TV channels. The Channels chip opens the channel strip
   above the inputs row (`channels.ts`). The setting is `favourites`, `all` or
   `off`.
-- **Weather panel**: the home-screen forecast (`weather.ts`).
+- **Weather panel**: the home-screen card or inline weather line (`weather.ts`).
+  The inline line also appears in the screensaver clock block.
 - **Settings panel**: the category list and pane UI (`settings.ts`).
 - **Screensaver**: two different things. The system screensaver is LG's gallery
   saver (`screensaverMinutes`). The in-app screensaver is Ember's own

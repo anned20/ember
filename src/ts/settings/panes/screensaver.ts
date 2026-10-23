@@ -13,7 +13,7 @@ import {t, tn} from '@lib/i18n.js';
 
 /**
  * The Screensaver pane: the in-app photo slideshow (on/off, idle delay, slide
- * interval, clock and date) and the rooted LG system screensaver timeout.
+ * interval, home info block) and the rooted LG system screensaver timeout.
  */
 export function createScreensaverPane(): PaneHandle {
   return {
@@ -68,21 +68,14 @@ export function createScreensaverPane(): PaneHandle {
       });
       section.appendChild(labeledControl(t('screensaver.slideEvery'), customSsSlide));
 
-      const customSsClockField = createToggle({
-        label: t('screensaver.clock'),
+      const customSsInfoField = createToggle({
+        label: t('screensaver.info'),
         focusIndex: '993',
-        path: 'launcher.customScreensaverShowClock',
+        path: 'launcher.customScreensaverInfo',
         binder: ctx.binder
       });
-      section.appendChild(customSsClockField.row);
-
-      const customSsDateField = createToggle({
-        label: t('screensaver.date'),
-        focusIndex: '994',
-        path: 'launcher.customScreensaverShowDate',
-        binder: ctx.binder
-      });
-      section.appendChild(customSsDateField.row);
+      section.appendChild(customSsInfoField.row);
+      section.appendChild(createHint(t('screensaver.infoHint')));
 
       section.appendChild(createHint(t('screensaver.hint', {brand: BRAND.name})));
 

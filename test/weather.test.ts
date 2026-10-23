@@ -1,11 +1,11 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
-import {conditionLabel, createWeatherPanel} from '@home/weather.js';
+import {conditionLabel, createWeatherPanel, normalizeWeatherConfig} from '@home/weather.js';
 import {BRAND} from '@lib/brand.js';
 import {setLanguage, t} from '@lib/i18n.js';
-import type {Config, WeatherLocation} from '@lib/types.js';
+import type {Config, WeatherLocation, WeatherStyle} from '@lib/types.js';
 
 const LOCATION: WeatherLocation = {
-  name: 'Berlin',
+  name: 'Berlin, Germany',
   latitude: 52.5,
   longitude: 13.4,
   countryCode: 'DE'
@@ -29,8 +29,8 @@ function forecast(): any {
   };
 }
 
-function config(): Config {
-  return {weather: {enabled: true, units: 'c', location: LOCATION}} as unknown as Config;
+function config(style: WeatherStyle = 'card'): Config {
+  return {weather: {style: style, units: 'c', location: LOCATION}} as unknown as Config;
 }
 
 /** A panel painted from a cache entry for `LOCATION`, so no request is made. */
@@ -58,7 +58,7 @@ describe('the weather panel', () => {
     setLanguage('nl');
     const el = await paint();
 
-    expect(el.querySelector('.weather-place')!.textContent).toBe('Berlin');
+    expect(el.querySelector('.weather-place')!.textContent).toBe('Berlin, Germany');
     expect(el.querySelector('.weather-day-label')!.textContent).toBe(t('weather.today'));
     expect(el.querySelector('.weather-condition')!.textContent).toBe(t('weather.condition.overcast'));
     expect(el.querySelector('.weather-now')!.textContent).toBe('12°');
@@ -93,5 +93,66 @@ describe('the weather panel', () => {
     expect(conditionLabel(0, true)).toBe(t('weather.condition.clear'));
     expect(conditionLabel(0, false)).toBe(t('weather.condition.clearNight'));
     expect(conditionLabel(95, true)).toBe(t('weather.condition.thunder'));
+  });
+
+  it('maps the old enabled flag to a weather style', () => {
+    expect(normalizeWeatherConfig({enabled: false}).style).toBe('off');
+    expect(normalizeWeatherConfig({enabled: true}).style).toBe('card');
+    expect(normalizeWeatherConfig({style: 'inline'}).style).toBe('inline');
+  });
+
+  it('paints the compact line into the home and saver targets instead of the card', async () => {
+    localStorage.setItem(BRAND.storage.weather, JSON.stringify({
+      location: LOCATION,
+      fetchedAt: Date.now(),
+      data: forecast()
+    }));
+    const card = document.createElement('section');
+    const home = document.createElement('div');
+    const saver = document.createElement('div');
+    document.body.appendChild(card);
+    document.body.appendChild(home);
+    document.body.appendChild(saver);
+
+    await createWeatherPanel(card, function () { return config('inline'); }, {
+      inlineEls: [home, saver]
+    }).refresh();
+
+    expect(card.hidden).toBe(true);
+    expect(card.innerHTML).toBe('');
+    [home, saver].forEach(function (line) {
+      expect(line.querySelector('.weather-inline-place')!.textContent).toBe('Berlin');
+      expect(line.querySelector('.weather-inline-temp')!.textContent).toBe('12°');
+      expect(line.querySelector('.weather-inline-condition')!.textContent).toBe('Overcast');
+      expect(line.querySelector('.weather-inline-hilo')!.textContent).toContain('H 14°');
+      expect(line.querySelector('.weather-inline-hilo')!.textContent).toContain('L 8°');
+      expect(line.querySelectorAll('.weather-glyph')).toHaveLength(1);
+    });
+  });
+
+  it('clears the card and both inline targets when the weather is off', async () => {
+    localStorage.setItem(BRAND.storage.weather, JSON.stringify({
+      location: LOCATION,
+      fetchedAt: Date.now(),
+      data: forecast()
+    }));
+    const card = document.createElement('section');
+    card.innerHTML = 'stale';
+    const home = document.createElement('div');
+    home.innerHTML = 'stale';
+    const saver = document.createElement('div');
+    saver.innerHTML = 'stale';
+    document.body.appendChild(card);
+    document.body.appendChild(home);
+    document.body.appendChild(saver);
+
+    await createWeatherPanel(card, function () { return config('off'); }, {
+      inlineEls: [home, saver]
+    }).refresh();
+
+    expect(card.hidden).toBe(true);
+    expect(card.innerHTML).toBe('');
+    expect(home.innerHTML).toBe('');
+    expect(saver.innerHTML).toBe('');
   });
 });

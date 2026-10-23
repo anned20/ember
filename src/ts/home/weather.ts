@@ -1,5 +1,6 @@
 /**
- * Home-screen weather: today + the next 4 days from Open-Meteo (no API key).
+ * Home-screen and screensaver weather: a card with today + the next 4 days,
+ * or one compact line in the clock block (Open-Meteo, no API key).
  *
  * Ported from the Atmosphere Android app (android-weather): the same forecast
  * and geocoding endpoints, WMO code → condition mapping (WeatherIcons.kt),
@@ -43,6 +44,8 @@ export type WeatherCondition =
 /** Options for createWeatherPanel. */
 export interface WeatherPanelOptions {
   isVisible?: () => boolean;
+  /** Inline line targets: the home clock block and the screensaver clock block. */
+  inlineEls?: Array<HTMLElement | null>;
 }
 
 /** Handle returned by createWeatherPanel. */
@@ -89,14 +92,19 @@ interface PlaceSearchResult {
 
 export function normalizeWeatherConfig(raw: unknown): WeatherConfig {
   const cfg = (raw && typeof raw === 'object' ? raw : {}) as {
-    enabled?: unknown;
+    style?: unknown;
     units?: unknown;
     location?: unknown;
+    enabled?: unknown;
   };
   const loc = (cfg.location && typeof cfg.location === 'object' ? cfg.location : {}) as Partial<WeatherLocation>;
   const hasCoords = typeof loc.latitude === 'number' && typeof loc.longitude === 'number';
+  // `enabled` is the pre-v26 shape; still read it for an unmigrated USB config.
+  const style = cfg.style === 'inline' || cfg.style === 'off'
+    ? cfg.style
+    : (cfg.enabled === false ? 'off' : 'card');
   return {
-    enabled: cfg.enabled !== false,
+    style: style,
     units: cfg.units === 'f' ? 'f' : 'c',
     location: hasCoords
       ? {
@@ -433,6 +441,11 @@ function placeLabel(name: unknown): string {
   return parts[0] + ', ' + parts[parts.length - 1];
 }
 
+/** Town only, for the compact inline line: "Manchester, United Kingdom" → "Manchester". */
+function cityName(name: unknown): string {
+  return String(name || '').split(',')[0].trim();
+}
+
 function rainChance(pct: unknown): string {
   // Mirror the Android list: only call out rain when it is a real chance.
   if (typeof pct !== 'number' || pct < 20) return '';
@@ -511,12 +524,34 @@ function renderPanel(el: HTMLElement | null, data: any, cfg: WeatherConfig): boo
   return true;
 }
 
+/** The one-line form for the clock block: glyph · city · temp condition · H/L. */
+function inlineHtml(built: {days: WeatherDay[]; isToday: boolean}, data: any, cfg: WeatherConfig): string {
+  const today = built.days[0];
+  const current = (data && data.current) || {};
+  // Current conditions only make sense while the cache still covers today.
+  const hasCurrent = built.isToday && typeof current.temperature_2m === 'number';
+  const nowCode = hasCurrent ? current.weather_code : today.code;
+  const nowIsDay = hasCurrent ? current.is_day !== 0 : true;
+  const units = cfg.units;
+  return weatherGlyphSvg(nowCode, nowIsDay) +
+    '<span class="weather-inline-place">' + escapeHtml(cityName(cfg.location.name)) + '</span>' +
+    '<span class="weather-inline-sep" aria-hidden="true">·</span>' +
+    '<span class="weather-inline-temp">' + formatTemp(hasCurrent ? current.temperature_2m : today.high, units) + '</span>' +
+    '<span class="weather-inline-condition">' + escapeHtml(conditionLabel(nowCode, nowIsDay)) + '</span>' +
+    '<span class="weather-inline-sep" aria-hidden="true">·</span>' +
+    '<span class="weather-inline-hilo">H ' + formatTemp(today.high, units) +
+      ' <span class="weather-low">L ' + formatTemp(today.low, units) + '</span></span>';
+}
+
 export function createWeatherPanel(
   el: HTMLElement | null,
   getConfig: () => Config,
   options?: WeatherPanelOptions
 ): WeatherPanelHandle {
   const isVisible: () => boolean = (options && options.isVisible) || function () { return true; };
+  const inlineEls = ((options && options.inlineEls) || []).filter(function (node): node is HTMLElement {
+    return !!node;
+  });
   let fetching: Promise<void> | null = null;
   let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -524,16 +559,53 @@ export function createWeatherPanel(
     return normalizeWeatherConfig(getConfig().weather);
   }
 
+  function clearInline(): void {
+    inlineEls.forEach(function (node) { node.innerHTML = ''; });
+  }
+
   function hide(): void {
-    if (!el) return;
-    el.hidden = true;
-    el.innerHTML = '';
+    if (el) {
+      el.hidden = true;
+      el.innerHTML = '';
+    }
+    clearInline();
+  }
+
+  /** Paint whichever style is selected. Returns false when there was nothing to draw. */
+  function paint(data: any, c: WeatherConfig): boolean {
+    if (c.style === 'off') {
+      hide();
+      return false;
+    }
+    if (c.style === 'inline') {
+      if (el) {
+        el.hidden = true;
+        el.innerHTML = '';
+      }
+      const built = buildDays(data);
+      if (!built.days.length || !inlineEls.length) {
+        clearInline();
+        return false;
+      }
+      moonMaskSeq = 0; // mask ids only need to be unique within one render
+      inlineEls.forEach(function (node) {
+        // Build per target: a glyph's mask id must be unique in the document.
+        node.innerHTML = inlineHtml(built, data, c);
+      });
+      return true;
+    }
+
+    // Card style.
+    clearInline();
+    const painted = renderPanel(el, data, c);
+    if (el) el.hidden = !painted;
+    return painted;
   }
 
   function paintFromCache(c: WeatherConfig): WeatherCache | null {
     const cache = readCache();
     if (!cache || !sameLocation(cache.location, c.location)) return null;
-    return renderPanel(el, cache.data, c) ? cache : null;
+    return paint(cache.data, c) ? cache : null;
   }
 
   function fetchNow(c: WeatherConfig): Promise<void> {
@@ -542,8 +614,8 @@ export function createWeatherPanel(
     fetching = getJson(forecastUrl(location)).then(function (data) {
       writeCache({location: location, fetchedAt: Date.now(), data: data});
       const latest = cfg();
-      if (latest.enabled && sameLocation(latest.location, location) && renderPanel(el, data, latest)) {
-        if (el) el.hidden = false;
+      if (latest.style !== 'off' && sameLocation(latest.location, location)) {
+        paint(data, latest);
       }
     }).catch(function (err: unknown) {
       // Keep whatever is on screen (cached forecast); stay hidden if nothing.
@@ -557,15 +629,14 @@ export function createWeatherPanel(
 
   /** Repaint from cache and fetch when stale. `force` always re-fetches. */
   function refresh(force?: boolean): Promise<void> {
-    if (!el) return Promise.resolve();
+    if (!el && !inlineEls.length) return Promise.resolve();
     const c = cfg();
-    if (!c.enabled) {
+    if (c.style === 'off') {
       hide();
       return Promise.resolve();
     }
     const cache = paintFromCache(c);
-    el.hidden = !cache;
-    if (!cache) el.innerHTML = '';
+    if (!cache) hide();
     const stale = !cache || (Date.now() - (cache.fetchedAt || 0)) > STALE_MS;
     if (force || stale) return fetchNow(c);
     return Promise.resolve();

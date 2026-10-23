@@ -61,6 +61,7 @@ interface HomeElements {
   scrim: HTMLElement;
   clock: HTMLElement | null;
   clockDate: HTMLElement | null;
+  clockWeather: HTMLElement | null;
   appSettingsBtn: HTMLElement | null;
   inputRow: HTMLElement | null;
   channelStrip: HTMLElement | null;
@@ -75,6 +76,7 @@ interface HomeElements {
   settingsPanel: HTMLElement | null;
   toast: HTMLElement | null;
   customScreensaver: HTMLElement;
+  screensaverWeather: HTMLElement | null;
   weatherPanel: HTMLElement | null;
   onToast?: (message: string) => void;
   onAerialChange?: (change: {mode?: string; id?: string; title?: string} | null) => void;
@@ -242,6 +244,7 @@ export function createApp(): AppLifecycle {
     scrim: document.getElementById('scrim')!,
     clock: document.getElementById('clock'),
     clockDate: document.getElementById('clock-date'),
+    clockWeather: document.getElementById('clock-weather'),
     appSettingsBtn: document.getElementById('app-settings-btn'),
     inputRow: document.getElementById('input-row'),
     channelStrip: document.getElementById('channel-strip'),
@@ -256,6 +259,7 @@ export function createApp(): AppLifecycle {
     settingsPanel: document.getElementById('settings-panel'),
     toast: document.getElementById('toast'),
     customScreensaver: document.getElementById('custom-screensaver')!,
+    screensaverWeather: document.getElementById('screensaver-weather'),
     weatherPanel: document.getElementById('weather-panel')
   };
 
@@ -412,7 +416,8 @@ export function createApp(): AppLifecycle {
   function buildModules() {
     // Leaf modules: no collaborators beyond config and the DOM.
     weather = createWeatherPanel(elements.weatherPanel, getConfig, {
-      isVisible: function () { return visible; }
+      isVisible: function () { return visible; },
+      inlineEls: [elements.clockWeather, elements.screensaverWeather]
     });
     background = createBackgroundController(elements, getConfig);
     music = createMusicPlayer(getConfig, Object.assign({}, elements, {

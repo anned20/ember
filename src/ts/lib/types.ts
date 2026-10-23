@@ -69,8 +69,11 @@ export interface WeatherLocation {
   countryCode: string;
 }
 
+/** How the home-screen weather is shown: the card, a line in the clock block, or not at all. */
+export type WeatherStyle = 'card' | 'inline' | 'off';
+
 export interface WeatherConfig {
-  enabled: boolean;
+  style: WeatherStyle;
   units: string;
   location: WeatherLocation;
 }
@@ -119,8 +122,8 @@ export interface LauncherConfig {
   customScreensaver: boolean;
   customScreensaverMinutes: number;
   customScreensaverSlideSec: number;
-  customScreensaverShowClock: boolean;
-  customScreensaverShowDate: boolean;
+  /** Show the home clock/date/weather block in the saver (mirrors the home switches). */
+  customScreensaverInfo: boolean;
   terminalChecked?: boolean;
 }
 

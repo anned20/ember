@@ -10,7 +10,7 @@ const STORAGE_KEY = BRAND.storage.config;
 // means, its type or its name? Bump this and add an entry to CONFIG_MIGRATIONS
 // keyed by the new version: stored settings and restored backups from older
 // versions both run through those steps (see migrateConfig / configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 25;
+export const CONFIG_SCHEMA_VERSION = 26;
 
 export const DEFAULT_CONFIG: Config = {
   version: CONFIG_SCHEMA_VERSION,
@@ -56,7 +56,7 @@ export const DEFAULT_CONFIG: Config = {
   // Home-screen forecast (Open-Meteo). Location defaults to City of London,
   // like the Atmosphere Android app; change it in Settings → Weather.
   weather: {
-    enabled: true,
+    style: 'card',
     units: 'c',
     location: {
       name: 'City of London, UK',
@@ -134,8 +134,8 @@ export const DEFAULT_CONFIG: Config = {
     customScreensaver: true,
     customScreensaverMinutes: 5,
     customScreensaverSlideSec: 20,
-    customScreensaverShowClock: true,
-    customScreensaverShowDate: true
+    // Show the home clock/date/weather block in the saver.
+    customScreensaverInfo: true
   }
 };
 
@@ -405,12 +405,6 @@ export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
     if (typeof config.launcher.customScreensaverSlideSec !== 'number') {
       config.launcher.customScreensaverSlideSec = 20;
     }
-    if (typeof config.launcher.customScreensaverShowClock !== 'boolean') {
-      config.launcher.customScreensaverShowClock = true;
-    }
-    if (typeof config.launcher.customScreensaverShowDate !== 'boolean') {
-      config.launcher.customScreensaverShowDate = true;
-    }
     // Keep system saver out of the way while the in-app one runs.
     if (config.launcher.customScreensaver &&
         config.launcher.screensaverMinutes > 0 &&
@@ -446,6 +440,28 @@ export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
   25: function addClockShadow(config) {
     if (['off', 'soft', 'strong'].indexOf(config.launcher.clockShadow) < 0) {
       config.launcher.clockShadow = 'strong';
+    }
+  },
+
+  // v26: one weather style (card/inline/off) and one screensaver info switch.
+  26: function weatherStyleAndScreensaverInfo(config) {
+    const weather = config.weather as typeof config.weather & {enabled?: unknown};
+    if (weather.enabled !== undefined) {
+      weather.style = weather.enabled === false ? 'off' : 'card';
+      delete weather.enabled;
+    }
+
+    const launcher = config.launcher as typeof config.launcher & {
+      customScreensaverShowClock?: unknown;
+      customScreensaverShowDate?: unknown;
+    };
+    if (launcher.customScreensaverShowClock !== undefined ||
+        launcher.customScreensaverShowDate !== undefined) {
+      launcher.customScreensaverInfo =
+        launcher.customScreensaverShowClock !== false ||
+        launcher.customScreensaverShowDate !== false;
+      delete launcher.customScreensaverShowClock;
+      delete launcher.customScreensaverShowDate;
     }
   }
 };

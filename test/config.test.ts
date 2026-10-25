@@ -40,6 +40,18 @@ describe('config migration registry', () => {
     expect(chosen.launcher.clockShadow).toBe('off');
   });
 
+  it('backfills the tile style without overruling an explicit choice (v27)', () => {
+    const missing = configAt(26);
+    delete (missing.launcher as Partial<Config['launcher']>).tileStyle;
+    migrateConfig(missing);
+    expect(missing.launcher.tileStyle).toBe('glass');
+
+    const chosen = configAt(26);
+    chosen.launcher.tileStyle = 'plain';
+    migrateConfig(chosen);
+    expect(chosen.launcher.tileStyle).toBe('plain');
+  });
+
   it('collapses the old weather and saver toggles into the new settings (v26)', () => {
     const off = configAt(25);
     delete (off.weather as Partial<Config['weather']>).style;

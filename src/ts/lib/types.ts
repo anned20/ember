@@ -100,6 +100,8 @@ export interface LauncherConfig {
   clockFormat: string;
   glassTint: string;
   glassBorder: string;
+  /** App tiles: 'glass' (the card) or 'plain' (icon and name, no card). */
+  tileStyle: string;
   focusColour: string;
   allAppsTile: boolean;
   numberKeyLaunch: boolean;

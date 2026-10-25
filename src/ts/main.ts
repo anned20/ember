@@ -981,6 +981,11 @@ export function createApp(): AppLifecycle {
     });
   }
 
+  function applyTileStyle() {
+    const launcher = getConfig().launcher || ({} as LauncherConfig);
+    document.body.classList.toggle('tiles-plain', launcher.tileStyle === 'plain');
+  }
+
   function applyPerfMode() {
     const config = getConfig();
     const on = !!(config.launcher && config.launcher.perfMode);
@@ -999,6 +1004,7 @@ export function createApp(): AppLifecycle {
     applyIconAlign();
     applyPerfMode();
     applyGlassTint();
+    applyTileStyle();
     music.applyConfig();
     // Paints the cached forecast at once; the network fetch (if stale) is not awaited.
     weather.refresh();

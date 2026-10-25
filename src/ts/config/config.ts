@@ -10,7 +10,7 @@ const STORAGE_KEY = BRAND.storage.config;
 // means, its type or its name? Bump this and add an entry to CONFIG_MIGRATIONS
 // keyed by the new version: stored settings and restored backups from older
 // versions both run through those steps (see migrateConfig / configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 26;
+export const CONFIG_SCHEMA_VERSION = 27;
 
 export const DEFAULT_CONFIG: Config = {
   version: CONFIG_SCHEMA_VERSION,
@@ -93,6 +93,8 @@ export const DEFAULT_CONFIG: Config = {
     // Their outline: white (the original), glass (same colour as the glass),
     // none, black, blue, purple, green, warm or gold.
     glassBorder: 'white',
+    // App tiles: glass (the original card) or plain (icon and name, no card).
+    tileStyle: 'glass',
     // Ring around what the remote is on, and the current-input marker: warm
     // (the original), white, border (same as glassBorder), blue, purple,
     // green or gold.
@@ -462,6 +464,13 @@ export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
         launcher.customScreensaverShowDate !== false;
       delete launcher.customScreensaverShowClock;
       delete launcher.customScreensaverShowDate;
+    }
+  },
+
+  // v27: app tile style, so the glass card can give way to plain icons.
+  27: function addTileStyle(config) {
+    if (['glass', 'plain'].indexOf(config.launcher.tileStyle) < 0) {
+      config.launcher.tileStyle = 'glass';
     }
   }
 };

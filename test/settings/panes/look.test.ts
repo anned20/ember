@@ -125,10 +125,14 @@ describe('Look pane', () => {
     const glassTint = pane.querySelector('[data-focus-index="1091"]') as OptionStepperElement;
     glassTint.__step(1);
 
+    const tileStyle = pane.querySelector('[data-focus-index="1096"]') as OptionStepperElement;
+    tileStyle.__step(1);
+
     ctx.binder.collect(config);
 
     expect(config.launcher.showClock).toBe(false);
     expect(config.launcher.glassTint).toBe('dark');
+    expect(config.launcher.tileStyle).toBe('plain');
   });
 
   it('reads every control, section and choice in Dutch', () => {

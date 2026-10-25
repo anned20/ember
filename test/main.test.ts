@@ -197,6 +197,24 @@ describe('platform gate', () => {
     clearIntervalSpy.mockRestore();
   });
 
+  it('drives the tile style from the config', async () => {
+    document.body.innerHTML = FIXTURE;
+    setDeviceInfo('10');
+    const config = loadConfig();
+    config.launcher.tileStyle = 'plain';
+    saveConfig(config);
+
+    const {createApp} = await import('../src/ts/main.js');
+    const app = createApp();
+    app.start();
+
+    await vi.waitFor(function () {
+      expect(document.body.classList.contains('tiles-plain')).toBe(true);
+    });
+
+    app.stop();
+  });
+
   it('drives the clock shadow from the config', async () => {
     document.body.innerHTML = FIXTURE;
     setDeviceInfo('10');

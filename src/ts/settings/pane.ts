@@ -1,4 +1,4 @@
-import type {AppCatalog, Config, CustomApp} from '@lib/types.js';
+import type {AppCatalog, Config} from '@lib/types.js';
 import type {SettingsBinder} from './settings-binding.js';
 
 /**
@@ -57,15 +57,12 @@ export interface SettingsContext {
 }
 
 /**
- * The Apps pane's shared state. It lives on the context (rather than a
+ * The Apps pane's shared state. The catalogs live on the context (rather than a
  * panel-local closure) so the pinned list and the app lists can be redrawn and
- * their focus restored from the same data the pane was built with.
+ * their focus restored from the same data the pane was built with. Dock
+ * membership itself is the pane's own LauncherConfig draft.
  */
 export interface SettingsAppsState {
-  /** The pinned app ids, in home-row order. */
-  pinnedOrder: string[];
-  /** The user-defined apps (id, launch id, title and icon). */
-  customApps: CustomApp[];
   /** Every app the lists can resolve, by id (catalog + installed + custom). */
   appsByIdMap: AppCatalog;
   /** The installed-app catalog behind the lists, or null before it is read. */

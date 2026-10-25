@@ -76,7 +76,7 @@ function makeContext(config: Config, pane: HTMLDivElement, hooks: Hooks = {}): S
     binder: createBinder(config),
     panes: {tools: pane},
     options: {onSave: hooks.onSave} as SettingsPanelOptions,
-    apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
+    apps: {appsByIdMap: {}, installedCatalog: null},
     focusInPanel: function () { return true; },
     isVisible: function () { return true; },
     focusControl: function () {},

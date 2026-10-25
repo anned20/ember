@@ -35,7 +35,7 @@ function makeContext(config: Config, pane: HTMLDivElement): SettingsContext {
     binder: createBinder(config),
     panes: {look: pane},
     options: {} as SettingsPanelOptions,
-    apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
+    apps: {appsByIdMap: {}, installedCatalog: null},
     focusInPanel: function () { return true; },
     isVisible: function () { return true; },
     focusControl: function () {},

@@ -56,7 +56,7 @@ function buildMusic(
     binder: createBinder(config),
     panes: {music: pane},
     options: options,
-    apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
+    apps: {appsByIdMap: {}, installedCatalog: null},
     focusInPanel: function () { return true; },
     isVisible: isVisible,
     focusControl: function () {},

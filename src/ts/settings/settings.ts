@@ -440,7 +440,7 @@ export function createSettingsPanel(
       binder: binder,
       panes: panes,
       options: options,
-      apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
+      apps: {appsByIdMap: {}, installedCatalog: null},
       isVisible: function () { return visible; },
       focusControl: focusControl,
       focusNow: focusNow,

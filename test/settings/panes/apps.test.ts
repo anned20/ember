@@ -49,7 +49,7 @@ function makeConfig(): Config {
 }
 
 function makeAppsState(): SettingsAppsState {
-  return {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null};
+  return {appsByIdMap: {}, installedCatalog: null};
 }
 
 function buildApps(
@@ -87,6 +87,16 @@ async function waitFor(check: () => boolean, ms = 1000): Promise<void> {
   throw new Error('waitFor timed out');
 }
 
+/** Drive Save's field-table read, then report what the Dock wrote. */
+function saved(ctx: SettingsContext): {pinned: string[]; custom: Config['launcher']['customApps']} {
+  ctx.binder.collect(ctx.rawConfig);
+  return {
+    pinned: ctx.rawConfig.launcher.pinnedApps,
+    custom: ctx.rawConfig.launcher.customApps
+  };
+}
+
+
 function pinnedRows(pane: HTMLElement): NodeListOf<HTMLElement> {
   return pane.querySelectorAll('.settings-pinned-row');
 }
@@ -115,16 +125,13 @@ describe('apps pane', () => {
 
   afterEach(() => setLanguage('en'));
 
-  it('builds the pinned, custom and discover controls and seeds the shared state', () => {
+  it('builds the pinned, custom and discover controls', () => {
     const {pane, ctx} = buildApps();
 
-    // The pinned order and custom apps move onto the context from the config.
-    expect(ctx.apps.pinnedOrder).toEqual(['com.netflix.ninja', 'org.webosbrew.custom', 'com.unknown.app']);
-    expect(ctx.apps.customApps).toHaveLength(1);
-    expect(ctx.apps.customApps[0].launchId).toBe('org.webosbrew.custom');
-    // The seed is a copy, not the config's own array.
-    ctx.apps.pinnedOrder.push('x');
-    expect(makeConfig().launcher.pinnedApps).toEqual(['com.netflix.ninja', 'org.webosbrew.custom', 'com.unknown.app']);
+    // Building reads the stored launcher but writes nothing back.
+    expect(ctx.rawConfig.launcher.pinnedApps)
+      .toEqual(['com.netflix.ninja', 'org.webosbrew.custom', 'com.unknown.app']);
+    expect(ctx.rawConfig.launcher.customApps).toHaveLength(1);
 
     expect((pane.querySelector('[data-focus-index="1190"]') as HTMLElement)).not.toBeNull();
     expect((pane.querySelector('[data-focus-index="1191"]') as HTMLElement)).not.toBeNull();
@@ -158,22 +165,23 @@ describe('apps pane', () => {
       .toBe('Show installed apps (1)');
   });
 
-  it('reorders and removes pinned apps, then writes them through the Save hook', () => {
+  it('reorders and removes pinned apps, writing them only on Save', async () => {
     const {pane, ctx, handle} = buildApps();
-    return handle.load!(ctx).then(function () {
-      // Move the custom app (row 2) up: click its ↑.
-      (pane.querySelector('[data-focus-index="1203"]') as HTMLElement).click();
-      expect(ctx.apps.pinnedOrder).toEqual(['org.webosbrew.custom', 'com.netflix.ninja', 'com.unknown.app']);
+    await handle.load!(ctx);
 
-      // Remove the first row: the custom app leaves both lists.
-      (pane.querySelector('[data-focus-index="1202"]') as HTMLElement).click();
-      expect(ctx.apps.pinnedOrder).toEqual(['com.netflix.ninja', 'com.unknown.app']);
-      expect(ctx.apps.customApps).toHaveLength(0);
+    // Move the custom app (row 2) up: click its ↑.
+    (pane.querySelector('[data-focus-index="1203"]') as HTMLElement).click();
+    // The draft holds the edit; the config does not until Save runs.
+    expect(ctx.rawConfig.launcher.pinnedApps)
+      .toEqual(['com.netflix.ninja', 'org.webosbrew.custom', 'com.unknown.app']);
+    expect(saved(ctx).pinned)
+      .toEqual(['org.webosbrew.custom', 'com.netflix.ninja', 'com.unknown.app']);
 
-      ctx.binder.collect(ctx.rawConfig);
-      expect(ctx.rawConfig.launcher.pinnedApps).toEqual(['com.netflix.ninja', 'com.unknown.app']);
-      expect(ctx.rawConfig.launcher.customApps).toEqual([]);
-    });
+    // Remove the first row: the custom app leaves both lists.
+    (pane.querySelector('[data-focus-index="1202"]') as HTMLElement).click();
+    const written = saved(ctx);
+    expect(written.pinned).toEqual(['com.netflix.ninja', 'com.unknown.app']);
+    expect(written.custom).toEqual([]);
   });
 
   it('adds a custom app and pins it', () => {
@@ -182,11 +190,23 @@ describe('apps pane', () => {
     (pane.querySelector('[data-focus-index="1400"]') as HTMLInputElement).value = 'com.foo.bar';
     (pane.querySelector('[data-focus-index="1403"]') as HTMLElement).click();
 
-    expect(ctx.apps.customApps).toHaveLength(2);
-    const added = ctx.apps.customApps.filter(function (entry) { return entry.launchId === 'com.foo.bar'; })[0];
+    const written = saved(ctx);
+    const added = written.custom.filter(function (entry) { return entry.launchId === 'com.foo.bar'; })[0];
     expect(added).toBeTruthy();
     expect(added.title).toBe('com.foo.bar');
-    expect(ctx.apps.pinnedOrder).toContain(added.id);
+    expect(added.id).toMatch(/^custom:/);
+    expect(written.pinned).toContain(added.id);
+  });
+
+  it('refuses a custom app for one already in the Dock', () => {
+    const {pane, ctx} = buildApps();
+
+    (pane.querySelector('[data-focus-index="1400"]') as HTMLInputElement).value = 'com.netflix.ninja';
+    (pane.querySelector('[data-focus-index="1403"]') as HTMLElement).click();
+
+    const written = saved(ctx);
+    expect(written.custom).toHaveLength(1);
+    expect(written.pinned).toEqual(['com.netflix.ninja', 'org.webosbrew.custom', 'com.unknown.app']);
   });
 
   it('imports every app from LG\u2019s home screen after the pinned ones', async () => {
@@ -196,8 +216,8 @@ describe('apps pane', () => {
     const {pane, ctx} = buildApps();
     (pane.querySelector('[data-focus-index="1298"]') as HTMLElement).click();
 
-    await waitFor(function () { return ctx.apps.pinnedOrder.indexOf('com.lg.one') >= 0; });
-    expect(ctx.apps.pinnedOrder).toEqual(
+    await waitFor(function () { return pinnedRows(pane).length === 4; });
+    expect(saved(ctx).pinned).toEqual(
       ['com.netflix.ninja', 'org.webosbrew.custom', 'com.unknown.app', 'com.lg.one']);
     expect(pane.textContent).toContain('Added 1 app from LG\u2019s home screen');
   });
@@ -214,7 +234,7 @@ describe('apps pane', () => {
     await waitFor(function () { return pane.querySelectorAll('.settings-apps .settings-app-row').length === 2; });
 
     (pane.querySelector('[data-focus-index="1510"]') as HTMLElement).click();
-    expect(ctx.apps.pinnedOrder).toContain('com.a');
+    expect(saved(ctx).pinned).toContain('com.a');
   });
 
   it('reads the sections, notes and counts in Dutch, keeping app titles as they are', async () => {
@@ -266,7 +286,7 @@ describe('apps pane', () => {
     const {pane, ctx} = buildApps();
     (pane.querySelector('[data-focus-index="1298"]') as HTMLElement).click();
 
-    await waitFor(function () { return ctx.apps.pinnedOrder.indexOf('com.lg.one') >= 0; });
+    await waitFor(function () { return pinnedRows(pane).length === 4; });
     expect(pane.textContent).toContain(tn('apps.lgAdded', 1));
   });
 });

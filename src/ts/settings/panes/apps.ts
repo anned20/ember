@@ -1,4 +1,5 @@
 import {listInstalledApps} from '@apps/apps.js';
+import {dock} from '@apps/dock.js';
 import {lgHomeAppsToAdd} from '@apps/lg-home.js';
 import {
   isAppInstalled, loadAppCatalog, rememberApps, resolvePinnedApp, setIconSrc, lazyLoadIcon
@@ -17,55 +18,55 @@ import {
 } from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
 import {t, tn} from '@lib/i18n.js';
-import type {AppRecord, CustomApp} from '@lib/types.js';
-
-/** The custom app with this id, or null. */
-function findCustomApp(ctx: SettingsContext, id: string): CustomApp | null {
-  const list = ctx.apps.customApps;
-  for (let i = 0; i < list.length; i += 1) {
-    if (list[i].id === id) return list[i];
-  }
-  return null;
-}
+import type {AppRecord, CustomApp, LauncherConfig} from '@lib/types.js';
 
 /**
  * The Apps pane: the pinned home-row list (reorder and remove), the custom-app
- * form, and the Discover scan. The pinned order, the custom apps, the installed
- * catalog and the app map live on the context (`ctx.apps`) so a redraw rebuilds
- * every list from the same data.
+ * form, and the Discover scan. Membership lives in a LauncherConfig draft that
+ * only the dock module edits, so Save writes exactly what the Dock will show.
  */
 export function createAppsPane(): PaneHandle {
   // Settings -> Apps -> Show hidden and system apps (for this visit only).
   let showHiddenApps = false;
+  // The Dock as this visit edits it: written to the config only on Save.
+  let draft: LauncherConfig;
   // The list containers built below, refilled by `load`.
   let pinnedList: HTMLElement;
   let addAppsList: HTMLElement;
   // Updates the "Show installed apps (N)" button after the list re-renders.
   let syncAddAppsToggle: (() => void) | null = null;
 
+  /** The Custom app record with this id, or null. */
+  function customAppOf(id: string): CustomApp | null {
+    const list = draft.customApps;
+    for (let i = 0; i < list.length; i += 1) {
+      if (list[i].id === id) return list[i];
+    }
+    return null;
+  }
+
   function movePinned(ctx: SettingsContext, index: number, delta: number): void {
-    const order = ctx.apps.pinnedOrder;
-    const next = index + delta;
-    if (next < 0 || next >= order.length) return;
-    const tmp = order[index];
-    order[index] = order[next];
-    order[next] = tmp;
+    const before = draft.pinnedApps[index];
+    draft = dock.move(draft, index, delta);
+    if (draft.pinnedApps[index] === before) return;
     if (!pinnedList) return;
     const keepFocus = pinnedList.contains(document.activeElement);
     renderPinnedList(ctx, pinnedList);
     // Stay on the moved app's arrow so repeated presses keep moving it.
-    if (keepFocus) ctx.refocusListButton(pinnedList, next, delta < 0 ? [0] : [1]);
+    if (keepFocus) {
+      ctx.refocusListButton(pinnedList, index + (delta < 0 ? -1 : 1), delta < 0 ? [0] : [1]);
+    }
   }
 
   function renderPinnedList(ctx: SettingsContext, container: HTMLElement): void {
     const apps = ctx.apps;
     container.innerHTML = '';
 
-    apps.pinnedOrder.forEach(function (appId, index) {
+    draft.pinnedApps.forEach(function (appId, index) {
       const app: AppRecord = apps.appsByIdMap[appId] ||
         {id: appId, launchId: undefined, title: appId, icon: ''};
       // Not shown on the home row (see apps.js): say why, so it can go.
-      const isCustom = apps.customApps.some(function (entry) { return entry && entry.id === appId; });
+      const isCustom = draft.customApps.some(function (entry) { return entry && entry.id === appId; });
       const missing = !isCustom && !isAppInstalled(apps.installedCatalog, appId);
       const row = createAppRow({
         title: app.title || app.id,
@@ -103,18 +104,14 @@ export function createAppsPane(): PaneHandle {
         focusIndex: 1201 + index * 3,
         onClick: function () { movePinned(ctx, index, 1); }
       });
-      if (index === apps.pinnedOrder.length - 1) downBtn.setAttribute('aria-disabled', 'true');
+      if (index === draft.pinnedApps.length - 1) downBtn.setAttribute('aria-disabled', 'true');
 
       const removeBtn = createMiniButton({
         label: '✕',
         focusIndex: 1202 + index * 3,
         onClick: function () {
           const keepFocus = container.contains(document.activeElement);
-          const removedId = apps.pinnedOrder[index];
-          apps.pinnedOrder.splice(index, 1);
-          for (let i = apps.customApps.length - 1; i >= 0; i -= 1) {
-            if (apps.customApps[i].id === removedId) apps.customApps.splice(i, 1);
-          }
+          draft = dock.remove(draft, draft.pinnedApps[index]);
           renderPinnedList(ctx, container);
           // The next app slides into this row; land on its ✕.
           if (keepFocus) ctx.refocusListButton(container, index, [2]);
@@ -145,7 +142,7 @@ export function createAppsPane(): PaneHandle {
       apps.appsByIdMap[app.id] = app;
     });
 
-    apps.customApps.forEach(function (entry) {
+    draft.customApps.forEach(function (entry) {
       if (!entry || !entry.id) return;
       apps.appsByIdMap[entry.id] = {
         id: entry.id,
@@ -155,9 +152,9 @@ export function createAppsPane(): PaneHandle {
       };
     });
 
-    for (let i = 0; i < apps.pinnedOrder.length; i += 1) {
-      const appId = apps.pinnedOrder[i];
-      if (findCustomApp(ctx, appId)) continue;
+    for (let i = 0; i < draft.pinnedApps.length; i += 1) {
+      const appId = draft.pinnedApps[i];
+      if (customAppOf(appId)) continue;
       if (!apps.appsByIdMap[appId] || !apps.appsByIdMap[appId].title || !apps.appsByIdMap[appId].icon) {
         apps.appsByIdMap[appId] = (await resolvePinnedApp(appId, apps.appsByIdMap)) as AppRecord;
       }
@@ -216,13 +213,8 @@ export function createAppsPane(): PaneHandle {
       return (a.title || a.id).localeCompare(b.title || b.id);
     });
 
-    const customLaunchIds: Record<string, boolean> = {};
-    apps.customApps.forEach(function (entry) {
-      if (entry && entry.launchId) customLaunchIds[entry.launchId] = true;
-    });
-
     const remaining = candidates.filter(function (app) {
-      return apps.pinnedOrder.indexOf(app.id) < 0 && !customLaunchIds[app.id];
+      return !dock.contains(draft, app.id);
     });
 
     addContainer.innerHTML = '';
@@ -239,9 +231,9 @@ export function createAppsPane(): PaneHandle {
         focusIndex: 1300 + index,
         dataset: {pointerFocus: 'off'},
         onClick: function () {
-          if (ctx.apps.pinnedOrder.indexOf(app.id) >= 0) return; // second OK before the redraw
+          if (dock.contains(draft, app.id)) return; // second OK before the redraw
           const keepFocus = document.activeElement === addBtn;
-          ctx.apps.pinnedOrder.push(app.id);
+          draft = dock.pin(draft, app.id);
           loadAppsLists(ctx, pinnedListEl, addContainer).then(function () {
             // The next app slides into this row; land on its + (unless the
             // user already moved on while the list was loading).
@@ -267,10 +259,14 @@ export function createAppsPane(): PaneHandle {
 
   return {
     build: function (ctx: SettingsContext): void {
-      // The lists edit the shared state in place; seed it from the stored config.
-      ctx.apps.pinnedOrder = (ctx.rawConfig.launcher.pinnedApps || []).slice();
-      ctx.apps.customApps = (ctx.rawConfig.launcher.customApps || []).map(function (entry) {
-        return Object.assign({}, entry);
+      // Membership lives in this draft and is written only when Save runs; seed
+      // it from the stored (unprofiled) launcher.
+      const stored = ctx.rawConfig.launcher;
+      draft = Object.assign({}, stored, {
+        pinnedApps: (stored.pinnedApps || []).slice(),
+        customApps: (stored.customApps || []).map(function (entry) {
+          return Object.assign({}, entry);
+        })
       });
 
       const appsSection = createSection(t('apps.pinnedSection'));
@@ -344,12 +340,12 @@ export function createAppsPane(): PaneHandle {
             importLgStatus.textContent = t('apps.lgReadFailed');
             return;
           }
-          const toAdd = lgHomeAppsToAdd(points, ctx.apps.pinnedOrder, ctx.apps.customApps);
+          const toAdd = lgHomeAppsToAdd(points, draft);
           if (!toAdd.length) {
             importLgStatus.textContent = t('apps.lgNone');
             return;
           }
-          toAdd.forEach(function (id) { ctx.apps.pinnedOrder.push(id); });
+          toAdd.forEach(function (id) { draft = dock.pin(draft, id); });
           await loadAppsLists(ctx, pinnedList, addAppsList);
           importLgStatus.textContent = tn('apps.lgAdded', toAdd.length);
         } catch (err: any) {
@@ -385,10 +381,12 @@ export function createAppsPane(): PaneHandle {
       addAppsList = document.createElement('div');
       addAppsList.className = 'settings-apps';
       appsSection.appendChild(addAppsList);
-      // The pin order and custom apps are edited by the lists, not a control.
+      // The Dock edits live in the draft, not a control. Hooks run after the
+      // field table, so only these two arrays are copied over: replacing the
+      // launcher would throw away what the plain fields just wrote.
       ctx.binder.hook(function (cfg) {
-        cfg.launcher.pinnedApps = ctx.apps.pinnedOrder.slice();
-        cfg.launcher.customApps = ctx.apps.customApps.slice();
+        cfg.launcher.pinnedApps = draft.pinnedApps.slice();
+        cfg.launcher.customApps = draft.customApps.slice();
       });
       ctx.panes.apps.appendChild(appsSection);
 
@@ -456,11 +454,12 @@ export function createAppsPane(): PaneHandle {
             return;
           }
 
-          const id = 'custom:' + Date.now() + '-' + Math.floor(Math.random() * 1000);
           const title = customNameInput.value.trim() || getBuiltinAppTitle(launchId) || launchId;
 
-          ctx.apps.customApps.push({id: id, launchId: launchId, title: title, icon: iconSelect.value});
-          ctx.apps.pinnedOrder.push(id);
+          const before = draft.customApps.length;
+          draft = dock.addCustom(draft, {launchId: launchId, title: title, icon: iconSelect.value});
+          // Already in the Dock: refuse the second tile and keep the form as it is.
+          if (draft.customApps.length === before) return;
 
           customAppIdInput.value = '';
           customNameInput.value = '';
@@ -499,11 +498,7 @@ export function createAppsPane(): PaneHandle {
       let discovered: AppRecord[] = [];
 
       function inDock(appId: string): boolean {
-        if (ctx.apps.pinnedOrder.indexOf(appId) >= 0) return true;
-        for (let i = 0; i < ctx.apps.customApps.length; i += 1) {
-          if (ctx.apps.customApps[i].launchId === appId) return true;
-        }
-        return false;
+        return dock.contains(draft, appId);
       }
 
       function renderDiscoverList(): void {
@@ -529,11 +524,11 @@ export function createAppsPane(): PaneHandle {
               const keepFocus = document.activeElement === addBtn;
               const override = discoverIconSelect.value;
               if (override) {
-                const id = 'custom:' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-                ctx.apps.customApps.push({id: id, launchId: app.id, title: app.title || app.id, icon: override});
-                ctx.apps.pinnedOrder.push(id);
+                draft = dock.addCustom(draft, {
+                  launchId: app.id, title: app.title || app.id, icon: override
+                });
               } else {
-                ctx.apps.pinnedOrder.push(app.id);
+                draft = dock.pin(draft, app.id);
               }
               loadAppsLists(ctx, pinnedList, addAppsList);
               renderDiscoverList();

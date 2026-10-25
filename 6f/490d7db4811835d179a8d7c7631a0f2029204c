@@ -1,0 +1,36 @@
+CONTEXT.md
+  h_1a6b0cc05bf029 17
+src/ts/apps/apps.ts
+  h_1a6b0cc05bf029 45,279,285,339
+src/ts/config/config.ts
+  h_1a6b0cc05bf029 13,104-105,477-483
+src/ts/lib/i18n-de.ts
+  h_1a6b0cc05bf029 267-268
+src/ts/lib/i18n-en.ts
+  h_1a6b0cc05bf029 285-286
+src/ts/lib/i18n-fr.ts
+  h_1a6b0cc05bf029 267-268
+src/ts/lib/i18n-nl.ts
+  h_1a6b0cc05bf029 267-268
+src/ts/lib/types.ts
+  h_1a6b0cc05bf029 107-108
+src/ts/settings/panes/apps.ts
+  h_1a6b0cc05bf029 289-298
+test/__snapshots__/settings-focus-index.test.ts.snap
+  h_1a6b0cc05bf029 209
+test/apps.test.ts
+  h_1a6b0cc05bf029 18-25,32-34,47,50,89-129,173
+test/config.test.ts
+  h_1a6b0cc05bf029 55-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6f490d7db4811835d179a8d7c7631a0f2029204c",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

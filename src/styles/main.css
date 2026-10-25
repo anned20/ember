@@ -292,9 +292,12 @@ body.all-apps-open #background-layer.gradient-animated {
   right: 0;
   bottom: 0;
   left: 0;
+  /* A flat tint under the gradients: the gradients are transparent at the top,
+     so without it bright footage (an aerial sky) barely darkened. */
   background:
     radial-gradient(ellipse at 30% 20%, rgba(8, 8, 12, 0) 0%, rgba(8, 8, 12, 0.35) 100%),
     linear-gradient(to top, rgba(6, 8, 16, 0.92) 0%, rgba(6, 8, 16, 0.45) 26%, rgba(6, 8, 16, 0) 58%);
+  background-color: rgba(6, 8, 16, 0.4);
   opacity: 0.9;
   pointer-events: none;
 }
@@ -471,11 +474,11 @@ body.clock-right .clock-stack {
 }
 
 .clock {
-  font-weight: 200;
-  letter-spacing: 0.06em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   line-height: 1.05;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
-  opacity: 0.92;
+  opacity: 1;
 }
 
 .clock:empty {
@@ -485,18 +488,17 @@ body.clock-right .clock-stack {
 /* 12-hour clock: "PM" smaller than the time (clock-format.js). */
 .clock-ampm {
   margin-left: 0.18em;
-  font-size: 0.38em;
+  font-size: 0.28em;
   font-weight: 400;
   letter-spacing: 0.06em;
 }
 
 .clock-date {
-  margin-top: 6px;
-  font-weight: 300;
-  letter-spacing: 0.08em;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
-  /* Same brightness as the time above it (it was 0.72: hard to read). */
-  opacity: 0.92;
+  margin-top: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65), 0 2px 16px rgba(0, 0, 0, 0.5);
+  opacity: 0.95;
 }
 
 .clock-date:empty {
@@ -507,16 +509,16 @@ body.clock-right .clock-stack {
 .clock-weather {
   display: inline-flex;
   align-items: center;
-  gap: 0.4em;
-  margin-top: 8px;
-  font-size: 24px;
-  font-weight: 300;
-  letter-spacing: 0.06em;
+  gap: 0.35em;
+  margin-top: 9px;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   max-width: 100%;
   overflow: hidden;
-  opacity: 0.92;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+  opacity: 0.9;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65), 0 2px 16px rgba(0, 0, 0, 0.5);
 }
 
 .clock-weather:empty {
@@ -529,27 +531,27 @@ body.clock-right .clock-stack {
 }
 
 .weather-inline-place {
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .weather-inline-temp {
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .weather-inline-condition {
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .weather-inline-sep {
-  opacity: 0.45;
+  opacity: 0.5;
 }
 
 .weather-inline-hilo {
-  opacity: 0.85;
+  opacity: 0.92;
 }
 
 .weather-inline-hilo .weather-low {
-  opacity: 0.7;
+  opacity: 0.78;
 }
 
 /* Shadow — driven by body.clock-shadow-off / .clock-shadow-strong. "soft" is
@@ -583,77 +585,83 @@ body.clock-shadow-strong .clock-weather {
 
 /* Size — driven by body.clock-size-small / medium / large / x-large / xx-large */
 body.clock-size-small .clock {
-  font-size: 36px;
-  font-weight: 300;
-  letter-spacing: 0.04em;
+  font-size: 48px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 body.clock-size-small .clock-date {
   font-size: 18px;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 body.clock-size-small .clock-weather {
   font-size: 16px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 body.clock-size-medium .clock {
-  font-size: 52px;
-  font-weight: 250;
-  letter-spacing: 0.05em;
+  font-size: 72px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 body.clock-size-medium .clock-date {
   font-size: 22px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 body.clock-size-medium .clock-weather {
-  font-size: 20px;
-  margin-top: 6px;
+  font-size: 19px;
+  margin-top: 8px;
 }
 
 body.clock-size-large .clock,
 body:not(.clock-size-small):not(.clock-size-medium):not(.clock-size-x-large):not(.clock-size-xx-large) .clock {
-  font-size: 72px;
+  font-size: 104px;
 }
 
 body.clock-size-large .clock-date,
 body:not(.clock-size-small):not(.clock-size-medium):not(.clock-size-x-large):not(.clock-size-xx-large) .clock-date {
   font-size: 26px;
+  margin-top: 14px;
+}
+
+body.clock-size-large .clock-weather,
+body:not(.clock-size-small):not(.clock-size-medium):not(.clock-size-x-large):not(.clock-size-xx-large) .clock-weather {
+  margin-top: 12px;
 }
 
 body.clock-size-x-large .clock {
-  font-size: 96px;
-  font-weight: 200;
-  letter-spacing: 0.06em;
+  font-size: 128px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 body.clock-size-x-large .clock-date {
   font-size: 32px;
-  margin-top: 8px;
+  margin-top: 16px;
 }
 
 body.clock-size-x-large .clock-weather {
-  font-size: 30px;
-  margin-top: 8px;
+  font-size: 27px;
+  margin-top: 12px;
 }
 
 body.clock-size-xx-large .clock {
-  font-size: 128px;
-  font-weight: 200;
-  letter-spacing: 0.05em;
+  font-size: 152px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 body.clock-size-xx-large .clock-date {
   font-size: 40px;
-  margin-top: 10px;
+  margin-top: 18px;
 }
 
 body.clock-size-xx-large .clock-weather {
-  font-size: 38px;
-  margin-top: 10px;
+  font-size: 34px;
+  margin-top: 14px;
 }
 
 /* ─── Weather: today + 4 days (top-left, opposite the gear) ─────────────── */

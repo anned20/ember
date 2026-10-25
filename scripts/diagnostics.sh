@@ -258,7 +258,7 @@ report() {
   settings_log=""
   if [ "$OPEN_SETTINGS" = 1 ]; then
     sid=""
-    for id in com.webos.app.settings; do
+    for id in com.palm.app.settings com.webos.app.settings; do
       if luna 'luna://com.webos.applicationManager/getAppInfo' "{\"id\":\"$id\"}" |
           grep -q '"returnValue": true'; then
         sid=$id

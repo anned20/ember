@@ -720,7 +720,8 @@ export function createApp(): AppLifecycle {
       music.fadeOutAndPause();
     }
     applyAppLaunchVolume();
-    const ids = getAppIdCandidates('com.webos.app.settings');
+    // LG's Settings app, with webOS OSE's id as the fallback (see app-icons).
+    const ids = getAppIdCandidates('com.palm.app.settings');
     for (let i = 0; i < ids.length; i += 1) {
       try {
         await launchSystemApp(ids[i]);

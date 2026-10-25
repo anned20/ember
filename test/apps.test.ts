@@ -11,6 +11,7 @@ vi.mock('@luna/luna.js', () => ({
 import {launchApp, launchAppViaRoot, listApps, getAppInfo} from '@luna/luna.js';
 import {createAppGrid} from '@apps/apps.js';
 import {createAllApps} from '@apps/all-apps.js';
+import {getAppIdCandidates} from '@apps/app-icons.js';
 import {setLanguage, t} from '@lib/i18n.js';
 import type {Config} from '@lib/types.js';
 
@@ -392,5 +393,16 @@ describe('the dock and All apps in Dutch', () => {
     await new Promise(function (resolve) { setTimeout(resolve, 0); });
 
     expect(toasts).toEqual([t('apps.launchFailed', {app: 'Netflix'})]);
+  });
+});
+
+describe('the TV Settings app id', () => {
+  it('falls back between LG’s and webOS OSE’s id', () => {
+    // LG TVs name it com.palm.app.settings; only webOS OSE (the Simulator) uses
+    // com.webos.app.settings. Losing the alias made the tile fail on the TV.
+    expect(getAppIdCandidates('com.palm.app.settings'))
+      .toEqual(['com.palm.app.settings', 'com.webos.app.settings']);
+    expect(getAppIdCandidates('com.webos.app.settings'))
+      .toEqual(['com.webos.app.settings', 'com.palm.app.settings']);
   });
 });

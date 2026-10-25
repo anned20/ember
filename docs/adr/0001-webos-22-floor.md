@@ -44,8 +44,7 @@ remove the same code while dropping four release years of users.
   backup-compatibility concerns, not old-TV branches, and remain.
 - **Backup compatibility is unchanged.** No schema or migration change.
   `configFromBackup` / `fitSettings` tolerate ids and values this version no
-  longer uses. A backup pinning a dropped old-alias id (for example
-  `com.palm.app.settings`) may restore as a tile that will not resolve.
+  longer uses.
 
 The removals ship in the same release as the gate, after it. Removing the
 compatibility code without the gate would let an unsupported TV update into a
@@ -55,8 +54,9 @@ hard crash.
 
 - All webOS 3/4/5/6 compatibility code is removed: the polyfills and XHR fetch
   shim, the multi-form built-in image URL list, the old-engine `play()` branch,
-  `com.palm.*` app ids and `PalmSystem`, and the `luna-send`/poll/settle
-  fallbacks in the root shell scripts.
+  PalmSystem, and the `luna-send`/poll/settle fallbacks in the root shell
+  scripts. The `com.palm.app.settings` id stays: it is LG's Settings app on
+  every supported release, not old-TV compatibility.
 - The build target is `es2020`, so esbuild and `tsc` stop downleveling optional
   chaining, nullish coalescing and async.
 - The Home watcher relies on a durable foreground subscription instead of

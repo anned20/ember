@@ -1,0 +1,40 @@
+src/ts/apps/lg-home.ts
+  h_1a6b0cc05bf029 8,10,37-40,44,47-51
+src/ts/settings/pane.ts
+  h_1a6b0cc05bf029 1,60,62-63
+src/ts/settings/panes/apps.ts
+  h_1a6b0cc05bf029 2,21,25-26,31-32,39-47,49-51,56-58,65,69,107,114,145,155-157,217,234,236,262-269,343,348,384-386,388-389,459-462,501,527-529,531
+src/ts/settings/settings.ts
+  h_1a6b0cc05bf029 443
+test/apps/lg-home.test.ts
+  h_1a6b0cc05bf029 4-8,11,24-37,39
+test/settings/panes/apps.test.ts
+  h_1a6b0cc05bf029 52,90-99,128,131-134,168,170-184,193-194,197-209,219-220,237,289
+test/settings/panes/background.test.ts
+  h_1a6b0cc05bf029 40
+test/settings/panes/inputs.test.ts
+  h_1a6b0cc05bf029 42
+test/settings/panes/look.test.ts
+  h_1a6b0cc05bf029 38
+test/settings/panes/music.test.ts
+  h_1a6b0cc05bf029 59
+test/settings/panes/screensaver.test.ts
+  h_1a6b0cc05bf029 45
+test/settings/panes/system.test.ts
+  h_1a6b0cc05bf029 39
+test/settings/panes/tools.test.ts
+  h_1a6b0cc05bf029 79
+test/settings/panes/weather.test.ts
+  h_1a6b0cc05bf029 44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4d8e15c31be73ff20f2fb34f072b0757fb71cb3e",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

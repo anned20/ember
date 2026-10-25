@@ -27,11 +27,11 @@ grouped by domain:
 | `apps/` | `@apps` | App discovery, icons, the app grid and the All-apps overlay, LG-home import. |
 | `background/` | `@background` | Background sources (built-in, USB, online), aerial clips, the in-app screensaver. |
 | `music/` | `@music` | The ambient music player and its built-in track manifest. |
-| `settings/` | `@settings` | The Settings panel (the composition root in `settings.ts`), the panel's key/wheel navigation (`navigation.ts`), backup/restore, field bindings, the text-field gate (`text-gate.ts`) and the pane seam (`pane.ts`). UI components live in `settings/components/`, category panes in `settings/panes/`. |
+| `settings/` | `@settings` | The Settings panel (the composition root in `settings.ts`), the panel's key navigation and wheel scrolling (`navigation.ts`), backup/restore, field bindings, the text-field gate (`text-gate.ts`) and the pane seam (`pane.ts`). UI components live in `settings/components/`, category panes in `settings/panes/`. |
 | `focus/` | `@focus` | Focus manager and the row model it moves over. |
-| `home/` | `@home` | Home-screen rows and panels: TV inputs, channels, weather. |
+| `home/` | `@home` | Home-screen rows and panels: TV inputs, channels, weather, and the home paint pass. |
 | `config/` | `@config` | The config tree: load, save, normalize, and profiles. |
-| `luna/` | `@luna` | The webOS Luna service transport and platform/device helpers. |
+| `luna/` | `@luna` | The webOS Luna service transport (`luna-transport.ts`), the service calls (`luna.ts`), the privileged root script (`root.ts`) and platform/device helpers. |
 | `lib/` | `@lib` | Shared vocabulary and utilities: `types.ts`, `compat.ts`, `version.ts`, `usb.ts`, `remote.ts`, and other cross-cutting helpers. |
 | `settings/components/` | | Small settings UI building blocks (`toggle`, `text-field`, `gallery`, and so on), imported by `@settings/settings.js` via `./components`. Same-directory imports stay relative. |
 | `settings/panes/` | | Category panes (`weather`, and the rest as they move), each a `PaneHandle` built by the composition root through a `SettingsContext` (`@settings/pane.js`). Same-directory imports stay relative. |

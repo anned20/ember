@@ -902,7 +902,7 @@ export function createFocusManager(
   }
 
   // The wheel only does something inside Settings; the panel's navigation
-  // module owns the accumulation, the rate-limit and the value stepping.
+  // module scrolls the pane natively and keeps focus on a visible row.
   function onWheel(event: WheelEvent): void {
     if (!document.body.classList.contains('settings-open')) return;
     settingsNav.wheel(event);

@@ -78,11 +78,28 @@ an object with methods plus the config accessor `applyConfig()`. The composition
 root calls those methods. Modules never call each other except through injected
 callbacks. Examples include `BackgroundController`, `MusicPlayer`, `AppGrid`,
 `FocusManager`, `SettingsPanelHandle`, `CustomScreensaver`,
-`WeatherPanelHandle`, `InputRowHandle`, `ChannelStripHandle` and `AllApps`.
+`WeatherPanelHandle`, `InputRowHandle`, `ChannelStripHandle`, `HomePaint` and
+`AllApps`.
 
 Cross-cutting callbacks are passed in, such as `onToast`, `focusControl` and
 `onBeforeLaunch`. If a module needs to do something the host owns, add a
 callback to its options instead of importing the host.
+
+`createHomePaint` (`home/paint.ts`) is config → DOM only: it applies the home
+screen's Look (clock, Glass, Tile style, icon layout and Performance mode) and
+owns its clock tick and layout listeners. It stays out of orchestration: the
+`refreshAll` pass, the module order and the device settings remain in the
+composition root. Its one non-DOM effect, the Performance-mode wallpaper
+switch, arrives as the injected `onPerfMode` callback.
+
+One module is not a factory: `dock` (`apps/dock.ts`) is a namespace of pure
+functions over a `LauncherConfig`. It owns Dock membership — `entries`,
+`contains`, `pin`, `addCustom`, `remove`, `move` — and every caller that changes
+which apps are on the home row (the Settings Apps pane's draft, the All apps
+menu's pin/unpin, the Launch Home import) goes through it. Each call returns a
+new launcher; nothing is saved or painted. `loadConfig` runs a repair with the
+same rules, so a restored config cannot leave a dangling `custom:` id or an
+exact duplicate pinned id.
 
 ### The Settings pane seam
 
@@ -111,8 +128,12 @@ keys, the wheel and photo-tile Select to `settings/navigation.ts`
 (`createSettingsNavigation`). The panel owns its tab bar, header actions,
 sequential/row movement, the photo picker and value adjustment; the router lends
 it `focusItem`/`isFocusable`/`noteRemoteNav` as a host, so focus painting keeps
-one owner. The router imports the standalone `settings/text-gate.ts`, not the
-panel, so importing it no longer loads the panel and its eight panes.
+one owner. The wheel scrolls `.settings-body` natively (the module drives it
+itself when the Magic Remote cursor is not over the pane) and, once it settles,
+re-anchors focus to the nearest visible row — without scrolling again — so D-pad
+continues from what is on screen. The router imports the standalone
+`settings/text-gate.ts`, not the panel, so importing it no longer loads the panel
+and its eight panes.
 
 For key handling, `focus.ts` calls the callbacks `main.ts` passes: `onNumber`,
 `onBack`, `onRed`/`onGreen`/`onBlue`, `onVolume*` and `onChannel*`. Those

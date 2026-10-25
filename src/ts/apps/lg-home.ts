@@ -5,8 +5,9 @@
  */
 
 import {getAppIdCandidates} from './app-icons.js';
+import {dock} from './dock.js';
 import {BRAND, BRAND_ID_NAMESPACE} from '@lib/brand.js';
-import type {CustomApp} from '@lib/types.js';
+import type {LauncherConfig} from '@lib/types.js';
 
 /** A launch point as returned by luna.js listLaunchPoints. */
 export interface LaunchPoint {
@@ -33,22 +34,21 @@ const NOT_FOR_DOCK = new RegExp(
 
 /**
  * App ids from `points` to add, in LG's order: shown apps (not hidden, and not
- * bookmarks such as a named HDMI input) that aren't pinned yet (`pinned`, any
- * alias id counts), aren't a custom app's launch id (`customApps`) and belong
- * in the dock.
+ * bookmarks such as a named HDMI input) that aren't in the Dock yet (any alias
+ * id counts, and a Custom app tile counts under its launch id) and belong in
+ * the dock. The Dock is read as live entries, so a Custom app record nobody
+ * pins no longer blocks an app from coming back.
  */
 export function lgHomeAppsToAdd(
   points: LaunchPoint[] | null | undefined,
-  pinned: string[] | null | undefined,
-  customApps: CustomApp[] | null | undefined
+  launcher: LauncherConfig
 ): string[] {
   const taken: Record<string, boolean> = {};
-  (pinned || []).forEach(function (id) {
-    getAppIdCandidates(id).forEach(function (alias) { taken[alias] = true; });
-  });
-  (customApps || []).forEach(function (entry) {
-    if (entry && entry.launchId) taken[entry.launchId] = true;
-    if (entry && entry.id) taken[entry.id] = true;
+  dock.entries(launcher).forEach(function (entry) {
+    getAppIdCandidates(entry.id).forEach(function (alias) { taken[alias] = true; });
+    if (entry.custom && entry.custom.launchId) {
+      getAppIdCandidates(entry.custom.launchId).forEach(function (alias) { taken[alias] = true; });
+    }
   });
   const out: string[] = [];
   (points || []).forEach(function (point) {

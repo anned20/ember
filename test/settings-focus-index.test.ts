@@ -1,8 +1,10 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 vi.mock('@luna/luna.js', () => ({
-  execRoot: vi.fn(async () => ''),
-  listLaunchPoints: vi.fn(async () => []),
+  listLaunchPoints: vi.fn(async () => [])
+}));
+
+vi.mock('@luna/root.js', () => ({
   readSettingsBackups: vi.fn(async () => []),
   runTvCheck: vi.fn(async () => ''),
   whoAmI: vi.fn(async () => null),

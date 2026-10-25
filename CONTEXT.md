@@ -12,7 +12,10 @@ backgrounds and music, all on top of the webOS Luna service bus.
 ## The screen
 
 - **Dock** (also home row): the row of app tiles the remote moves along
-  (`focus.focusHomeDock`). Its rows are `apps`, `inputs` and `channels`.
+  (`focus.focusHomeDock`). Its rows are `apps`, `inputs` and `channels`. Its
+  membership — which apps are in it, in what order, and which of them are
+  Custom apps — is one module (`apps/dock.ts`, `dock`); the Settings pane, the
+  All apps menu and the Launch Home import edit only through it.
 - **Tile**: one focusable card in the dock. It can be a pinned or custom app, an
   input, a channel, the All-apps tile, or the TV Settings tile.
 - **App grid**: the dock's row of app tiles (`apps.ts`, `createAppGrid`).
@@ -46,8 +49,14 @@ backgrounds and music, all on top of the webOS Luna service bus.
 - **Profile**: a named overlay on the base config: `default`, `night` or
   `cinema` (`profiles.ts`). A preset merged with `config.profiles[id]`.
 - **Performance mode** (`perfMode`): drops blur and animation for weaker TVs.
+- **Home paint**: the config → DOM pass that applies the Look to the home
+  screen (`home/paint.ts`, `createHomePaint`). It paints the clock, Glass, Tile
+  style, icon layout and Performance mode, and owns the clock tick and the
+  layout listeners. `main.ts` calls it from `refreshAll`; it does not
+  orchestrate other modules.
 - **Pinned app**: an app tile chosen by app id (`pinnedApps`). A **custom app**
-  is a tile added by hand (`customApps`), possibly with its own icon.
+  is a tile added by hand (`customApps`), possibly with its own icon. Both are
+  Dock entries; `dock` decides what pinning, unpinning and reordering do.
 
 ## Lifecycle and the foreground
 
@@ -84,6 +93,11 @@ backgrounds and music, all on top of the webOS Luna service bus.
 - **Luna**: the webOS service bus. A **Luna request** is a call to a service
   (`luna.ts`, `luna-transport.ts`). **Root exec** runs a shell command through
   Homebrew Channel (`execRoot`).
+- **Root script**: a privileged operation built and run in `root.ts` — backups,
+  the Home watcher, boot-on-start, channels, the system screensaver, the volume
+  fallback, app icons, the TV check and the preview flag. Callers ask the root
+  script for a behaviour. The root `luna-send` idiom for service calls stays in
+  `luna-transport.ts`.
 - **Ladder**: the ordered fallback strategies a Luna request tries
   (`luna-transport.ts`, `LadderRung`), for services that differ across webOS
   versions.

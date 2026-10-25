@@ -18,15 +18,20 @@
  */
 
 import {REMOTE_KEY} from '@lib/remote.js';
-import {createRow, rowOf} from '@focus/focus-row.js';
+import {createRow} from '@focus/focus-row.js';
 import {isEditingSettingsText} from './text-gate.js';
 
 // Centres closer than this count as the same visual row (Left/Right).
 const SAME_ROW_PX = 24;
 
-// Magic Remote scroll wheel → previous/next settings option.
-const WHEEL_STEP_PX = 48;
-const WHEEL_STEP_MS = 110;
+// How long after the last wheel notch the pane counts as settled, before focus
+// is moved back to a visible row. Chromium animates wheel scrolling, so this is
+// slightly longer than one animation frame's worth of travel.
+const WHEEL_SETTLE_MS = 150;
+
+// The keep-in-view margin focusItem uses for Settings rows. A re-anchor target
+// inside it will not make the router scroll the pane again.
+const KEEP_IN_VIEW_PX = 72;
 
 // An element the navigation manipulates. DOM nodes carry a few optional
 // form-control properties; absent ones read as undefined.
@@ -63,7 +68,7 @@ export interface SettingsNavigation {
   recover(up: boolean): boolean;
   /** Handle a direction key while a panel control has focus. */
   move(keyCode: number): boolean;
-  /** Handle the wheel inside Settings. */
+  /** Handle the wheel inside Settings: scroll the pane, keep focus visible. */
   wheel(event: WheelEvent): void;
   /** Handle Select on the focused control (the photo picker). */
   activate(active: HTMLElement | null): boolean;
@@ -492,45 +497,81 @@ export function createSettingsNavigation(
     return true;
   }
 
-  // Magic Remote scroll wheel → previous/next settings option.
-  // webOS fires standard wheel events; without a handler the panel either
-  // does nothing useful or only pixel-scrolls without moving focus.
-  let wheelAccum = 0;
-  let wheelLockUntil = 0;
+  // Magic Remote scroll wheel → native pane scrolling.
+  let wheelSettle: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * After the wheel scrolled the pane, the focused control can be off-screen.
+   * Leave focus alone while it is still visible; otherwise move it to the
+   * nearest visible control (same column preferred) without scrolling again, so
+   * the next D-pad press continues from what is on screen. Focus in the tab bar
+   * or header never scrolls away and stays put.
+   */
+  function anchorFocusInView(body: NavEl): void {
+    const active = document.activeElement as NavEl | null;
+    if (!active || !body.contains(active)) return;
+    const view = body.getBoundingClientRect();
+    const current = active.getBoundingClientRect();
+    if (current.top >= view.top && current.bottom <= view.bottom) return;
+
+    const cx = current.left + current.width / 2;
+    const cy = current.top + current.height / 2;
+    const scoped = settingsFocusables();
+    let best: NavEl | null = null;
+    let bestScore = Infinity;
+    for (let i = 0; i < scoped.length; i += 1) {
+      const el = scoped[i];
+      if (el === active || !body.contains(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.top < view.top || r.bottom > view.bottom) continue;
+      const dx = Math.abs(r.left + r.width / 2 - cx);
+      const dy = Math.abs(r.top + r.height / 2 - cy);
+      // Prefer a row the router will leave in place, then the nearest row and
+      // column: the highlight does not hop sideways between rows.
+      const inside = r.top >= view.top + KEEP_IN_VIEW_PX &&
+        r.bottom <= view.bottom - KEEP_IN_VIEW_PX;
+      const score = (inside ? 0 : 1e9) + dy * 1000 + dx;
+      if (score < bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    }
+    if (!best) return;
+    host.noteRemoteNav();
+    focusItem(best);
+  }
 
   function wheel(event: WheelEvent): void {
     // Don't steal the wheel while the virtual keyboard is open for editing.
-    if (isEditingSettingsText(document.activeElement)) return;
+    if (isEditingSettingsText(document.activeElement)) {
+      event.preventDefault();
+      return;
+    }
 
-    // Always own the wheel inside settings so we can step focus instead of
-    // leaving a laggy native pixel scroll with no selection movement.
-    event.preventDefault();
-    event.stopPropagation();
+    const body = root.querySelector<NavEl>('#settings-panel .settings-body');
+    if (!body) return;
 
-    const dy = event.deltaY || 0;
-    // deltaMode: 0=pixel, 1=line, 2=page. Magic Remote is usually pixels;
-    // normalize line/page into a comparable scale.
-    const scale = event.deltaMode === 1 ? 24 : event.deltaMode === 2 ? 240 : 1;
-    wheelAccum += dy * scale;
+    // The Magic Remote scrolls whatever is under its cursor. Settings is the
+    // only thing that scrolls here, so drive the pane ourselves when the cursor
+    // is elsewhere (left category list, header, clock); over the pane the
+    // browser's native scroll is the nicer feel.
+    if (!body.contains(event.target as Node | null)) {
+      event.preventDefault();
+      // deltaMode: 0=pixel, 1=line, 2=page. Magic Remote is usually pixels;
+      // normalize line/page into a comparable scale.
+      const scale = event.deltaMode === 1 ? 24 : event.deltaMode === 2 ? 240 : 1;
+      body.scrollTop += (event.deltaY || 0) * scale;
+    }
 
-    const now = Date.now();
-    if (now < wheelLockUntil) return;
-    if (Math.abs(wheelAccum) < WHEEL_STEP_PX) return;
-
-    const dir = wheelAccum > 0 ? 1 : -1;
-    wheelAccum = 0;
-    wheelLockUntil = now + WHEEL_STEP_MS;
+    // A wheel turn is remote navigation: keep scroll-induced pointermove from
+    // snapping focus to whatever row lands under a still cursor.
     host.noteRemoteNav();
 
-    const activeEl = document.activeElement as NavEl | null;
-    const current = activeEl && rowOf(activeEl) === 'settings' ? activeEl : null;
-    const before = document.activeElement;
-    moveSequential(current, dir);
-    // If focus could not step (stuck / empty list), still scroll the pane.
-    if (document.activeElement === before) {
-      const body = document.querySelector('#settings-panel .settings-body');
-      if (body) body.scrollTop += dir * 72;
-    }
+    if (wheelSettle) clearTimeout(wheelSettle);
+    wheelSettle = setTimeout(function () {
+      wheelSettle = null;
+      anchorFocusInView(body);
+    }, WHEEL_SETTLE_MS);
   }
 
   function adjustValueControl(el: NavEl | null, dir: number): boolean {

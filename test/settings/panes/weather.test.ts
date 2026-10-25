@@ -41,7 +41,7 @@ function buildPane(): {pane: HTMLElement; config: Config; ctx: SettingsContext} 
     binder: createBinder(config),
     panes: {weather: pane},
     options: {},
-    apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
+    apps: {appsByIdMap: {}, installedCatalog: null},
     focusInPanel: function () { return true; },
     isVisible: function () { return true; },
     focusControl: function () {},

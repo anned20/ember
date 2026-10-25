@@ -3,8 +3,10 @@ import {BRAND} from '@lib/brand.js';
 import {setLanguage, t} from '@lib/i18n.js';
 
 vi.mock('@luna/luna.js', () => ({
-  execRoot: vi.fn(async () => ''),
-  listLaunchPoints: vi.fn(async () => []),
+  listLaunchPoints: vi.fn(async () => [])
+}));
+
+vi.mock('@luna/root.js', () => ({
   readSettingsBackups: vi.fn(async () => []),
   runTvCheck: vi.fn(async () => ''),
   whoAmI: vi.fn(async () => null),

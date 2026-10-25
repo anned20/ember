@@ -4,7 +4,10 @@ vi.mock('@luna/luna.js', () => ({
   listApps: vi.fn(),
   getAppInfo: vi.fn(),
   launchApp: vi.fn(async () => 'ok'),
-  launchAppViaRoot: vi.fn(async () => 'ok'),
+  launchAppViaRoot: vi.fn(async () => 'ok')
+}));
+
+vi.mock('@luna/root.js', () => ({
   readFileAsDataUrl: vi.fn(async () => '')
 }));
 
@@ -19,6 +22,7 @@ interface GridOptions {
   numberKeyLaunch?: boolean;
   tvSettingsTile?: boolean;
   allAppsTile?: boolean;
+  customApps?: Config['launcher']['customApps'];
 }
 
 function makeConfig(pinnedApps: string[], options?: GridOptions): () => Config {
@@ -27,7 +31,7 @@ function makeConfig(pinnedApps: string[], options?: GridOptions): () => Config {
     return {
       launcher: {
         pinnedApps: pinnedApps,
-        customApps: [],
+        customApps: opts.customApps || [],
         iconSize: 'medium',
         allAppsTile: opts.allAppsTile,
         numberKeyLaunch: opts.numberKeyLaunch,
@@ -339,6 +343,28 @@ describe('All apps context menu', () => {
     expect(allApps.handleBack()).toBe(true); // menu -> closed
     expect(mount.querySelector('.all-apps-menu')).toBeNull();
     expect(allApps.handleBack()).toBe(false);
+  });
+});
+
+describe('dock membership', () => {
+  it('paints a Custom app tile from its record', async () => {
+    mockInstalled([]);
+    const custom = [{id: 'custom:1-7', launchId: 'com.foo.bar', title: 'Foo', icon: ''}];
+    const {container, grid} = buildGrid(['netflix', 'custom:1-7'], {customApps: custom});
+    grid.renderShell();
+    await grid.refresh();
+
+    expect(container.querySelector('.app-tile[data-app-id="com.foo.bar"] .app-label')!.textContent)
+      .toBe('Foo');
+  });
+
+  it('paints one tile for an exactly duplicated pinned id', async () => {
+    mockInstalled(['netflix']);
+    const {container, grid} = buildGrid(['netflix', 'netflix']);
+    grid.renderShell();
+    await grid.refresh();
+
+    expect(container.querySelectorAll('.app-tile[data-app-id="netflix"]').length).toBe(1);
   });
 });
 

@@ -36,7 +36,7 @@ function buildPane(config?: Config): {pane: HTMLElement; config: Config; ctx: Se
     binder: createBinder(cfg),
     panes: {system: pane},
     options: {},
-    apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
+    apps: {appsByIdMap: {}, installedCatalog: null},
     focusInPanel: function () { return true; },
     isVisible: function () { return true; },
     focusControl: function () {},

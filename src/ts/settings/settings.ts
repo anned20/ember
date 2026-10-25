@@ -1,7 +1,7 @@
 import {saveConfig} from '@config/config.js';
 import {applyActiveProfile} from '@config/profiles.js';
 import {indexInRow} from '@focus/focus-row.js';
-import {whoAmI} from '@luna/luna.js';
+import {whoAmI} from '@luna/root.js';
 import {attachInputScrollHelpers} from './text-gate.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
@@ -440,7 +440,7 @@ export function createSettingsPanel(
       binder: binder,
       panes: panes,
       options: options,
-      apps: {pinnedOrder: [], customApps: [], appsByIdMap: {}, installedCatalog: null},
+      apps: {appsByIdMap: {}, installedCatalog: null},
       isVisible: function () { return visible; },
       focusControl: focusControl,
       focusNow: focusNow,

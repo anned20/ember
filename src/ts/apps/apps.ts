@@ -10,10 +10,11 @@ import {
   setIconSrc
 } from './app-catalog.js';
 import {getAppIdCandidates, getBuiltinAppIcon} from './app-icons.js';
+import {dock, type DockEntry} from './dock.js';
 import {indexInRow} from '@focus/focus-row.js';
 import {BRAND} from '@lib/brand.js';
 import {t} from '@lib/i18n.js';
-import type {AppCatalog, AppRecord, Config, CustomApp} from '@lib/types.js';
+import type {AppCatalog, AppRecord, Config, CustomApp, LauncherConfig} from '@lib/types.js';
 
 const BUNDLED_SETTINGS_ICON = 'assets/app-icons/tv-settings.png';
 
@@ -37,9 +38,7 @@ export interface LaunchableApp {
 
 /** The home dock's inputs, read once per render. */
 interface DockParams {
-  pinned: string[];
-  customApps: CustomApp[];
-  customById: Record<string, CustomApp>;
+  entries: DockEntry[];
   iconSize: string;
   allAppsTile: boolean;
   tvSettingsTile: boolean;
@@ -265,24 +264,18 @@ export function createAppGrid(
 
   function dockParams(): DockParams {
     const config = getConfig();
-    const customApps = (config.launcher && config.launcher.customApps) || [];
-    const customById: Record<string, CustomApp> = {};
-    customApps.forEach(function (entry) {
-      if (entry && entry.id) customById[entry.id] = entry;
-    });
+    const launcher = (config.launcher || {}) as LauncherConfig;
     return {
-      pinned: (config.launcher && config.launcher.pinnedApps) || [],
-      customApps: customApps,
-      customById: customById,
-      iconSize: (config.launcher && config.launcher.iconSize) || 'medium',
-      allAppsTile: !(config.launcher && config.launcher.allAppsTile === false),
-      tvSettingsTile: !(config.launcher && config.launcher.tvSettingsTile === false),
-      numberKeys: !(config.launcher && config.launcher.numberKeyLaunch === false)
+      entries: dock.entries(launcher),
+      iconSize: launcher.iconSize || 'medium',
+      allAppsTile: launcher.allAppsTile !== false,
+      tvSettingsTile: launcher.tvSettingsTile !== false,
+      numberKeys: launcher.numberKeyLaunch !== false
     };
   }
 
   function dockSignature(p: DockParams): string {
-    return JSON.stringify([p.pinned, p.customApps, p.iconSize, prefersBundledIcons(), p.allAppsTile, p.tvSettingsTile, p.numberKeys]);
+    return JSON.stringify([p.entries, p.iconSize, prefersBundledIcons(), p.allAppsTile, p.tvSettingsTile, p.numberKeys]);
   }
 
   function applyScale(p: DockParams) {
@@ -335,8 +328,8 @@ export function createAppGrid(
       const settingsApp = cat['com.palm.app.settings'] || cat['com.webos.app.settings'];
       settingsIcon = (settingsApp && settingsApp.icon) || '';
     }
-    if (p.allAppsTile) tiles.push(makeAllAppsTile(p.pinned.length));
-    if (p.tvSettingsTile) tiles.push(makeSettingsTile(p.pinned.length + (p.allAppsTile ? 1 : 0), settingsIcon));
+    if (p.allAppsTile) tiles.push(makeAllAppsTile(p.entries.length));
+    if (p.tvSettingsTile) tiles.push(makeSettingsTile(p.entries.length + (p.allAppsTile ? 1 : 0), settingsIcon));
   }
 
   // Tiles for the dock from remembered info only (no app list). Synchronous, so
@@ -344,14 +337,13 @@ export function createAppGrid(
   // listApps call answers; refresh() fills the real names/icons in place.
   function buildShellTiles(p: DockParams): HTMLElement[] {
     const tiles: HTMLElement[] = [];
-    for (let i = 0; i < p.pinned.length; i += 1) {
-      const custom = p.customById[p.pinned[i]];
-      if (custom) {
-        tiles.push(makeCustomTile(custom, i));
-        continue;
+    p.entries.forEach(function (entry, i) {
+      if (entry.custom) {
+        tiles.push(makeCustomTile(entry.custom, i));
+        return;
       }
-      tiles.push(makeTile(knownAppInfo(p.pinned[i]) || {id: p.pinned[i], title: p.pinned[i], icon: ''}, i));
-    }
+      tiles.push(makeTile(knownAppInfo(entry.id) || {id: entry.id, title: entry.id, icon: ''}, i));
+    });
     appendChromeTiles(tiles, p, {});
     return tiles;
   }

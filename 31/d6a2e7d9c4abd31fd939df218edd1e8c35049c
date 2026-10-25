@@ -1,0 +1,22 @@
+docs/agents/architecture.md
+  h_1a6b0cc05bf029 123-128
+docs/agents/layout.md
+  h_1a6b0cc05bf029 30
+src/ts/focus/focus.ts
+  h_1a6b0cc05bf029 905
+src/ts/settings/navigation.ts
+  h_1a6b0cc05bf029 21,27-34,71,500-542,546-549,551-563,565-574
+test/settings/navigation.test.ts
+  h_1a6b0cc05bf029 1,81-84,167-224,226-236
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "31d6a2e7d9c4abd31fd939df218edd1e8c35049c",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

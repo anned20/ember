@@ -1,0 +1,46 @@
+CONTEXT.md
+  h_1a6b0cc05bf029 96-100
+docs/agents/layout.md
+  h_1a6b0cc05bf029 34
+src/ts/apps/app-catalog.ts
+  h_1a6b0cc05bf029 1-2
+src/ts/home/channels.ts
+  h_1a6b0cc05bf029 5,11-12,16
+src/ts/luna/luna-transport.ts
+  h_1a6b0cc05bf029 215
+src/ts/luna/luna.ts
+  h_1a6b0cc05bf029 11,152,350-351
+src/ts/luna/platform.ts
+  h_1a6b0cc05bf029 1
+src/ts/luna/root.ts
+  h_1a6b0cc05bf029 1-570
+src/ts/main.ts
+  h_1a6b0cc05bf029 34-36,45-46,1040,1046-1050
+src/ts/settings/panes/tools.ts
+  h_1a6b0cc05bf029 10-11,265
+src/ts/settings/settings.ts
+  h_1a6b0cc05bf029 4
+test/apps.test.ts
+  h_1a6b0cc05bf029 7-10
+test/inputs-channels.test.ts
+  h_1a6b0cc05bf029 7-11,25,27
+test/luna/root.test.ts
+  h_1a6b0cc05bf029 1-323
+test/settings-focus-index.test.ts
+  h_1a6b0cc05bf029 4-7
+test/settings-panel.test.ts
+  h_1a6b0cc05bf029 6-9
+test/settings/panes/tools.test.ts
+  h_1a6b0cc05bf029 13-14,16,48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3c9dbae29c60d232de1b63715c3ac7e2f1697a1c",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

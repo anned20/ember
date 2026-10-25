@@ -196,6 +196,50 @@ describe('first-run import', () => {
   });
 });
 
+describe('the Dock repair', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  function stored(launcher: Partial<Config['launcher']>): void {
+    const config = JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as Config;
+    Object.assign(config.launcher, launcher);
+    localStorage.setItem(BRAND.storage.config, JSON.stringify(config));
+  }
+
+  it('drops a pinned custom: id whose Custom app record is gone', () => {
+    stored({pinnedApps: ['netflix', 'custom:1-7'], customApps: []});
+    expect(loadConfig().launcher.pinnedApps).toEqual(['netflix']);
+  });
+
+  it('keeps a custom: id that still has its record', () => {
+    const custom = [{id: 'custom:1-7', launchId: 'com.foo.bar', title: 'Foo', icon: ''}];
+    stored({pinnedApps: ['netflix', 'custom:1-7'], customApps: custom});
+    expect(loadConfig().launcher.pinnedApps).toEqual(['netflix', 'custom:1-7']);
+  });
+
+  it('drops an exactly duplicated pinned id, keeping the first', () => {
+    stored({pinnedApps: ['netflix', 'netflix', 'amazon.html']});
+    expect(loadConfig().launcher.pinnedApps).toEqual(['netflix', 'amazon.html']);
+  });
+
+  it('keeps a Custom app record nobody pins', () => {
+    const custom = [{id: 'custom:1-7', launchId: 'com.foo.bar', title: 'Foo', icon: ''}];
+    stored({pinnedApps: ['netflix'], customApps: custom});
+
+    const loaded = loadConfig();
+    expect(loaded.launcher.customApps).toEqual(custom);
+    expect(loaded.launcher.pinnedApps).toEqual(['netflix']);
+  });
+
+  it('repairs a restored backup too', () => {
+    const backup = JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as Config;
+    backup.launcher.pinnedApps = ['netflix', 'custom:gone', 'netflix'];
+
+    const fitted = configFromBackup(backup, DEFAULT_CONFIG);
+    expect(fitted!.config.launcher.pinnedApps).toEqual(['netflix']);
+  });
+});
+
 describe('the Language setting', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => localStorage.clear());

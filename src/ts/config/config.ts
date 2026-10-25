@@ -496,6 +496,26 @@ const CONFIG_REPAIRS: ConfigMigration[] = [
         config.launcher.screensaverMinutes = coerced;
       }
     }
+  },
+
+  // A restored or hand-edited config can disagree with itself. Drop a pinned
+  // custom: id whose Custom app record is gone (it shows as a nameless tile)
+  // and exact duplicate pinned ids (they show as two tiles for one app).
+  function repairDock(config) {
+    const launcher = config.launcher;
+    const customIds: Record<string, boolean> = {};
+    (launcher.customApps || []).forEach(function (entry) {
+      if (entry && entry.id) customIds[entry.id] = true;
+    });
+    const seen: Record<string, boolean> = {};
+    launcher.pinnedApps = (launcher.pinnedApps || []).filter(function (id: unknown) {
+      if (typeof id !== 'string' || seen[id]) return false;
+      if (id.indexOf('custom:') === 0 && !customIds[id]) return false;
+      seen[id] = true;
+      return true;
+    });
+    // A Custom app record nobody pins is kept on purpose: no screen shows it,
+    // and dropping it on load would delete stored data for no visible gain.
   }
 ];
 

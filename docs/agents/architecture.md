@@ -78,11 +78,19 @@ an object with methods plus the config accessor `applyConfig()`. The composition
 root calls those methods. Modules never call each other except through injected
 callbacks. Examples include `BackgroundController`, `MusicPlayer`, `AppGrid`,
 `FocusManager`, `SettingsPanelHandle`, `CustomScreensaver`,
-`WeatherPanelHandle`, `InputRowHandle`, `ChannelStripHandle` and `AllApps`.
+`WeatherPanelHandle`, `InputRowHandle`, `ChannelStripHandle`, `HomePaint` and
+`AllApps`.
 
 Cross-cutting callbacks are passed in, such as `onToast`, `focusControl` and
 `onBeforeLaunch`. If a module needs to do something the host owns, add a
 callback to its options instead of importing the host.
+
+`createHomePaint` (`home/paint.ts`) is config → DOM only: it applies the home
+screen's Look (clock, Glass, Tile style, icon layout and Performance mode) and
+owns its clock tick and layout listeners. It stays out of orchestration: the
+`refreshAll` pass, the module order and the device settings remain in the
+composition root. Its one non-DOM effect, the Performance-mode wallpaper
+switch, arrives as the injected `onPerfMode` callback.
 
 One module is not a factory: `dock` (`apps/dock.ts`) is a namespace of pure
 functions over a `LauncherConfig`. It owns Dock membership — `entries`,

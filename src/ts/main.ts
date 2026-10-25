@@ -1,4 +1,3 @@
-import {setClockTime} from '@lib/clock-format.js';
 import {createAllApps} from '@apps/all-apps.js';
 import type {AllApps} from '@apps/all-apps.js';
 import {loadConfig, saveConfig, applyUsbConfig, readStoredConfigText} from '@config/config.js';
@@ -23,6 +22,8 @@ import {createCustomScreensaver} from '@background/screensaver.js';
 import type {CustomScreensaver} from '@background/screensaver.js';
 import {createWeatherPanel} from '@home/weather.js';
 import type {WeatherPanelHandle} from '@home/weather.js';
+import {createHomePaint} from '@home/paint.js';
+import type {HomePaint} from '@home/paint.js';
 import {
   getForegroundApp,
   launchApp,
@@ -52,7 +53,7 @@ import {activity, noteForeground} from '@lib/activity.js';
 import {settingsBackupText, importLegacySettings} from '@settings/settings-backup.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
-import {activeLocale, setLanguage, t} from '@lib/i18n.js';
+import {setLanguage, t} from '@lib/i18n.js';
 import type {Config, LauncherConfig, AppRecord, LunaResponse} from '@lib/types.js';
 
 type ErrorLike = {message?: unknown} | null | undefined;
@@ -106,17 +107,6 @@ const LAST_RUN_VERSION_KEY = BRAND.storage.lastRunVersion;
 // (written by install/SSH).
 const PREVIEW_FLAG_FILE = BRAND.tmpPrefix + '-preview-ss';
 
-// When a user on a weaker TV enables Performance mode, the glassmorphic blur and
-// animated background are disabled for smoother rendering, while the layout stays
-// intact (see the `.perf-mode` rules in styles/main.css).
-// Settings -> Look -> Glass colour and Glass border: body.glass-<tint> and
-// body.glass-border-<colour> recolour the glass (main.css). Light glass with
-// a white border is the original look and needs no class.
-const GLASS_TINTS = ['dark', 'black', 'blue', 'purple', 'green', 'warm'];
-const GLASS_BORDERS = ['glass', 'none', 'black', 'blue', 'purple', 'green', 'warm', 'gold'];
-// Settings -> Look -> Focus colour: body.focus-<colour>; warm needs no class.
-const FOCUS_COLOURS = ['white', 'border', 'blue', 'purple', 'green', 'gold'];
-
 // Run `fn` once the first paint and the current work are done, so startup side
 // work (root hooks, backups) does not compete with bringing the screen
 // up on a cold boot.
@@ -125,24 +115,6 @@ function whenIdle(fn: () => void) {
     window.requestIdleCallback(function () { fn(); }, {timeout: 3000});
   } else {
     setTimeout(fn, 250);
-  }
-}
-
-function formatClockDate(date: Date, timezone: string) {
-  const options: Intl.DateTimeFormatOptions = {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long'
-  };
-  if (timezone) {
-    options.timeZone = timezone;
-  }
-  try {
-    return new Intl.DateTimeFormat(activeLocale(), options).format(date);
-  } catch (err) {
-    // Invalid timezone — fall back to local date.
-    delete options.timeZone;
-    return new Intl.DateTimeFormat(activeLocale(), options).format(date);
   }
 }
 
@@ -231,7 +203,6 @@ export function createApp(): AppLifecycle {
   let started = false;
   let stopped = false;
 
-  let clockTimer: ReturnType<typeof setInterval> | null = null;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
   let resumeTimer: ReturnType<typeof setTimeout> | null = null;
   let reclaimTimer1: ReturnType<typeof setTimeout> | undefined;
@@ -277,6 +248,7 @@ export function createApp(): AppLifecycle {
   let inputs!: InputRowHandle;
   let apps!: AppGrid;
   let allApps!: AllApps;
+  let paint!: HomePaint;
   let foregroundWatcher!: ForegroundWatcher;
   let built = false;
 
@@ -394,6 +366,17 @@ export function createApp(): AppLifecycle {
   // the Luna bus on construction, so this must not run on an unsupported TV.
   function buildModules() {
     // Leaf modules: no collaborators beyond config and the DOM.
+    paint = createHomePaint({
+      clock: elements.clock,
+      clockDate: elements.clockDate,
+      launcher: elements.launcher,
+      appGrid: elements.appGrid,
+      appGridShell: elements.appGridShell,
+      musicBar: elements.musicBar
+    }, getConfig, {
+      // 1920px wallpapers instead of 4K (see backgrounds.js).
+      onPerfMode: setLiteImages
+    });
     weather = createWeatherPanel(elements.weatherPanel, getConfig, {
       isVisible: function () { return visible; },
       inlineEls: [elements.clockWeather, elements.screensaverWeather]
@@ -401,7 +384,7 @@ export function createApp(): AppLifecycle {
     background = createBackgroundController(elements, getConfig);
     music = createMusicPlayer(getConfig, Object.assign({}, elements, {
       onToast: showToast,
-      onBarChange: function () { updateMusicBarClearance(); }
+      onBarChange: function () { paint.layoutChanged(); }
     }));
 
     // Live TV channels above the inputs row (Channels chip; channels.js).
@@ -717,76 +700,6 @@ export function createApp(): AppLifecycle {
     showToast(t('apps.tvSettingsFailed'));
   }
 
-  function applyClockStyle() {
-    const launcher = (getConfig().launcher) || ({} as LauncherConfig);
-    const rawAlign = launcher.clockAlign || 'center';
-    // left | center (centre top) | center-middle | right
-    const align =
-      rawAlign === 'left' ||
-      rawAlign === 'right' ||
-      rawAlign === 'center-middle'
-        ? rawAlign
-        : 'center';
-    const sizeAllowed: Record<string, number> = {
-      small: 1,
-      medium: 1,
-      large: 1,
-      'x-large': 1,
-      'xx-large': 1
-    };
-    const size = sizeAllowed[launcher.clockSize] ? launcher.clockSize : 'large';
-
-    document.body.classList.remove(
-      'clock-left',
-      'clock-center',
-      'clock-center-middle',
-      'clock-right'
-    );
-    // CSS class: center-middle → clock-center-middle; others → clock-{align}
-    document.body.classList.add('clock-' + align);
-
-    document.body.classList.remove(
-      'clock-size-small',
-      'clock-size-medium',
-      'clock-size-large',
-      'clock-size-x-large',
-      'clock-size-xx-large'
-    );
-    document.body.classList.add('clock-size-' + size);
-
-    const shadowAllowed: Record<string, number> = {off: 1, soft: 1, strong: 1};
-    const shadow = shadowAllowed[launcher.clockShadow] ? launcher.clockShadow : 'strong';
-
-    document.body.classList.remove(
-      'clock-shadow-off',
-      'clock-shadow-soft',
-      'clock-shadow-strong'
-    );
-    document.body.classList.add('clock-shadow-' + shadow);
-  }
-
-  function updateClock() {
-    const config = getConfig();
-    const launcher = config.launcher || ({} as LauncherConfig);
-    const now = new Date();
-
-    applyClockStyle();
-
-    if (launcher.showClock && elements.clock) {
-      setClockTime(elements.clock, now, launcher.timezone || '', launcher.clockFormat === '12');
-    } else if (elements.clock) {
-      elements.clock.textContent = '';
-    }
-
-    if (elements.clockDate) {
-      if (launcher.showDate) {
-        elements.clockDate.textContent = formatClockDate(now, launcher.timezone || '');
-      } else {
-        elements.clockDate.textContent = '';
-      }
-    }
-  }
-
   async function applyUsbOverrides() {
     const config = getBaseConfig();
     const paths = await resolveLoungePaths(config);
@@ -805,185 +718,13 @@ export function createApp(): AppLifecycle {
     }
   }
 
-  // Icon row layout: 'scroll' keeps a single horizontal row capped to N icons
-  // (the rest reachable by scrolling left/right), 'wrap' lets icons stack onto
-  // multiple rows. Scroll is the default.
-  function applyIconLayout() {
-    const grid = elements.appGrid;
-    const shell = elements.appGridShell;
-    const launcher = elements.launcher;
-    if (!grid || !launcher) return;
-    const config = getConfig();
-    const layout = (config.launcher && config.launcher.iconLayout) || 'scroll';
-    launcher.classList.toggle('layout-scroll', layout === 'scroll');
-    launcher.classList.toggle('layout-wrap', layout !== 'scroll');
-    if (layout === 'scroll') {
-      const scaleBySize: Record<string, number> = {small: 0.78, medium: 1, large: 1.28};
-      const iconSize = (config.launcher && config.launcher.iconSize) || 'medium';
-      const scale = scaleBySize[iconSize] || 1;
-      let perRow = parseInt(String(config.launcher && config.launcher.iconsPerRow), 10) || 7;
-      perRow = Math.min(Math.max(perRow, 3), 12);
-      const tileFootprint = (152 * scale) + 28; // tile width + 14px*2 margins
-      // Plus the grid's own side padding (8px each side in scroll layout).
-      // Without it, exactly perRow tiles overflowed by 16px: the arrows showed
-      // and the row scrolled a few pixels for nothing.
-      const gridSidePadding = 16;
-      const maxW = Math.round(perRow * tileFootprint + gridSidePadding) + 'px';
-      // Cap the shell (edges sit on the shell); grid fills the shell width.
-      if (shell) {
-        shell.style.maxWidth = maxW;
-        shell.style.setProperty('--tile-scale', String(scale));
-      }
-      grid.style.maxWidth = '';
-    } else {
-      if (shell) {
-        shell.style.maxWidth = '';
-        shell.style.setProperty('--tile-scale', '1');
-      }
-      grid.style.maxWidth = '';
-    }
-    scheduleAppScrollHints();
-  }
-
-  /**
-   * The music bar sits in the bottom-right corner. When the lowest row of app
-   * tiles reaches under it (a wide row, wrapped rows), lift the launcher clear
-   * of it (body.music-bar-clear). Only across, and only what the row shows:
-   * lifting doesn't move tiles sideways, and the one-row layout's scrolling
-   * doesn't change which part of the screen it covers, so this never flips.
-   */
-  function updateMusicBarClearance() {
-    const bar = document.getElementById('music-bar');
-    const grid = elements.appGrid;
-    if (!bar || !grid) return;
-    const b = bar.getBoundingClientRect();
-    // The row's visible area: in the one-row layout, tiles scrolled out of view
-    // still have positions. Counting them lifted the row at one end of the
-    // scroll and dropped it at the other.
-    const g = grid.getBoundingClientRect();
-    let overlaps = false;
-    if (b.width > 0 && b.height > 0) {
-      const tiles = grid.querySelectorAll('.app-tile');
-      let lowest = -Infinity;
-      for (let i = 0; i < tiles.length; i += 1) {
-        lowest = Math.max(lowest, tiles[i].getBoundingClientRect().top);
-      }
-      for (let i = 0; i < tiles.length && !overlaps; i += 1) {
-        const r = tiles[i].getBoundingClientRect();
-        if (lowest - r.top > 24 || r.width === 0) continue;
-        const left = Math.max(r.left, g.left);
-        const right = Math.min(r.right, g.right);
-        if (right <= left) continue;
-        overlaps = left < b.right && right > b.left;
-      }
-    }
-    document.body.classList.toggle('music-bar-clear', overlaps);
-  }
-
-  function updateAppScrollHints() {
-    updateMusicBarClearance();
-    const grid = elements.appGrid;
-    const shell = elements.appGridShell;
-    const launcher = elements.launcher;
-    if (!grid || !shell) return;
-
-    const scrollMode = launcher && launcher.classList.contains('layout-scroll');
-    if (!scrollMode) {
-      shell.classList.remove('can-scroll-left', 'can-scroll-right');
-      return;
-    }
-
-    // scrollWidth can lag a frame after tile rebuild; remeasure if needed.
-    // Arrows only when at least a third of a tile is out of view: a few
-    // pixels of overflow (rounding, borders) is nothing worth scrolling to.
-    const tile = grid.querySelector('.app-tile') as HTMLElement | null;
-    const minWorth = Math.max(8, tile ? tile.offsetWidth / 3 : 48);
-    const maxScroll = grid.scrollWidth - grid.clientWidth;
-    const hasOverflow = maxScroll > minWorth;
-    const atLeft = grid.scrollLeft <= 6;
-    const atRight = grid.scrollLeft >= maxScroll - 6;
-
-    shell.classList.toggle('can-scroll-left', hasOverflow && !atLeft);
-    shell.classList.toggle('can-scroll-right', hasOverflow && !atRight);
-  }
-
-  /** Remeasure after layout/images settle (scrollWidth can lag one frame). */
-  function scheduleAppScrollHints() {
-    updateAppScrollHints();
-    if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(function () {
-        if (stopped) return;
-        updateAppScrollHints();
-        setTimeout(function () {
-          if (!stopped) updateAppScrollHints();
-        }, 80);
-      });
-    } else {
-      setTimeout(function () {
-        if (!stopped) updateAppScrollHints();
-      }, 80);
-    }
-  }
-
-  function bindAppScrollHints() {
-    const grid = elements.appGrid;
-    if (!grid) return;
-
-    on(grid, 'scroll', function () {
-      updateAppScrollHints();
-    }, {passive: true});
-
-    on(window, 'resize', function () {
-      scheduleAppScrollHints();
-    });
-  }
-
-  function applyIconAlign() {
-    if (!elements.launcher) return;
-    const config = getConfig();
-    const align = (config.launcher && config.launcher.iconAlign) || 'center';
-    elements.launcher.classList.remove('icons-left', 'icons-center', 'icons-right');
-    const cls = align === 'left' ? 'icons-left' : align === 'right' ? 'icons-right' : 'icons-center';
-    elements.launcher.classList.add(cls);
-  }
-
-  function applyGlassTint() {
-    const launcher = getConfig().launcher || ({} as LauncherConfig);
-    GLASS_TINTS.forEach(function (name) {
-      document.body.classList.toggle('glass-' + name, name === launcher.glassTint);
-    });
-    GLASS_BORDERS.forEach(function (name) {
-      document.body.classList.toggle('glass-border-' + name, name === launcher.glassBorder);
-    });
-    FOCUS_COLOURS.forEach(function (name) {
-      document.body.classList.toggle('focus-' + name, name === launcher.focusColour);
-    });
-  }
-
-  function applyTileStyle() {
-    const launcher = getConfig().launcher || ({} as LauncherConfig);
-    document.body.classList.toggle('tiles-plain', launcher.tileStyle === 'plain');
-  }
-
-  function applyPerfMode() {
-    const config = getConfig();
-    const on = !!(config.launcher && config.launcher.perfMode);
-    document.body.classList.toggle('perf-mode', on);
-    // 1920px wallpapers instead of 4K (see backgrounds.js).
-    setLiteImages(on);
-  }
-
   /**
    * @param {{resume?: boolean}} [opts] resume: returning to Ember; keeps
    *   the dock as-is when nothing about it changed (see apps.refresh).
    */
   async function refreshAll(opts?: {resume?: boolean}) {
     const resume = !!(opts && opts.resume);
-    updateClock();
-    applyIconAlign();
-    applyPerfMode();
-    applyGlassTint();
-    applyTileStyle();
+    paint.apply();
     music.applyConfig();
     // Paints the cached forecast at once; the network fetch (if stale) is not awaited.
     weather.refresh();
@@ -996,8 +737,7 @@ export function createApp(): AppLifecycle {
     const launcherConfig = getConfig().launcher || ({} as LauncherConfig);
     setPreferBundledIcons(launcherConfig.bundledIcons !== false);
     await apps.refresh({reuse: resume});
-    applyIconLayout();
-    scheduleAppScrollHints();
+    paint.layoutChanged();
     await music.loadTracks({reuse: resume});
     // After a return the remote is already on the tile it was on (handleResume).
     // Otherwise (start-up, after Save): where the remote was on the home screen,
@@ -1275,9 +1015,7 @@ export function createApp(): AppLifecycle {
 
     await applyUsbOverrides();
     if (stopped) return;
-    updateClock();
-    clockTimer = setInterval(updateClock, 30000);
-    bindAppScrollHints();
+    paint.start();
 
     applyHomeVolume();
     applyScreensaverSetting();
@@ -1406,10 +1144,6 @@ export function createApp(): AppLifecycle {
   function stop() {
     stopped = true;
     if (!built) return;
-    if (clockTimer !== null) {
-      clearInterval(clockTimer);
-      clockTimer = null;
-    }
     clearTimeout(toastTimer);
     clearTimeout(resumeTimer ?? undefined);
     clearTimeout(reclaimTimer1);
@@ -1418,6 +1152,7 @@ export function createApp(): AppLifecycle {
     pendingTimers.forEach(function (timer) { clearTimeout(timer); });
     pendingTimers.length = 0;
     foregroundWatcher.stop();
+    paint.stop();
     if (settings.isVisible()) settings.hide();
     weather.stop();
     customScreensaver.stop();

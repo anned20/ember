@@ -49,6 +49,11 @@ backgrounds and music, all on top of the webOS Luna service bus.
 - **Profile**: a named overlay on the base config: `default`, `night` or
   `cinema` (`profiles.ts`). A preset merged with `config.profiles[id]`.
 - **Performance mode** (`perfMode`): drops blur and animation for weaker TVs.
+- **Home paint**: the config → DOM pass that applies the Look to the home
+  screen (`home/paint.ts`, `createHomePaint`). It paints the clock, Glass, Tile
+  style, icon layout and Performance mode, and owns the clock tick and the
+  layout listeners. `main.ts` calls it from `refreshAll`; it does not
+  orchestrate other modules.
 - **Pinned app**: an app tile chosen by app id (`pinnedApps`). A **custom app**
   is a tile added by hand (`customApps`), possibly with its own icon. Both are
   Dock entries; `dock` decides what pinning, unpinning and reordering do.

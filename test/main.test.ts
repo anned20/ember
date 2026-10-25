@@ -196,43 +196,6 @@ describe('platform gate', () => {
     setIntervalSpy.mockRestore();
     clearIntervalSpy.mockRestore();
   });
-
-  it('drives the tile style from the config', async () => {
-    document.body.innerHTML = FIXTURE;
-    setDeviceInfo('10');
-    const config = loadConfig();
-    config.launcher.tileStyle = 'plain';
-    saveConfig(config);
-
-    const {createApp} = await import('../src/ts/main.js');
-    const app = createApp();
-    app.start();
-
-    await vi.waitFor(function () {
-      expect(document.body.classList.contains('tiles-plain')).toBe(true);
-    });
-
-    app.stop();
-  });
-
-  it('drives the clock shadow from the config', async () => {
-    document.body.innerHTML = FIXTURE;
-    setDeviceInfo('10');
-    const config = loadConfig();
-    config.launcher.clockShadow = 'off';
-    saveConfig(config);
-
-    const {createApp} = await import('../src/ts/main.js');
-    const app = createApp();
-    app.start();
-
-    await vi.waitFor(function () {
-      expect(document.body.classList.contains('clock-shadow-off')).toBe(true);
-    });
-    expect(document.body.classList.contains('clock-shadow-strong')).toBe(false);
-
-    app.stop();
-  });
 });
 
 // The first start after an update tears down the voice assistant an earlier

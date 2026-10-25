@@ -27,7 +27,7 @@ grouped by domain:
 | `apps/` | `@apps` | App discovery, icons, the app grid and the All-apps overlay, LG-home import. |
 | `background/` | `@background` | Background sources (built-in, USB, online), aerial clips, the in-app screensaver. |
 | `music/` | `@music` | The ambient music player and its built-in track manifest. |
-| `settings/` | `@settings` | The Settings panel (the composition root in `settings.ts`), the panel's key/wheel navigation (`navigation.ts`), backup/restore, field bindings, the text-field gate (`text-gate.ts`) and the pane seam (`pane.ts`). UI components live in `settings/components/`, category panes in `settings/panes/`. |
+| `settings/` | `@settings` | The Settings panel (the composition root in `settings.ts`), the panel's key navigation and wheel scrolling (`navigation.ts`), backup/restore, field bindings, the text-field gate (`text-gate.ts`) and the pane seam (`pane.ts`). UI components live in `settings/components/`, category panes in `settings/panes/`. |
 | `focus/` | `@focus` | Focus manager and the row model it moves over. |
 | `home/` | `@home` | Home-screen rows and panels: TV inputs, channels, weather. |
 | `config/` | `@config` | The config tree: load, save, normalize, and profiles. |

@@ -120,8 +120,12 @@ keys, the wheel and photo-tile Select to `settings/navigation.ts`
 (`createSettingsNavigation`). The panel owns its tab bar, header actions,
 sequential/row movement, the photo picker and value adjustment; the router lends
 it `focusItem`/`isFocusable`/`noteRemoteNav` as a host, so focus painting keeps
-one owner. The router imports the standalone `settings/text-gate.ts`, not the
-panel, so importing it no longer loads the panel and its eight panes.
+one owner. The wheel scrolls `.settings-body` natively (the module drives it
+itself when the Magic Remote cursor is not over the pane) and, once it settles,
+re-anchors focus to the nearest visible row — without scrolling again — so D-pad
+continues from what is on screen. The router imports the standalone
+`settings/text-gate.ts`, not the panel, so importing it no longer loads the panel
+and its eight panes.
 
 For key handling, `focus.ts` calls the callbacks `main.ts` passes: `onNumber`,
 `onBack`, `onRed`/`onGreen`/`onBlue`, `onVolume*` and `onChannel*`. Those

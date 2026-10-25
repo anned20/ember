@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {REMOTE_KEY} from '@lib/remote.js';
 import {createSettingsNavigation} from '@settings/navigation.js';
 
@@ -76,6 +76,10 @@ describe('settings navigation', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
     document.body.className = '';
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('walks the category list and activates the tab it lands on', () => {
@@ -160,4 +164,73 @@ describe('settings navigation', () => {
     const nav = createSettingsNavigation(root, makeHost());
     expect(nav.activate(document.body)).toBe(false);
   });
+
+  it('lets the wheel scroll the pane natively and keeps visible focus', () => {
+    vi.useFakeTimers();
+    const {root, pane} = buildFixture();
+    const btn = document.createElement('button');
+    btn.className = 'focusable';
+    pane.appendChild(btn);
+    const nav = createSettingsNavigation(root, makeHost());
+
+    btn.focus();
+    const event = new WheelEvent('wheel', {deltaY: 120, bubbles: true, cancelable: true});
+    btn.dispatchEvent(event);
+    nav.wheel(event);
+    vi.advanceTimersByTime(200);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(btn);
+  });
+
+  it('drives the pane itself when the wheel is outside it', () => {
+    vi.useFakeTimers();
+    const {root, body} = buildFixture();
+    Object.defineProperty(body, 'scrollTop', {value: 0, writable: true});
+    const nav = createSettingsNavigation(root, makeHost());
+
+    const event = new WheelEvent('wheel', {deltaY: 120, cancelable: true});
+    nav.wheel(event);
+    vi.advanceTimersByTime(200);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(body.scrollTop).toBe(120);
+  });
+
+  it('re-anchors focus to the nearest visible row after the wheel settles', () => {
+    vi.useFakeTimers();
+    const {root, pane, body} = buildFixture();
+    Object.defineProperty(body, 'scrollTop', {value: 0, writable: true});
+    const gone = document.createElement('button');
+    const near = document.createElement('button');
+    const far = document.createElement('button');
+    [gone, near, far].forEach(function (btn) {
+      btn.className = 'focusable';
+      pane.appendChild(btn);
+    });
+    stubRect(body, 0, 600);
+    stubRect(gone, -120, -70);
+    stubRect(near, 100, 150);
+    stubRect(far, 300, 350);
+    const host = makeHost();
+    const nav = createSettingsNavigation(root, host);
+
+    gone.focus();
+    nav.wheel(new WheelEvent('wheel', {deltaY: 120, cancelable: true}));
+    vi.advanceTimersByTime(200);
+
+    expect(document.activeElement).toBe(near);
+    expect(host.focusItem).toHaveBeenCalledWith(near);
+  });
 });
+
+function stubRect(el: HTMLElement, top: number, bottom: number): void {
+  Object.defineProperty(el, 'getBoundingClientRect', {
+    value: function () {
+      return {
+        top, bottom, left: 0, right: 100, width: 100, height: bottom - top,
+        x: 0, y: top, toJSON: function () { return {}; }
+      };
+    }
+  });
+}

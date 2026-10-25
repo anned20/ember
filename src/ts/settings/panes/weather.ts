@@ -3,7 +3,6 @@ import {
   createOptionStepper,
   createSection,
   createTextField,
-  createToggle,
   labeledControl
 } from '@settings/components/index.js';
 import {foldPlaceText, normalizeWeatherConfig, searchPlaces} from '@home/weather.js';
@@ -18,7 +17,7 @@ const PLACE_LOOKUP_DEBOUNCE_MS = 300;
 const PLACE_RESULT_LIMIT = 6;
 const SUGGESTION_FOCUS_INDEX = '1023';
 
-/** The Weather pane: show/hide, units, and the place type-ahead. */
+/** The Weather pane: the card/inline/off style, units, and the place type-ahead. */
 export function createWeatherPane(): PaneHandle {
   return {
     build: function (ctx: SettingsContext): void {
@@ -27,13 +26,20 @@ export function createWeatherPane(): PaneHandle {
       const cfg = normalizeWeatherConfig(ctx.rawConfig.weather);
       let place: WeatherLocation = Object.assign({}, cfg.location);
 
-      const enabledField = createToggle({
-        label: t('weather.show'),
-        focusIndex: '1020',
-        path: 'weather.enabled',
+      const styleSelect = createOptionStepper({
+        focusIndex: 1020,
+        choices: [
+          {value: 'card', label: t('weather.style.card')},
+          {value: 'inline', label: t('weather.style.inline')},
+          {value: 'off', label: t('weather.style.off')}
+        ],
+        path: 'weather.style',
+        parse: function (raw) {
+          return raw === 'inline' || raw === 'off' ? raw : 'card';
+        },
         binder: ctx.binder
       });
-      section.appendChild(enabledField.row);
+      section.appendChild(labeledControl(t('weather.style'), styleSelect));
 
       const unitsSelect = createOptionStepper({
         focusIndex: 1021,

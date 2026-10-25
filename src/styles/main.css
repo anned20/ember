@@ -228,6 +228,10 @@ body.focus-gold, .glass-preview.focus-gold {
   align-items: center;
   justify-content: center;
   padding: 30px 24px;
+  /* One height for both tile styles: the plain tile is taller, and without
+     this the box (and every control below it) jumped when the style changed.
+     The icons sit at the same height in both styles, so only the names move. */
+  min-height: 216px;
   margin: 10px 0 18px;
   border-radius: 18px;
   background-color: #1d2a3a;
@@ -288,9 +292,12 @@ body.all-apps-open #background-layer.gradient-animated {
   right: 0;
   bottom: 0;
   left: 0;
+  /* A flat tint under the gradients: the gradients are transparent at the top,
+     so without it bright footage (an aerial sky) barely darkened. */
   background:
     radial-gradient(ellipse at 30% 20%, rgba(8, 8, 12, 0) 0%, rgba(8, 8, 12, 0.35) 100%),
     linear-gradient(to top, rgba(6, 8, 16, 0.92) 0%, rgba(6, 8, 16, 0.45) 26%, rgba(6, 8, 16, 0) 58%);
+  background-color: rgba(6, 8, 16, 0.4);
   opacity: 0.9;
   pointer-events: none;
 }
@@ -467,11 +474,11 @@ body.clock-right .clock-stack {
 }
 
 .clock {
-  font-weight: 200;
-  letter-spacing: 0.06em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   line-height: 1.05;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
-  opacity: 0.92;
+  opacity: 1;
 }
 
 .clock:empty {
@@ -481,28 +488,77 @@ body.clock-right .clock-stack {
 /* 12-hour clock: "PM" smaller than the time (clock-format.js). */
 .clock-ampm {
   margin-left: 0.18em;
-  font-size: 0.38em;
+  font-size: 0.28em;
   font-weight: 400;
   letter-spacing: 0.06em;
 }
 
 .clock-date {
-  margin-top: 6px;
-  font-weight: 300;
-  letter-spacing: 0.08em;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
-  /* Same brightness as the time above it (it was 0.72: hard to read). */
-  opacity: 0.92;
+  margin-top: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65), 0 2px 16px rgba(0, 0, 0, 0.5);
+  opacity: 0.95;
 }
 
 .clock-date:empty {
   display: none;
 }
 
+/* Inline weather line under the date: glyph · town · temp condition · H/L. */
+.clock-weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  margin-top: 9px;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  opacity: 0.9;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65), 0 2px 16px rgba(0, 0, 0, 0.5);
+}
+
+.clock-weather:empty {
+  display: none;
+}
+
+.clock-weather .weather-glyph {
+  width: 1em;
+  height: 1em;
+}
+
+.weather-inline-place {
+  font-weight: 400;
+}
+
+.weather-inline-temp {
+  font-weight: 400;
+}
+
+.weather-inline-condition {
+  opacity: 0.95;
+}
+
+.weather-inline-sep {
+  opacity: 0.5;
+}
+
+.weather-inline-hilo {
+  opacity: 0.92;
+}
+
+.weather-inline-hilo .weather-low {
+  opacity: 0.78;
+}
+
 /* Shadow — driven by body.clock-shadow-off / .clock-shadow-strong. "soft" is
    the base text-shadow above, so it needs no rule. */
 body.clock-shadow-off .clock,
-body.clock-shadow-off .clock-date {
+body.clock-shadow-off .clock-date,
+body.clock-shadow-off .clock-weather {
   text-shadow: none;
 }
 
@@ -520,59 +576,92 @@ body.clock-shadow-strong .clock-date {
     0 5px 20px rgba(0, 0, 0, 0.55);
 }
 
+body.clock-shadow-strong .clock-weather {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.8),
+    0 2px 8px rgba(0, 0, 0, 0.65),
+    0 5px 20px rgba(0, 0, 0, 0.55);
+}
+
 /* Size — driven by body.clock-size-small / medium / large / x-large / xx-large */
 body.clock-size-small .clock {
-  font-size: 36px;
-  font-weight: 300;
-  letter-spacing: 0.04em;
+  font-size: 48px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 body.clock-size-small .clock-date {
   font-size: 18px;
-  margin-top: 2px;
+  margin-top: 4px;
+}
+
+body.clock-size-small .clock-weather {
+  font-size: 16px;
+  margin-top: 6px;
 }
 
 body.clock-size-medium .clock {
-  font-size: 52px;
-  font-weight: 250;
-  letter-spacing: 0.05em;
+  font-size: 72px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 body.clock-size-medium .clock-date {
   font-size: 22px;
-  margin-top: 4px;
+  margin-top: 6px;
+}
+
+body.clock-size-medium .clock-weather {
+  font-size: 19px;
+  margin-top: 8px;
 }
 
 body.clock-size-large .clock,
 body:not(.clock-size-small):not(.clock-size-medium):not(.clock-size-x-large):not(.clock-size-xx-large) .clock {
-  font-size: 72px;
+  font-size: 104px;
 }
 
 body.clock-size-large .clock-date,
 body:not(.clock-size-small):not(.clock-size-medium):not(.clock-size-x-large):not(.clock-size-xx-large) .clock-date {
   font-size: 26px;
+  margin-top: 14px;
+}
+
+body.clock-size-large .clock-weather,
+body:not(.clock-size-small):not(.clock-size-medium):not(.clock-size-x-large):not(.clock-size-xx-large) .clock-weather {
+  margin-top: 12px;
 }
 
 body.clock-size-x-large .clock {
-  font-size: 96px;
-  font-weight: 200;
-  letter-spacing: 0.06em;
+  font-size: 128px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 body.clock-size-x-large .clock-date {
   font-size: 32px;
-  margin-top: 8px;
+  margin-top: 16px;
+}
+
+body.clock-size-x-large .clock-weather {
+  font-size: 27px;
+  margin-top: 12px;
 }
 
 body.clock-size-xx-large .clock {
-  font-size: 128px;
-  font-weight: 200;
-  letter-spacing: 0.05em;
+  font-size: 152px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 body.clock-size-xx-large .clock-date {
   font-size: 40px;
-  margin-top: 10px;
+  margin-top: 18px;
+}
+
+body.clock-size-xx-large .clock-weather {
+  font-size: 34px;
+  margin-top: 14px;
 }
 
 /* ─── Weather: today + 4 days (top-left, opposite the gear) ─────────────── */
@@ -1141,6 +1230,90 @@ body.perf-mode .app-scroll-badge {
   text-overflow: ellipsis;
   white-space: nowrap;
   opacity: 0.9;
+}
+
+/* Settings -> Look -> Glass -> Tile style: plain tiles (body.tiles-plain, set
+   in main.js applyTileStyle). The icon fills the tile and the name sits
+   underneath, with no card; the Look preview carries .tiles-plain itself. The
+   glass style above stays the base, so these are the only overrides.
+   The :not(.settings-open) gate keeps the saved style out of the open Settings
+   panel, so the preview can show a style the config does not have yet. */
+body.tiles-plain:not(.settings-open) .app-tile,
+.glass-preview.tiles-plain .app-tile {
+  border: 0;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  padding: 0;
+  /* Focus may animate here, unlike the glass cards: a plain tile has no
+     backdrop filter, so scaling it does not re-blur anything. A little
+     overshoot gives it the Apple TV pop; Performance mode turns it off. */
+  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* The icon fills the 152px tile, so the row maths in main.js stay untouched. */
+body.tiles-plain:not(.settings-open) .app-tile .app-icon,
+body.tiles-plain:not(.settings-open) .app-tile .app-fallback,
+.glass-preview.tiles-plain .app-tile .app-icon,
+.glass-preview.tiles-plain .app-tile .app-fallback {
+  width: calc(152px * var(--tile-scale, 1));
+  height: calc(152px * var(--tile-scale, 1));
+  border-radius: calc(26px * var(--tile-scale, 1));
+  /* Letter tiles: a glyph to match the larger box. */
+  font-size: calc(52px * var(--tile-scale, 1));
+}
+
+/* The name sits under the icon, readable over a light wallpaper. */
+body.tiles-plain:not(.settings-open) .app-label,
+.glass-preview.tiles-plain .app-label {
+  margin-top: calc(12px * var(--tile-scale, 1));
+  max-width: calc(152px * var(--tile-scale, 1));
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75), 0 0 14px rgba(0, 0, 0, 0.45);
+}
+
+/* Focus: the ring moves from the card (gone) to the icon, and the tile grows
+   upward like an Apple TV icon. Pinned at its bottom edge so the name stays on
+   the row and only the icon rises into the space above it. */
+body.tiles-plain:not(.settings-open) .app-tile.focused,
+body.tiles-plain:not(.settings-open) .app-tile.is-preview-focus,
+.glass-preview.tiles-plain .app-tile.is-preview-focus {
+  box-shadow: none;
+  transform-origin: center bottom;
+  transform: scale(1.1);
+}
+
+body.tiles-plain:not(.settings-open) .app-tile.focused .app-icon,
+body.tiles-plain:not(.settings-open) .app-tile.focused .app-fallback,
+body.tiles-plain:not(.settings-open) .app-tile.is-preview-focus .app-icon,
+body.tiles-plain:not(.settings-open) .app-tile.is-preview-focus .app-fallback,
+.glass-preview.tiles-plain .app-tile.is-preview-focus .app-icon,
+.glass-preview.tiles-plain .app-tile.is-preview-focus .app-fallback {
+  box-shadow:
+    0 0 0 2px rgba(var(--focus-ring-rgb), 0.85),
+    0 0 0 5px rgba(var(--focus-glow-rgb), 0.55),
+    0 14px 40px rgba(0, 0, 0, 0.45),
+    0 0 34px rgba(var(--focus-halo-rgb), 0.35);
+}
+
+/* Number keys: the badge becomes a dimmed prefix of the name (the label's
+   data-app-key is mirrored in apps.js applyNumbering). */
+body.tiles-plain:not(.settings-open) .app-key {
+  display: none;
+}
+
+body.tiles-plain:not(.settings-open) .app-label[data-app-key]::before {
+  content: attr(data-app-key);
+  margin-right: 0.4em;
+  font-weight: 600;
+  opacity: 0.65;
+}
+
+/* Scroll hints sit on the icon body, which in plain tiles starts at the grid's
+   top padding and is as tall as the tile. */
+body.tiles-plain:not(.settings-open) .app-scroll-edge {
+  top: 24px;
+  height: calc(152px * var(--tile-scale, 1));
 }
 
 /* Compact bottom-right music dock — no full-width empty glass bar. */
@@ -2542,35 +2715,10 @@ body.settings-open.reuses-wallpaper #background-layer {
     linear-gradient(to top, rgba(0, 0, 0, 0.45) 0%, transparent 40%);
 }
 
+/* Reuses .clock-stack and the home clock classes, so home → saver never moves
+   the clock, date or inline weather line. */
 .custom-screensaver-clock {
-  position: relative;
   z-index: 3;
-  text-align: center;
-  padding: 24px 48px;
-  pointer-events: none;
-}
-
-.custom-screensaver-time {
-  font-size: 120px;
-  font-weight: 300;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  color: #fff;
-  text-shadow: 0 4px 40px rgba(0, 0, 0, 0.55);
-}
-
-.custom-screensaver-time:empty,
-.custom-screensaver-date:empty {
-  display: none;
-}
-
-.custom-screensaver-date {
-  margin-top: 18px;
-  font-size: 32px;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.88);
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
 }
 
 .custom-screensaver-hint {

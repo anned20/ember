@@ -40,6 +40,53 @@ describe('config migration registry', () => {
     expect(chosen.launcher.clockShadow).toBe('off');
   });
 
+  it('backfills the tile style without overruling an explicit choice (v27)', () => {
+    const missing = configAt(26);
+    delete (missing.launcher as Partial<Config['launcher']>).tileStyle;
+    migrateConfig(missing);
+    expect(missing.launcher.tileStyle).toBe('glass');
+
+    const chosen = configAt(26);
+    chosen.launcher.tileStyle = 'plain';
+    migrateConfig(chosen);
+    expect(chosen.launcher.tileStyle).toBe('plain');
+  });
+
+  it('collapses the old weather and saver toggles into the new settings (v26)', () => {
+    const off = configAt(25);
+    delete (off.weather as Partial<Config['weather']>).style;
+    (off.weather as Config['weather'] & {enabled?: boolean}).enabled = false;
+    const offLauncher = off.launcher as Config['launcher'] & {
+      customScreensaverShowClock?: boolean;
+      customScreensaverShowDate?: boolean;
+    };
+    offLauncher.customScreensaverShowClock = false;
+    offLauncher.customScreensaverShowDate = false;
+
+    migrateConfig(off);
+
+    expect(off.weather.style).toBe('off');
+    expect('enabled' in off.weather).toBe(false);
+    expect(off.launcher.customScreensaverInfo).toBe(false);
+    expect('customScreensaverShowClock' in off.launcher).toBe(false);
+    expect('customScreensaverShowDate' in off.launcher).toBe(false);
+
+    const kept = configAt(25);
+    delete (kept.weather as Partial<Config['weather']>).style;
+    (kept.weather as Config['weather'] & {enabled?: boolean}).enabled = true;
+    const keptLauncher = kept.launcher as Config['launcher'] & {
+      customScreensaverShowClock?: boolean;
+      customScreensaverShowDate?: boolean;
+    };
+    keptLauncher.customScreensaverShowClock = true;
+    keptLauncher.customScreensaverShowDate = false;
+
+    migrateConfig(kept);
+
+    expect(kept.weather.style).toBe('card');
+    expect(kept.launcher.customScreensaverInfo).toBe(true);
+  });
+
   it('applies only the steps above the stored version, in order', () => {
     const config = configAt(22);
     delete (config.background as Partial<Config['background']>).aerial;

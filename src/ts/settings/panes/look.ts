@@ -101,11 +101,26 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
       glassPreview.appendChild(previewInputs);
       glassSection.appendChild(glassPreview);
 
+      const tileStyleSelect = createOptionStepper({
+        focusIndex: 1096,
+        choices: [
+          {value: 'glass', label: t('look.glass.style.glass')},
+          {value: 'plain', label: t('look.glass.style.plain')}
+        ],
+        path: 'launcher.tileStyle',
+        parse: function (raw) { return raw === 'plain' ? 'plain' : 'glass'; },
+        binder: ctx.binder,
+        onChange: paintGlassPreview
+      });
+      glassSection.appendChild(labeledControl(t('look.glass.style'), tileStyleSelect));
+      glassSection.appendChild(createHint(t('look.glass.styleHint')));
+
       function paintGlassPreview(): void {
         const tint = glassSelect.value;
         const border = glassBorderSelect.value;
         const highlight = focusColourSelect.value;
         glassPreview.className = 'glass-preview' +
+          (tileStyleSelect.value === 'plain' ? ' tiles-plain' : '') +
           (tint && tint !== 'light' ? ' glass-' + tint : '') +
           (border && border !== 'white' ? ' glass-border-' + border : '') +
           (highlight && highlight !== 'warm' ? ' focus-' + highlight : '');

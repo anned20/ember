@@ -12,8 +12,7 @@ function makeConfig(): Config {
       customScreensaver: false,
       customScreensaverMinutes: 5,
       customScreensaverSlideSec: 20,
-      customScreensaverShowClock: true,
-      customScreensaverShowDate: false,
+      customScreensaverInfo: true,
       screensaverMinutes: 10
     }
   } as unknown as Config;
@@ -69,7 +68,8 @@ describe('screensaver pane', () => {
     expect(stepper(pane, '991').value).toBe('5');
     expect(stepper(pane, '992').value).toBe('20');
     expect((pane.querySelector('[data-focus-index="993"]') as HTMLInputElement).checked).toBe(true);
-    expect((pane.querySelector('[data-focus-index="994"]') as HTMLInputElement).checked).toBe(false);
+    expect(pane.querySelector('[data-focus-index="994"]')).toBeNull();
+    expect(pane.textContent).toContain(t('screensaver.infoHint'));
     expect(stepper(pane, '995').value).toBe('10');
     expect(pane.querySelector('.settings-preview-ss-btn')!.textContent).toBe('Preview screensaver now');
   });
@@ -89,7 +89,6 @@ describe('screensaver pane', () => {
     stepper(pane, '991').setValue('15');
     stepper(pane, '992').setValue('30');
     (pane.querySelector('[data-focus-index="993"]') as HTMLInputElement).checked = false;
-    (pane.querySelector('[data-focus-index="994"]') as HTMLInputElement).checked = true;
     stepper(pane, '995').setValue('10');
 
     ctx.binder.collect(config);
@@ -97,8 +96,7 @@ describe('screensaver pane', () => {
     expect(config.launcher.customScreensaver).toBe(true);
     expect(config.launcher.customScreensaverMinutes).toBe(15);
     expect(config.launcher.customScreensaverSlideSec).toBe(30);
-    expect(config.launcher.customScreensaverShowClock).toBe(false);
-    expect(config.launcher.customScreensaverShowDate).toBe(true);
+    expect(config.launcher.customScreensaverInfo).toBe(false);
     // The in-app saver is on, so the TV saver is raised to 30.
     expect(config.launcher.screensaverMinutes).toBe(30);
   });
@@ -120,6 +118,8 @@ describe('screensaver pane', () => {
     expect(pane.textContent).toContain(t('screensaver.custom', {brand: BRAND.name}));
     expect(pane.textContent).toContain(t('screensaver.startAfter'));
     expect(pane.textContent).toContain(t('screensaver.slideEvery'));
+    expect(pane.textContent).toContain(t('screensaver.info'));
+    expect(pane.textContent).toContain(t('screensaver.infoHint'));
     expect(pane.textContent).toContain(t('screensaver.tv'));
     expect(pane.textContent).toContain(t('screensaver.preview'));
 

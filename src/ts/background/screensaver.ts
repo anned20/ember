@@ -100,6 +100,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
 
   const bgA = rootEl.querySelector<HTMLElement>('.custom-screensaver-bg-a');
   const bgB = rootEl.querySelector<HTMLElement>('.custom-screensaver-bg-b');
+  const clockEl = rootEl.querySelector<HTMLElement>('.custom-screensaver-clock');
   const timeEl = rootEl.querySelector<HTMLElement>('.custom-screensaver-time');
   const dateEl = rootEl.querySelector<HTMLElement>('.custom-screensaver-date');
 
@@ -128,6 +129,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     enabled: boolean;
     idleMinutes: number;
     slideSec: number;
+    showInfo: boolean;
     showClock: boolean;
     showDate: boolean;
     timezone: string;
@@ -142,9 +144,12 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
       slideSec: typeof launcher.customScreensaverSlideSec === 'number'
         ? launcher.customScreensaverSlideSec
         : 20,
-      showClock: launcher.customScreensaverShowClock !== false,
-      showDate: launcher.customScreensaverShowDate !== false,
-      timezone: launcher.timezone || ''
+      // The saver block mirrors the home clock/date/weather switches exactly.
+      showInfo: launcher.customScreensaverInfo !== false,
+      showClock: !!launcher.showClock,
+      showDate: !!launcher.showDate,
+      timezone: launcher.timezone || '',
+      clockFormat: launcher.clockFormat || '24'
     };
   }
 
@@ -172,14 +177,14 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
   function paintClock() {
     const c = cfg();
     const now = new Date();
+    if (clockEl) clockEl.hidden = !c.showInfo;
+    if (!c.showInfo) return;
     if (timeEl) {
       if (c.showClock) setClockTime(timeEl, now, c.timezone, c.clockFormat === '12');
       else timeEl.textContent = '';
-      timeEl.hidden = !c.showClock;
     }
     if (dateEl) {
       dateEl.textContent = c.showDate ? formatDate(now, c.timezone) : '';
-      dateEl.hidden = !c.showDate;
     }
   }
 

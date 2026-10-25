@@ -295,9 +295,12 @@ export function createAppGrid(
     for (let i = 0; i < tiles.length; i += 1) {
       const tile = tiles[i];
       const existing = tile.querySelector('.app-key');
+      // Mirrored onto the label so the plain tile style can prefix the name.
+      const label = tile.querySelector<HTMLElement>('.app-label');
       if (numberKeys && i < 9) {
         const key = String(i + 1);
         tile.dataset.appKey = key;
+        if (label) label.dataset.appKey = key;
         if (existing) existing.textContent = key;
         else {
           const badge = document.createElement('span');
@@ -308,6 +311,7 @@ export function createAppGrid(
         }
       } else {
         delete tile.dataset.appKey;
+        if (label) delete label.dataset.appKey;
         if (existing) existing.remove();
       }
     }

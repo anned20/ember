@@ -25,7 +25,7 @@ const PLACE: WeatherLocation = {
 function makeConfig(): Config {
   return {
     weather: {
-      enabled: true,
+      style: 'card',
       units: 'c',
       location: {name: 'Berlin', latitude: 52.5, longitude: 13.4, countryCode: 'DE'}
     }
@@ -94,16 +94,27 @@ describe('weather pane', () => {
     vi.mocked(searchPlaces).mockResolvedValue([]);
   });
 
-  it('builds the show/hide, units and location controls from the config', () => {
+  it('builds the style, units and location controls from the config', () => {
     const {pane} = buildPane();
 
-    const toggle = pane.querySelector('input[type=checkbox]') as HTMLInputElement;
-    expect(toggle.dataset.focusIndex).toBe('1020');
-    expect(toggle.checked).toBe(true);
-
+    const style = pane.querySelector('[data-focus-index="1020"]') as unknown as {value: string};
+    expect(style.value).toBe('card');
+    expect(pane.textContent).toContain(t('weather.style'));
     expect(pane.querySelector('[data-focus-index="1021"]')).not.toBeNull();
     expect(pane.querySelector('input[data-focus-index="1022"]')).not.toBeNull();
     expect(pane.textContent).toContain('Location: Berlin');
+  });
+
+  it('saves the chosen weather style through the binder', () => {
+    const {pane, config, ctx} = buildPane();
+
+    const style = pane.querySelector('[data-focus-index="1020"]') as unknown as {
+      setValue(value: string): void;
+    };
+    style.setValue('inline');
+    ctx.binder.collect(config);
+
+    expect(config.weather.style).toBe('inline');
   });
 
   it('looks up places as the user types and saves a picked place through the binder', async () => {
@@ -147,7 +158,8 @@ describe('weather pane', () => {
     const {pane} = buildPane();
 
     const input = pane.querySelector('input[data-focus-index="1022"]') as HTMLInputElement;
-    expect(pane.textContent).toContain(t('weather.show'));
+    expect(pane.textContent).toContain(t('weather.style'));
+    expect(pane.textContent).toContain(t('weather.style.card'));
     expect(pane.textContent).toContain(t('weather.temperature'));
     expect(pane.textContent).toContain(t('weather.location', {place: 'Berlin'}));
     expect(pane.textContent).toContain(t('weather.idleHint'));

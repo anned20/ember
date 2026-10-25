@@ -10,6 +10,7 @@ import {createMusicPlayer} from '@music/music.js';
 import type {MusicPlayer} from '@music/music.js';
 import {createAppGrid} from '@apps/apps.js';
 import type {AppGrid} from '@apps/apps.js';
+import {dock} from '@apps/dock.js';
 import {createInputRow} from '@home/inputs.js';
 import type {InputRowHandle} from '@home/inputs.js';
 import {createChannelStrip} from '@home/channels.js';
@@ -338,47 +339,25 @@ export function createApp(): AppLifecycle {
 
   // All apps -> long-press menu. Pinning writes the base config (never the
   // active profile) and repaints, so the home row behind the overlay follows.
-  function launcherWrite(update: (launcher: LauncherConfig) => void) {
+  function launcherWrite(update: (launcher: LauncherConfig) => LauncherConfig) {
     const config = getBaseConfig();
-    const launcher = Object.assign({}, config.launcher);
-    update(launcher);
+    const launcher = update(config.launcher);
     setConfig(Object.assign({}, config, {launcher: launcher}));
     saveConfig(baseConfig);
     refreshAll();
   }
 
   function isAppPinned(app: AppRecord): boolean {
-    const launcher = getBaseConfig().launcher;
-    if ((launcher.pinnedApps || []).indexOf(app.id) >= 0) return true;
-    return (launcher.customApps || []).some(function (entry) {
-      return !!entry && (entry.launchId || entry.id) === app.id;
-    });
+    return dock.contains(getBaseConfig().launcher, app.id);
   }
 
   function pinApp(app: AppRecord) {
-    launcherWrite(function (launcher) {
-      if ((launcher.pinnedApps || []).indexOf(app.id) < 0) {
-        launcher.pinnedApps = (launcher.pinnedApps || []).concat([app.id]);
-      }
-    });
+    launcherWrite(function (launcher) { return dock.pin(launcher, app.id); });
   }
 
-  // Drop the app's pin and any custom tile that launches it (the same rule the
-  // Settings pinned list uses when an app is removed).
+  // The same rule the Settings pinned list uses when an app is removed.
   function unpinApp(app: AppRecord) {
-    launcherWrite(function (launcher) {
-      const dropped: string[] = [];
-      launcher.customApps = (launcher.customApps || []).filter(function (entry) {
-        if (entry && (entry.launchId || entry.id) === app.id) {
-          dropped.push(entry.id);
-          return false;
-        }
-        return true;
-      });
-      launcher.pinnedApps = (launcher.pinnedApps || []).filter(function (id) {
-        return id !== app.id && dropped.indexOf(id) < 0;
-      });
-    });
+    launcherWrite(function (launcher) { return dock.remove(launcher, app.id); });
   }
 
   function restartApp(app: AppRecord) {

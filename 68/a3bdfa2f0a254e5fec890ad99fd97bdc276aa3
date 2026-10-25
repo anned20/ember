@@ -1,0 +1,16 @@
+CONTEXT.md
+  h_1a6b0cc05bf029 15-18,53-54
+docs/agents/architecture.md
+  h_1a6b0cc05bf029 87-95,123-128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "68a3bdfa2f0a254e5fec890ad99fd97bdc276aa3",
+  "prompts": {},
+  "humans": {
+    "h_1a6b0cc05bf029": {
+      "author": "Anne Douwe Bouma <ad.bouma@247kooi.com>"
+    }
+  }
+}

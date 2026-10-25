@@ -4,7 +4,10 @@ vi.mock('@luna/luna.js', () => ({
   listApps: vi.fn(),
   getAppInfo: vi.fn(),
   launchApp: vi.fn(async () => 'ok'),
-  launchAppViaRoot: vi.fn(async () => 'ok'),
+  launchAppViaRoot: vi.fn(async () => 'ok')
+}));
+
+vi.mock('@luna/root.js', () => ({
   readFileAsDataUrl: vi.fn(async () => '')
 }));
 

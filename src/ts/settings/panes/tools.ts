@@ -7,8 +7,8 @@ import {
   labeledControl
 } from '@settings/components/index.js';
 import {
-  execRoot, readSettingsBackups, runTvCheck, writeAutoBackup, writeSettingsBackup
-} from '@luna/luna.js';
+  appendRootFile, readSettingsBackups, runTvCheck, writeAutoBackup, writeSettingsBackup
+} from '@luna/root.js';
 import {findLoungeRoots} from '@lib/usb.js';
 import {qrSvgMarkup} from '@lib/qr-svg.js';
 import {RELEASE_PAGE_URL, fetchLatestRelease, updateVerdict} from '@lib/update-check.js';
@@ -262,8 +262,7 @@ export function createToolsPane(): PaneHandle {
           const probeLine = probe.stop();
           const summary = tvCheckSummary(report, head) + '\n' + probeLine;
           // Also into the saved report, which is what people usually send.
-          execRoot('printf \'%s\\n\' \'' + probeLine.replace(/'/g, '') +
-            '\' >> ' + DIAGNOSTICS_FILE).catch(function () { /* optional */ });
+          appendRootFile(DIAGNOSTICS_FILE, probeLine).catch(function () { /* optional */ });
           tvCheckText.textContent = summary;
           tvCheckQr.innerHTML = qrSvgMarkup(summary);
           tvCheckResult.hidden = false;

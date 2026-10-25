@@ -4,10 +4,13 @@ vi.mock('@luna/luna.js', () => ({
   getAllInputStatus: vi.fn(),
   getAllInputStatusViaRoot: vi.fn(async () => null),
   switchInput: vi.fn(async () => true),
+  launchApp: vi.fn(async () => 'ok'),
+  launchAppViaRoot: vi.fn(async () => 'ok')
+}));
+
+vi.mock('@luna/root.js', () => ({
   getTvChannels: vi.fn(async () => []),
   getTvChannelNow: vi.fn(async () => ({number: '', name: '', programme: ''})),
-  launchApp: vi.fn(async () => 'ok'),
-  launchAppViaRoot: vi.fn(async () => 'ok'),
   openTvChannel: vi.fn(async () => true)
 }));
 
@@ -15,15 +18,13 @@ import {createInputRow} from '@home/inputs.js';
 import {createChannelStrip} from '@home/channels.js';
 import {
   getAllInputStatus,
-  getTvChannelNow,
-  getTvChannels,
   launchApp,
   launchAppViaRoot,
-  openTvChannel,
   switchInput
 } from '@luna/luna.js';
+import {getTvChannelNow, getTvChannels, openTvChannel} from '@luna/root.js';
 import {setLanguage, t} from '@lib/i18n.js';
-import type {TvChannel} from '@luna/luna.js';
+import type {TvChannel} from '@luna/root.js';
 import type {Config} from '@lib/types.js';
 
 function flush(): Promise<void> {

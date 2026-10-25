@@ -31,6 +31,9 @@ import {
   listApps,
   closeApp,
   removeApp,
+  setSystemVolume
+} from '@luna/luna.js';
+import {
   enableHomeWatcher,
   disableHomeWatcher,
   enableBootLaunch,
@@ -38,10 +41,9 @@ import {
   cleanupVoice,
   writeAutoBackup,
   readSettingsBackups,
-  setSystemVolume,
   setScreensaverTimeout,
-  execRoot
-} from '@luna/luna.js';
+  takePreviewFlag
+} from '@luna/root.js';
 import {createForegroundWatcher, shouldInterceptHome} from '@lib/foreground-watcher.js';
 import type {ForegroundWatcher} from '@lib/foreground-watcher.js';
 import {getSdkVersion, isSupportedPlatform} from '@luna/platform.js';
@@ -102,10 +104,6 @@ const SYSTEM_APP_ROOT_AFTER_MS = 1200;
 // version>.json), so going back to that version can restore them unchanged.
 // Needs root; skipped quietly without it.
 const LAST_RUN_VERSION_KEY = BRAND.storage.lastRunVersion;
-
-// Root-written flag file that force-starts the in-app screensaver preview
-// (written by install/SSH).
-const PREVIEW_FLAG_FILE = BRAND.tmpPrefix + '-preview-ss';
 
 // Run `fn` once the first paint and the current work are done, so startup side
 // work (root hooks, backups) does not compete with bringing the screen
@@ -1039,27 +1037,17 @@ export function createApp(): AppLifecycle {
     customScreensaver.start();
 
     // One-shot force preview: URL, webOSSystem launch params, webOSRelaunch,
-    // or root flag file PREVIEW_FLAG_FILE (written by install/SSH).
+    // or the root flag file (written by install/SSH).
     if (launchParamsWantPreview()) {
       laterTracked(function () { triggerScreensaverPreview('launchParams'); }, 900);
       laterTracked(function () { triggerScreensaverPreview('launchParams-retry'); }, 2500);
     }
     // Root-written flag: reliable on TV even when launch params are dropped.
-    try {
-      execRoot(
-        'if [ -f ' + PREVIEW_FLAG_FILE + ' ]; then cat ' + PREVIEW_FLAG_FILE +
-        '; rm -f ' + PREVIEW_FLAG_FILE + '; fi'
-      ).then(function (res: LunaResponse) {
-        let text = (res && res.stdoutString ? String(res.stdoutString) : '').trim();
-        if (!text && res && res.stdoutBytes) {
-          try { text = String(atob(res.stdoutBytes)).trim(); } catch (e) { /* ignore */ }
-        }
-        if (text === '1' || text === 'preview' || text.indexOf('1') === 0) {
-          laterTracked(function () { triggerScreensaverPreview('flag-file'); }, 600);
-          laterTracked(function () { triggerScreensaverPreview('flag-file-retry'); }, 2200);
-        }
-      }).catch(function () { /* ignore */ });
-    } catch (errFlag) { /* ignore */ }
+    takePreviewFlag().then(function (wanted) {
+      if (!wanted) return;
+      laterTracked(function () { triggerScreensaverPreview('flag-file'); }, 600);
+      laterTracked(function () { triggerScreensaverPreview('flag-file-retry'); }, 2200);
+    });
     on(document, 'webOSRelaunch', function (ev: Event) {
       try {
         const d = ((ev as CustomEvent).detail) || {};

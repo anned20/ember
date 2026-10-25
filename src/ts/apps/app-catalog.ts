@@ -1,4 +1,5 @@
-import {getAppInfo, listApps, readFileAsDataUrl} from '@luna/luna.js';
+import {getAppInfo, listApps} from '@luna/luna.js';
+import {readFileAsDataUrl} from '@luna/root.js';
 import {getAppIdCandidates, getBuiltinAppIcon, getBuiltinAppTitle} from './app-icons.js';
 import {withAssetVersion} from '@lib/compat.js';
 import {APP_VERSION} from '@lib/version.js';

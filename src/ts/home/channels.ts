@@ -2,17 +2,18 @@
  * Home -> Channels chip: Live TV's channels in a strip above the inputs row.
  * The first chip shows what is on now and opens Live TV; the others switch
  * Live TV to that channel. The chip only appears when the TV has channels
- * tuned (luna.js getTvChannels): a TV used only with a set-top box has none.
+ * tuned (root.js getTvChannels): a TV used only with a set-top box has none.
  *
  * Setting launcher.channels: 'favourites' (LG's favourites, or every channel
  * when there are none), 'all', or 'off'.
  */
 
-import {getTvChannelNow, getTvChannels, launchApp, launchAppViaRoot, openTvChannel} from '@luna/luna.js';
+import {launchApp, launchAppViaRoot} from '@luna/luna.js';
+import {getTvChannelNow, getTvChannels, openTvChannel} from '@luna/root.js';
 import {indexInRow} from '@focus/focus-row.js';
 import {BRAND} from '@lib/brand.js';
 import {t} from '@lib/i18n.js';
-import type {TvChannel} from '@luna/luna.js';
+import type {TvChannel} from '@luna/root.js';
 import type {Config, LauncherConfig} from '@lib/types.js';
 
 const LIVE_TV_ID = 'com.webos.app.livetv';

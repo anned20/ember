@@ -37,7 +37,6 @@ export const TIMEOUTS = {
   rootAppRemove: 15000,
   rootInputs: 7000,
   rootHomeWatcher: 20000,
-  rootHomeWatcherProbe: 5000,
   rootHomeWatcherStop: 8000,
   rootBootLaunchEnable: 12000,
   rootBootLaunchDisable: 8000,
@@ -213,7 +212,7 @@ export function execRoot(command: string, timeoutMs?: number): Promise<LunaRespo
  * That build requires `-i` (interactive) or it prints nothing; `-n 1` exits
  * after one reply; `-w` is a hard timeout. Newer TVs accept the same flags.
  */
-export function lunaSendRootCommand(uri: string, payloadJson: string | null, waitMs?: number): string {
+function lunaSendRootCommand(uri: string, payloadJson: string | null, waitMs?: number): string {
   const wait = waitMs || TIMEOUTS.lunaSendWait;
   const payload = payloadJson == null ? '{}' : String(payloadJson);
   // Single-quoted payload; escape any embedded single quotes for the shell.

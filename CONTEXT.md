@@ -93,6 +93,11 @@ backgrounds and music, all on top of the webOS Luna service bus.
 - **Luna**: the webOS service bus. A **Luna request** is a call to a service
   (`luna.ts`, `luna-transport.ts`). **Root exec** runs a shell command through
   Homebrew Channel (`execRoot`).
+- **Root script**: a privileged operation built and run in `root.ts` — backups,
+  the Home watcher, boot-on-start, channels, the system screensaver, the volume
+  fallback, app icons, the TV check and the preview flag. Callers ask the root
+  script for a behaviour. The root `luna-send` idiom for service calls stays in
+  `luna-transport.ts`.
 - **Ladder**: the ordered fallback strategies a Luna request tries
   (`luna-transport.ts`, `LadderRung`), for services that differ across webOS
   versions.

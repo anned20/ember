@@ -10,10 +10,10 @@ vi.mock('@config/config.js', async (importOriginal) => {
   });
 });
 
-vi.mock('@luna/luna.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@luna/luna.js')>();
+vi.mock('@luna/root.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@luna/root.js')>();
   return Object.assign({}, actual, {
-    execRoot: vi.fn(async () => ''),
+    appendRootFile: vi.fn(async () => {}),
     readSettingsBackups: vi.fn(async () => []),
     writeAutoBackup: vi.fn(async () => {}),
     writeSettingsBackup: vi.fn(async () => ({usb: true, usbError: ''})),
@@ -45,7 +45,7 @@ import {
   LAST_BACKUP_KEY, backupLabel, backupWhen, backupWhereLabel, compatibilityNote, lastBackupNote,
   parseBackup, restoreReport, settingsBackupText
 } from '@settings/settings-backup.js';
-import {readSettingsBackups, runTvCheck} from '@luna/luna.js';
+import {readSettingsBackups, runTvCheck} from '@luna/root.js';
 import {CONFIG_SCHEMA_VERSION, configFromBackup, saveConfig} from '@config/config.js';
 import {findLoungeRoots} from '@lib/usb.js';
 import {fetchLatestRelease} from '@lib/update-check.js';

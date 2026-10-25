@@ -1,4 +1,4 @@
-import {lunaRequest} from './luna.js';
+import {lunaRequest} from './luna-transport.js';
 
 /**
  * The declared supported-platform floor: webOS 22.

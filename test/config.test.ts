@@ -52,6 +52,18 @@ describe('config migration registry', () => {
     expect(chosen.launcher.tileStyle).toBe('plain');
   });
 
+  it('backfills the TV Settings tile without overruling an explicit choice (v28)', () => {
+    const missing = configAt(27);
+    delete (missing.launcher as Partial<Config['launcher']>).tvSettingsTile;
+    migrateConfig(missing);
+    expect(missing.launcher.tvSettingsTile).toBe(true);
+
+    const hidden = configAt(27);
+    hidden.launcher.tvSettingsTile = false;
+    migrateConfig(hidden);
+    expect(hidden.launcher.tvSettingsTile).toBe(false);
+  });
+
   it('collapses the old weather and saver toggles into the new settings (v26)', () => {
     const off = configAt(25);
     delete (off.weather as Partial<Config['weather']>).style;

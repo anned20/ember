@@ -10,7 +10,7 @@ const STORAGE_KEY = BRAND.storage.config;
 // means, its type or its name? Bump this and add an entry to CONFIG_MIGRATIONS
 // keyed by the new version: stored settings and restored backups from older
 // versions both run through those steps (see migrateConfig / configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 27;
+export const CONFIG_SCHEMA_VERSION = 28;
 
 export const DEFAULT_CONFIG: Config = {
   version: CONFIG_SCHEMA_VERSION,
@@ -101,6 +101,8 @@ export const DEFAULT_CONFIG: Config = {
     focusColour: 'warm',
     // All apps tile on the home row (opens the grid of every app on the TV).
     allAppsTile: true,
+    // TV Settings shortcut tile at the end of the home row.
+    tvSettingsTile: true,
     // Remote number keys (1-9) open the home row tile at that position.
     numberKeyLaunch: true,
     // Clock placement: left | center (top) | center-middle | right.
@@ -471,6 +473,13 @@ export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
   27: function addTileStyle(config) {
     if (['glass', 'plain'].indexOf(config.launcher.tileStyle) < 0) {
       config.launcher.tileStyle = 'glass';
+    }
+  },
+
+  // v28: the TV Settings shortcut tile on the home row can be turned off.
+  28: function addTvSettingsTile(config) {
+    if (typeof config.launcher.tvSettingsTile !== 'boolean') {
+      config.launcher.tvSettingsTile = true;
     }
   }
 };

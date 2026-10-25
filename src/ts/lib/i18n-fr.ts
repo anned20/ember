@@ -264,6 +264,8 @@ export const fr: Record<TranslationKey, string> = {
   'apps.notInstalled': '— non installée sur ce TV',
   'apps.allAppsTile': 'Vignette Toutes les applis sur la ligne d’accueil',
   'apps.allAppsTileHint': 'Ouvre une grille de toutes les applis du TV : ouvre n’importe quelle appli sans l’épingler ici.',
+  'apps.tvSettingsTile': 'Vignette Réglages TV sur la ligne d’accueil',
+  'apps.tvSettingsTileHint': 'Désactivé masque la vignette Réglages TV de la ligne d’accueil.',
   'apps.numberKeys': 'Les touches numériques ouvrent les vignettes de la ligne d’accueil',
   'apps.numberKeysHint': 'Appuie sur 1–9 de la télécommande pour ouvrir la vignette à cette position (1 est la première) ; chaque vignette affiche son numéro.',
   'apps.addHeading': 'Ajouter une appli',

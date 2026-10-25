@@ -42,6 +42,7 @@ interface DockParams {
   customById: Record<string, CustomApp>;
   iconSize: string;
   allAppsTile: boolean;
+  tvSettingsTile: boolean;
   numberKeys: boolean;
 }
 
@@ -275,12 +276,13 @@ export function createAppGrid(
       customById: customById,
       iconSize: (config.launcher && config.launcher.iconSize) || 'medium',
       allAppsTile: !(config.launcher && config.launcher.allAppsTile === false),
+      tvSettingsTile: !(config.launcher && config.launcher.tvSettingsTile === false),
       numberKeys: !(config.launcher && config.launcher.numberKeyLaunch === false)
     };
   }
 
   function dockSignature(p: DockParams): string {
-    return JSON.stringify([p.pinned, p.customApps, p.iconSize, prefersBundledIcons(), p.allAppsTile, p.numberKeys]);
+    return JSON.stringify([p.pinned, p.customApps, p.iconSize, prefersBundledIcons(), p.allAppsTile, p.tvSettingsTile, p.numberKeys]);
   }
 
   function applyScale(p: DockParams) {
@@ -334,7 +336,7 @@ export function createAppGrid(
       settingsIcon = (settingsApp && settingsApp.icon) || '';
     }
     if (p.allAppsTile) tiles.push(makeAllAppsTile(p.pinned.length));
-    tiles.push(makeSettingsTile(p.pinned.length + 1, settingsIcon));
+    if (p.tvSettingsTile) tiles.push(makeSettingsTile(p.pinned.length + (p.allAppsTile ? 1 : 0), settingsIcon));
   }
 
   // Tiles for the dock from remembered info only (no app list). Synchronous, so

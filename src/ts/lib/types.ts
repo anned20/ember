@@ -104,6 +104,8 @@ export interface LauncherConfig {
   tileStyle: string;
   focusColour: string;
   allAppsTile: boolean;
+  /** Show the TV Settings shortcut tile at the end of the home row. */
+  tvSettingsTile: boolean;
   numberKeyLaunch: boolean;
   clockAlign: string;
   clockSize: string;

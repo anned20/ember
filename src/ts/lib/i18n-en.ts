@@ -282,6 +282,8 @@ export const en = {
   'apps.notInstalled': '— not installed on this TV',
   'apps.allAppsTile': 'All apps tile on the home row',
   'apps.allAppsTileHint': 'Opens a grid of every app on the TV: open any app without pinning it here.',
+  'apps.tvSettingsTile': 'TV Settings tile on the home row',
+  'apps.tvSettingsTileHint': 'Off hides the TV Settings tile from the home row.',
   'apps.numberKeys': 'Number keys open home row tiles',
   'apps.numberKeysHint': 'Press 1–9 on the remote to open the tile at that position (1 is the first); each tile shows its number.',
   'apps.addHeading': 'Add an app',

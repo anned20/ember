@@ -286,6 +286,16 @@ export function createAppsPane(): PaneHandle {
       appsSection.appendChild(allAppsTileField.row);
       appsSection.appendChild(createHint(t('apps.allAppsTileHint')));
 
+      // TV Settings shortcut at the end of the home row.
+      const tvSettingsTileField = createToggle({
+        label: t('apps.tvSettingsTile'),
+        focusIndex: '1192',
+        path: 'launcher.tvSettingsTile',
+        binder: ctx.binder
+      });
+      appsSection.appendChild(tvSettingsTileField.row);
+      appsSection.appendChild(createHint(t('apps.tvSettingsTileHint')));
+
       // Number keys: press 1-9 on the remote to open the home row tile at that
       // position (apps.js numbers the tiles and launches by number).
       const numberKeyField = createToggle({

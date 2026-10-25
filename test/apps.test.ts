@@ -15,15 +15,23 @@ import {getAppIdCandidates} from '@apps/app-icons.js';
 import {setLanguage, t} from '@lib/i18n.js';
 import type {Config} from '@lib/types.js';
 
-function makeConfig(pinnedApps: string[], numberKeyLaunch?: boolean): () => Config {
+interface GridOptions {
+  numberKeyLaunch?: boolean;
+  tvSettingsTile?: boolean;
+  allAppsTile?: boolean;
+}
+
+function makeConfig(pinnedApps: string[], options?: GridOptions): () => Config {
+  const opts = options || {};
   return function (): Config {
     return {
       launcher: {
         pinnedApps: pinnedApps,
         customApps: [],
         iconSize: 'medium',
-        allAppsTile: true,
-        numberKeyLaunch: numberKeyLaunch
+        allAppsTile: opts.allAppsTile,
+        numberKeyLaunch: opts.numberKeyLaunch,
+        tvSettingsTile: opts.tvSettingsTile
       }
     } as unknown as Config;
   };
@@ -36,10 +44,10 @@ function mockInstalled(ids: string[]) {
   vi.mocked(getAppInfo).mockImplementation(async (id: string) => ({id: id, title: id}));
 }
 
-function buildGrid(pinnedApps: string[], numberKeyLaunch?: boolean) {
+function buildGrid(pinnedApps: string[], options?: GridOptions) {
   const container = document.createElement('div');
   document.body.appendChild(container);
-  const grid = createAppGrid(container, makeConfig(pinnedApps, numberKeyLaunch), {});
+  const grid = createAppGrid(container, makeConfig(pinnedApps, options), {});
   return {container, grid};
 }
 
@@ -75,6 +83,47 @@ describe('home row numbering and badges', () => {
 
     expect(container.querySelectorAll('.app-tile[data-app-key]').length).toBe(9);
     expect(container.querySelectorAll('.app-key').length).toBe(9);
+  });
+});
+
+describe('the TV Settings tile', () => {
+  it('is painted by default, after All apps', async () => {
+    mockInstalled(['netflix']);
+    const {container, grid} = buildGrid(['netflix']);
+    await grid.refresh();
+    expect(container.querySelectorAll('.settings-tile').length).toBe(1);
+    expect(container.querySelector('.all-apps-launcher')).not.toBeNull();
+  });
+
+  it('is left out when the setting is off', async () => {
+    mockInstalled(['netflix']);
+    const {container, grid} = buildGrid(['netflix'], {tvSettingsTile: false});
+    await grid.refresh();
+
+    expect(container.querySelector('.settings-tile')).toBeNull();
+    // netflix, All apps
+    expect(container.querySelectorAll('.app-tile').length).toBe(2);
+  });
+
+  it('leaves no gap in the number keys when it is off', async () => {
+    mockInstalled(['netflix']);
+    const {container, grid} = buildGrid(['netflix'], {tvSettingsTile: false});
+    await grid.refresh();
+
+    const keys = Array.from(container.querySelectorAll<HTMLElement>('.app-tile'))
+      .map(function (tile) { return tile.dataset.appKey; });
+    expect(keys).toEqual(['1', '2']);
+  });
+
+  it('stays when All apps is off', async () => {
+    mockInstalled(['netflix']);
+    const {container, grid} = buildGrid(['netflix'], {allAppsTile: false});
+    await grid.refresh();
+
+    expect(container.querySelector('.all-apps-launcher')).toBeNull();
+    const labels = Array.from(container.querySelectorAll('.app-label'))
+      .map(function (label) { return label.textContent; });
+    expect(labels).toEqual(['Netflix', t('apps.tvSettings')]);
   });
 });
 
@@ -121,7 +170,7 @@ describe('All apps overlay', () => {
 describe('numberKeyLaunch off', () => {
   it('numbers no tiles and does not launch by number', async () => {
     mockInstalled(['netflix', 'youtube.leanback.v4']);
-    const {container, grid} = buildGrid(['netflix', 'youtube.leanback.v4'], false);
+    const {container, grid} = buildGrid(['netflix', 'youtube.leanback.v4'], {numberKeyLaunch: false});
     await grid.refresh();
 
     expect(container.querySelectorAll('.app-tile[data-app-key]').length).toBe(0);

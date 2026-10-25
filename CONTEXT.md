@@ -14,7 +14,7 @@ backgrounds and music, all on top of the webOS Luna service bus.
 - **Dock** (also home row): the row of app tiles the remote moves along
   (`focus.focusHomeDock`). Its rows are `apps`, `inputs` and `channels`.
 - **Tile**: one focusable card in the dock. It can be a pinned or custom app, an
-  input, a channel, or the All-apps tile.
+  input, a channel, the All-apps tile, or the TV Settings tile.
 - **App grid**: the dock's row of app tiles (`apps.ts`, `createAppGrid`).
 - **All apps**: the full-screen overlay listing every installed app
   (`all-apps.ts`), opened by the All-apps tile.

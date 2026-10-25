@@ -264,6 +264,8 @@ export const de: Record<TranslationKey, string> = {
   'apps.notInstalled': '– nicht auf diesem TV installiert',
   'apps.allAppsTile': 'Alle-Apps-Kachel in der Startzeile',
   'apps.allAppsTileHint': 'Öffnet ein Raster mit allen Apps auf dem TV: Öffne jede App, ohne sie hier anzuheften.',
+  'apps.tvSettingsTile': 'TV-Einstellungen-Kachel in der Startzeile',
+  'apps.tvSettingsTileHint': 'Aus blendet die TV-Einstellungen-Kachel in der Startzeile aus.',
   'apps.numberKeys': 'Zifferntasten öffnen Kacheln der Startzeile',
   'apps.numberKeysHint': 'Drücke 1–9 auf der Fernbedienung, um die Kachel an dieser Position zu öffnen (1 ist die erste); jede Kachel zeigt ihre Nummer.',
   'apps.addHeading': 'Eine App hinzufügen',

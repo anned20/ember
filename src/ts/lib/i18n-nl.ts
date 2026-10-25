@@ -264,6 +264,8 @@ export const nl: Record<TranslationKey, string> = {
   'apps.notInstalled': '(niet geïnstalleerd op deze tv)',
   'apps.allAppsTile': 'Alle-apps-tegel op de home-rij',
   'apps.allAppsTileHint': 'Opent een raster met elke app op de tv: open een app zonder hem hier vast te zetten.',
+  'apps.tvSettingsTile': 'TV-instellingen-tegel op de home-rij',
+  'apps.tvSettingsTileHint': 'Uit verbergt de TV-instellingen-tegel op de home-rij.',
   'apps.numberKeys': 'Cijfertoetsen openen tegels op de home-rij',
   'apps.numberKeysHint': 'Druk op 1–9 op de afstandsbediening om de tegel op die positie te openen (1 is de eerste); elke tegel toont zijn nummer.',
   'apps.addHeading': 'Een app toevoegen',

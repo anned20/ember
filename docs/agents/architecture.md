@@ -84,6 +84,15 @@ Cross-cutting callbacks are passed in, such as `onToast`, `focusControl` and
 `onBeforeLaunch`. If a module needs to do something the host owns, add a
 callback to its options instead of importing the host.
 
+One module is not a factory: `dock` (`apps/dock.ts`) is a namespace of pure
+functions over a `LauncherConfig`. It owns Dock membership — `entries`,
+`contains`, `pin`, `addCustom`, `remove`, `move` — and every caller that changes
+which apps are on the home row (the Settings Apps pane's draft, the All apps
+menu's pin/unpin, the Launch Home import) goes through it. Each call returns a
+new launcher; nothing is saved or painted. `loadConfig` runs a repair with the
+same rules, so a restored config cannot leave a dangling `custom:` id or an
+exact duplicate pinned id.
+
 ### The Settings pane seam
 
 `settings.ts` is the Settings composition root. It owns the panel state, the

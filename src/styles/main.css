@@ -413,6 +413,19 @@ body.all-apps-open #background-layer.gradient-animated {
     0 0 30px rgba(var(--focus-halo-rgb), 0.3);
 }
 
+/* Network status: quiet white when fine, amber with no uplink, red with no link. */
+.network-status[hidden] {
+  display: none;
+}
+
+.network-status[data-state="no-internet"] {
+  color: #f2c078;
+}
+
+.network-status[data-state="offline"] {
+  color: #ff6b6b;
+}
+
 .clock-stack {
   position: absolute;
   top: 36px;
@@ -471,6 +484,11 @@ body.clock-right .clock-stack {
   transform: none;
   text-align: right;
   max-width: calc(100% - 280px);
+}
+
+/* The network chip widens the top-right cluster: keep the clock clear of it. */
+body.has-network-status.clock-right .clock-stack {
+  right: 248px;
 }
 
 .clock {
@@ -692,6 +710,11 @@ body.clock-size-xx-large .clock-weather {
 body.clock-left .weather-panel {
   left: auto;
   right: 160px;
+}
+
+/* The network chip widens the top-right cluster: keep the forecast clear of it. */
+body.has-network-status.clock-left .weather-panel {
+  right: 248px;
 }
 
 .weather-glyph {

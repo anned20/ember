@@ -31,6 +31,9 @@ backgrounds and music, all on top of the webOS Luna service bus.
   `off`.
 - **Weather panel**: the home-screen card or inline weather line (`weather.ts`).
   The inline line also appears in the screensaver clock block.
+- **Network status**: the Wi-Fi/Ethernet and internet chip in the top bar, left of
+  the Settings gear (`network-status.ts`). Link type comes from the connection
+  manager; internet reachability comes from a two-host probe.
 - **Settings panel**: the category list and pane UI (`settings.ts`).
 - **Screensaver**: two different things. The system screensaver is LG's gallery
   saver (`screensaverMinutes`). The in-app screensaver is Ember's own

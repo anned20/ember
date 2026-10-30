@@ -147,6 +147,31 @@ describe('settings panel integration', () => {
     expect(saved[0].launcher.clockShadow).toBe('soft');
   });
 
+  it('saves the network status toggle', async () => {
+    const panel = document.createElement('div');
+    panel.id = 'settings-panel';
+    document.body.appendChild(panel);
+
+    const saved: Config[] = [];
+    const handle = createSettingsPanel(panel, loadConfig, {
+      onSave: function (config) { saved.push(config); }
+    });
+    handle.show();
+
+    const toggle = await waitFor('input[data-focus-index="1097"]', panel) as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event('change'));
+
+    const saveBtn = await waitFor('.settings-save', panel);
+    // Wait out the open guard, which swallows the click sequence that opened us.
+    await new Promise(function (resolve) { setTimeout(resolve, 800); });
+    (saveBtn as HTMLButtonElement).click();
+
+    expect(saved.length).toBe(1);
+    expect(saved[0].launcher.showNetworkStatus).toBe(false);
+  });
+
   it('renders the panel shell in Dutch when the language is Dutch', async () => {
     setLanguage('nl');
 

@@ -661,7 +661,10 @@ export function createFocusManager(
       const primary = isHorizontal ? Math.abs(dx) : Math.abs(dy);
       const secondary = isHorizontal ? Math.abs(dy) : Math.abs(dx);
       // Prefer top-chrome when moving up so we hit Settings over a distant input.
-      const chromeBias = (keyCode === REMOTE_KEY.UP && isTopChrome(item)) ? -5000 : 0;
+      // The network chip shares that row; keep UP on Settings (Left reaches the chip).
+      const chromeBias = (keyCode === REMOTE_KEY.UP && isTopChrome(item))
+        ? (item.id === 'app-settings-btn' ? -6000 : -5000)
+        : 0;
       const score = primary * 100 + secondary + chromeBias;
 
       if (score < bestScore) {

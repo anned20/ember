@@ -27,10 +27,10 @@ function tryLunaRequest(uri: string, options: LunaRequestOptions) {
   });
 }
 
-export function launchApp(id: string) {
+export function launchApp(id: string, params?: Record<string, unknown>) {
   return lunaRequest('luna://com.webos.applicationManager', {
     method: 'launch',
-    parameters: {id: id, params: {}}
+    parameters: {id: id, params: params || {}}
   }, TIMEOUTS.launch);
 }
 

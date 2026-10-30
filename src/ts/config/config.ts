@@ -10,7 +10,7 @@ const STORAGE_KEY = BRAND.storage.config;
 // means, its type or its name? Bump this and add an entry to CONFIG_MIGRATIONS
 // keyed by the new version: stored settings and restored backups from older
 // versions both run through those steps (see migrateConfig / configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 28;
+export const CONFIG_SCHEMA_VERSION = 29;
 
 export const DEFAULT_CONFIG: Config = {
   version: CONFIG_SCHEMA_VERSION,
@@ -85,6 +85,8 @@ export const DEFAULT_CONFIG: Config = {
     channels: 'favourites',
     showClock: true,
     showDate: true,
+    // Wi-Fi/Ethernet and internet chip next to the Settings gear.
+    showNetworkStatus: true,
     // '24' (18:30) or '12' (6:30 PM), home screen and screensaver.
     clockFormat: '24',
     // Glass colour of the app tiles, inputs and Settings button: light (the
@@ -480,6 +482,13 @@ export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
   28: function addTvSettingsTile(config) {
     if (typeof config.launcher.tvSettingsTile !== 'boolean') {
       config.launcher.tvSettingsTile = true;
+    }
+  },
+
+  // v29: the home-screen network status chip.
+  29: function addNetworkStatus(config) {
+    if (typeof config.launcher.showNetworkStatus !== 'boolean') {
+      config.launcher.showNetworkStatus = true;
     }
   }
 };

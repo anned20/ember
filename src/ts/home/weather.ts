@@ -23,14 +23,14 @@ const DAYS_SHOWN = 5; // today + 4 ahead
 // A couple of spare days so a cached forecast still covers "today" + 4 after midnight.
 const DAYS_REQUESTED = 7;
 
-export const DEFAULT_WEATHER_LOCATION: WeatherLocation = {
+const DEFAULT_WEATHER_LOCATION: WeatherLocation = {
   name: 'City of London, UK',
   latitude: 51.5123,
   longitude: -0.0907,
   countryCode: 'GB'
 };
 
-export type WeatherCondition =
+type WeatherCondition =
   | 'clear'
   | 'mainly-clear'
   | 'partly-cloudy'
@@ -136,7 +136,7 @@ export function normalizeWeatherConfig(raw: unknown): WeatherConfig {
 
 // ── WMO code → condition (WeatherIcons.kt) ────────────────────────────────
 
-export function conditionOf(code: number): WeatherCondition {
+function conditionOf(code: number): WeatherCondition {
   switch (code) {
     case 0: return 'clear';
     case 1: return 'mainly-clear';
@@ -264,7 +264,7 @@ function fog(): string {
   }).join('');
 }
 
-export function weatherGlyphSvg(code: number, isDay?: boolean): string {
+function weatherGlyphSvg(code: number, isDay?: boolean): string {
   const day = isDay !== false;
   let body = '';
   switch (conditionOf(code)) {

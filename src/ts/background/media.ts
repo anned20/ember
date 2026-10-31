@@ -21,7 +21,7 @@ export interface MediaDescriptor {
   title?: string;
 }
 
-export const DEFAULT_PRESET = 'warm-gradient';
+const DEFAULT_PRESET = 'warm-gradient';
 
 /** The one gradient table: the wallpaper, the screensaver and the pane share it. */
 export const PRESETS: Record<string, string> = {
@@ -57,7 +57,7 @@ export function shuffled<T>(items: T[]): T[] {
 }
 
 /** The one timeout policy for "does this image decode". */
-export const IMAGE_PROBE_TIMEOUT_MS = 8000;
+const IMAGE_PROBE_TIMEOUT_MS = 8000;
 
 export interface ProbeResult {
   ok: boolean;

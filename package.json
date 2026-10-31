@@ -14,6 +14,8 @@
     "sim:setup": "node scripts/simulator.ts setup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p scripts/tsconfig.json",
+    "lint": "oxlint src/ts test scripts && knip",
+    "precommit": "npm run typecheck && npm run lint && npm test",
     "clean": "rm -rf dist",
     "version:set": "node scripts/set-version.ts",
     "version": "node scripts/set-version.ts && git add version.md appinfo.json"

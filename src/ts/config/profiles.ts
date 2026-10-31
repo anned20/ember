@@ -8,7 +8,7 @@ export const PROFILE_OPTIONS: Array<{id: string; labelKey: TranslationKey}> = [
   {id: 'cinema', labelKey: 'look.profile.cinema'}
 ];
 
-export const PROFILE_PRESETS: Record<string, DeepPartial<Config>> = {
+const PROFILE_PRESETS: Record<string, DeepPartial<Config>> = {
   night: {
     // Keeps your wallpaper, just under a darker scrim. It used to force the
     // midnight gradient, so photos picked in Settings "reset" to Gradient.

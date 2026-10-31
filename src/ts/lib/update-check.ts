@@ -15,7 +15,7 @@ const FETCH_TIMEOUT_MS = 8000;
 /** The project's release page: what the QR code opens on a phone. */
 export const RELEASE_PAGE_URL = 'https://github.com/' + BRAND.repo + '/releases/latest';
 
-export type UpdateState = 'current' | 'available' | 'unknown';
+type UpdateState = 'current' | 'available' | 'unknown';
 
 export interface UpdateVerdict {
   state: UpdateState;

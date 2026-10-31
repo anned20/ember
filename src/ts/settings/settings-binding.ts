@@ -33,7 +33,7 @@ export interface ConfigField {
 }
 
 /** An explicit save step for a derived / asynchronous field. */
-export type ConfigHook = (config: Config) => void;
+type ConfigHook = (config: Config) => void;
 
 /** A field table plus the read-back and save passes over it. */
 export interface SettingsBinder {

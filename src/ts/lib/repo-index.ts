@@ -23,7 +23,7 @@ export interface RepoManifest {
   ipkSize: number;
 }
 
-export interface RepoPackage {
+interface RepoPackage {
   id: string;
   title: string;
   iconUri: string;
@@ -55,7 +55,7 @@ export interface RepoInput {
 }
 
 /** The manifest's file name in the repository, for `id`. */
-export function manifestFileName(id: string): string {
+function manifestFileName(id: string): string {
   return id + '.manifest.json';
 }
 

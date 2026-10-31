@@ -16,11 +16,6 @@ export interface NormalizedApps {
   complete?: boolean;
 }
 
-/** The foreground app id, or '' when unknown. */
-export interface ForegroundInfo {
-  appId: string;
-}
-
 function tryLunaRequest(uri: string, options: LunaRequestOptions) {
   return lunaRequest(uri, options).catch(function () {
     return null;
@@ -113,7 +108,7 @@ export function listApps(): Promise<NormalizedApps> {
  * root: a sandboxed app is usually refused the full list. Falls back to the
  * in-app subscription, which may return few or none.
  */
-export const LIST_LAUNCH_POINTS_LADDER: LadderRung[] = [
+const LIST_LAUNCH_POINTS_LADDER: LadderRung[] = [
   {
     via: 'rootLuna',
     uri: APP_MANAGER + '/listLaunchPoints',
@@ -151,7 +146,7 @@ function pickForegroundId(res: LunaResponse | null | undefined): string {
  * first; the in-app rungs cover desktop previews. Must use -i on this TV's
  * luna-send or stdout is empty (see the root command builder in luna-transport).
  */
-export const FOREGROUND_LADDER: LadderRung[] = [
+const FOREGROUND_LADDER: LadderRung[] = [
   {
     via: 'rootLuna',
     uri: APP_MANAGER + '/getForegroundAppInfo',
@@ -241,7 +236,7 @@ export function getAllInputStatusViaRoot(): Promise<LunaResponse> {
   });
 }
 
-export function getInputStatus(inputId: string) {
+function getInputStatus(inputId: string) {
   return lunaRequest('luna://com.webos.service.eim', {
     method: 'getInputStatus',
     parameters: {id: inputId}

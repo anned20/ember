@@ -38,14 +38,14 @@ export function isAudioFile(name: unknown): boolean {
   });
 }
 
-export function isImageFile(name: unknown): boolean {
+function isImageFile(name: unknown): boolean {
   const lower = stripUrlQuery(name).toLowerCase();
   return IMAGE_EXT.some(function (ext) {
     return lower.endsWith(ext);
   });
 }
 
-export function normalizeTrack(entry: unknown, basePath: string): UsbTrack | null {
+function normalizeTrack(entry: unknown, basePath: string): UsbTrack | null {
   if (typeof entry === 'string') {
     const url = entry.indexOf('/') === 0 ? entry : joinPath(basePath, entry);
     return {url: url, title: '', artist: ''};
@@ -97,7 +97,7 @@ export function joinPath(base: string, part: string): string {
   return base + '/' + part;
 }
 
-export async function fetchText(url: string): Promise<string> {
+async function fetchText(url: string): Promise<string> {
   const res = await fetch(url);
   if (!res.ok) throw new Error('HTTP ' + res.status);
   return res.text();
@@ -114,7 +114,7 @@ function resolveTrackUrl(trimmed: string, basePath: string): string {
   return joinPath(basePath, trimmed);
 }
 
-export function parseM3u(text: string, basePath: string): UsbTrack[] {
+function parseM3u(text: string, basePath: string): UsbTrack[] {
   const tracks: UsbTrack[] = [];
   const lines = text.split(/\r?\n/);
   let pendingMeta: {artist: string; title: string} | null = null;

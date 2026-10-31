@@ -21,7 +21,7 @@ const MENU_INDEX_OFFSET = 900;
 type ErrorLike = {message?: unknown} | null | undefined;
 
 /** One app as listInstalledApps reports it (with its hidden / removable flags). */
-export type ListedApp = Awaited<ReturnType<typeof listInstalledApps>>[number];
+type ListedApp = Awaited<ReturnType<typeof listInstalledApps>>[number];
 
 /** The focus manager calls the All apps overlay makes. */
 interface AllAppsFocus {

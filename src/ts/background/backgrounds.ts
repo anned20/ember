@@ -245,16 +245,6 @@ export function builtinImageUrl(file: string): string {
   return withAssetVersion(absolute || rel, APP_VERSION);
 }
 
-export function getBuiltinImageUrl(id: string, manifest?: BuiltinBackground[] | null): string {
-  const list = manifest || builtinCache || BUILTIN_BACKGROUNDS_FALLBACK;
-  const entry = list.find(function (item) {
-    return item.id === id;
-  }) || list[0];
-
-  if (!entry) return '';
-  return builtinImageUrl(entry.file);
-}
-
 export function parseUrlList(text: string): string[] {
   if (!text) return [];
 

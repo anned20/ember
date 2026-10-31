@@ -220,7 +220,7 @@ const GENERIC_ID_WORDS = /^(app|apps|tv|webos|lge|lg|web)$/i;
  * lose the domain: "org.webosbrew.custom-screensaver" is "Custom
  * Screensaver", where every Homebrew app used to read "Org Webosbrew …".
  */
-export function humanizeAppId(id?: string | null): string {
+function humanizeAppId(id?: string | null): string {
   if (!id) return 'App';
 
   let parts = String(id).split('.');
@@ -258,7 +258,7 @@ function isResolvedIcon(icon: string) {
   return /^https?:\/\//i.test(icon) || icon.indexOf('file://') === 0 || icon.charAt(0) === '/';
 }
 
-export function pickBestIcon(...icons: Array<string | null | undefined>): string {
+function pickBestIcon(...icons: Array<string | null | undefined>): string {
   const absolute: string[] = [];
   const relative: string[] = [];
 
@@ -274,7 +274,7 @@ export function pickBestIcon(...icons: Array<string | null | undefined>): string
   return '';
 }
 
-export function resolveAppIcon(app: RawApp): string {
+function resolveAppIcon(app: RawApp): string {
   const raw = app.largeIcon || app.icon || app.miniicon || app.mediumIcon || '';
   if (!raw) return '';
 

@@ -193,7 +193,7 @@ export interface BuiltinMusicEntry {
 /* Backup fit / restore                                                        */
 /* -------------------------------------------------------------------------- */
 
-export type BackupSkipReason = 'type' | 'newer';
+type BackupSkipReason = 'type' | 'newer';
 
 export interface BackupSkip {
   path: string;
@@ -227,16 +227,16 @@ export interface WebOSServiceHandle {
   cancel?: () => void;
 }
 
-export interface WebOSService {
+interface WebOSService {
   request(uri: string, options: WebOSServiceRequestOptions): WebOSServiceHandle;
 }
 
-export interface WebOS {
+interface WebOS {
   service: WebOSService;
   deviceInfo?: (cb: (info: LunaResponse) => void) => void;
 }
 
-export interface WebOSSystem {
+interface WebOSSystem {
   launchParams?: string;
 }
 

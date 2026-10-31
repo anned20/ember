@@ -29,7 +29,7 @@ interface TileApp extends AppRecord {
  * just the launch candidates (e.g. a spoken app name). Only the optional
  * id fields are read.
  */
-export interface LaunchableApp {
+interface LaunchableApp {
   id?: string;
   launchId?: string;
   ids?: string[];
@@ -75,7 +75,7 @@ export interface InstalledApp extends AppRecord {
  * Prime Video is `amazon.html` on older TVs and native `amazon` on current
  * OLEDs — the first id often 404s or hangs, so we must fall through.
  */
-export async function launchAppCandidates(ids?: string[] | null): Promise<string> {
+async function launchAppCandidates(ids?: string[] | null): Promise<string> {
   const unique: string[] = [];
   (ids || []).forEach(function (id) {
     if (id && unique.indexOf(id) < 0) unique.push(id);

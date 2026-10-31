@@ -94,6 +94,13 @@ current `-v9` set ships.
 ## Commands
 
 - `npm run typecheck` runs `tsc --noEmit` for the app and for `scripts/`.
+- `npm run lint` runs oxlint (type-aware: floating promises, `any`, the
+  correctness rules) and knip (unused exports, types and files). Knip's entry
+  points are `src/ts/boot.ts`, `scripts/*.ts` and the tests, and its
+  `ignoreDependencies` lists the two CLI tools (`@procot/webostv`,
+  `@webos-tools/cli`) that are run, not imported.
+- `npm run precommit` runs typecheck, lint and test: the same set the pre-commit
+  hook and CI run.
 - `npm run brand` re-renders `scripts/brand.sh` from `src/ts/lib/brand.ts`.
 - `npm test` runs Vitest.
 - `npm run build` bundles to `dist/`. `npm run pack` also produces the IPK.

@@ -1,0 +1,16 @@
+{
+  "entry": [
+    "src/ts/boot.ts",
+    "scripts/*.ts",
+    "test/**/*.ts"
+  ],
+  "project": [
+    "src/ts/**/*.ts",
+    "scripts/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "ignoreDependencies": [
+    "@procot/webostv",
+    "@webos-tools/cli"
+  ]
+}

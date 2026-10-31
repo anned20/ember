@@ -8,7 +8,7 @@ import {discoverMusicTracks, isAudioFile} from '@lib/usb.js';
 import {subscribeVolume} from '@luna/luna.js';
 import {BRAND} from '@lib/brand.js';
 import {t} from '@lib/i18n.js';
-import {errorMessage} from '@lib/errors.js';
+import {errorMessage, errorName} from '@lib/errors.js';
 import type {Config, MusicTrack} from '@lib/types.js';
 
 export interface MusicPlayerElements {
@@ -256,7 +256,7 @@ export function createMusicPlayer(
           result = audio.play();
         } catch (err) {
           try { audio.muted = prevMuted; } catch (e2) { /* ignore */ }
-          const name = err instanceof Error ? err.name : '';
+          const name = errorName(err);
           if (name === 'NotAllowedError' || /user|gesture|autoplay/i.test(errorMessage(err))) {
             pendingAutoplay = true;
             updateNowPlaying();
@@ -271,7 +271,7 @@ export function createMusicPlayer(
           afterPlayAttempt(true);
         }, function (err) {
           try { audio.muted = prevMuted; } catch (e2) { /* ignore */ }
-          const name = err instanceof Error ? err.name : '';
+          const name = errorName(err);
           if (useMuted) {
             // Muted autoplay failed — try unmuted (may still need gesture).
             invokePlay(false);

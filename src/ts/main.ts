@@ -320,7 +320,7 @@ export function createApp(): AppLifecycle {
     const launcher = update(config.launcher);
     setConfig(Object.assign({}, config, {launcher: launcher}));
     saveConfig(baseConfig);
-    void refreshAll();
+    refreshAll().catch(function () { /* the old home stays painted */ });
   }
 
   function isAppPinned(app: AppRecord): boolean {
@@ -468,7 +468,7 @@ export function createApp(): AppLifecycle {
         void applyHomeVolume();
         void applyScreensaverSetting();
         customScreensaver.applyConfig();
-        void refreshAll();
+        refreshAll().catch(function () { /* the old home stays painted */ });
         void syncRootHooks(savedConfig);
       },
       onClose: function () {
@@ -509,7 +509,7 @@ export function createApp(): AppLifecycle {
         void openTvSettings();
       },
       onOpenAllApps: function () {
-        void allApps.show();
+        allApps.show().catch(function () { /* the grid refuses to open */ });
       },
       onToast: showToast
     });

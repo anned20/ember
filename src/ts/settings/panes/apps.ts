@@ -235,13 +235,13 @@ export function createAppsPane(): PaneHandle {
           if (dock.contains(draft, app.id)) return; // second OK before the redraw
           const keepFocus = document.activeElement === addBtn;
           draft = dock.pin(draft, app.id);
-          void loadAppsLists(ctx, pinnedListEl, addContainer).then(function () {
+          loadAppsLists(ctx, pinnedListEl, addContainer).then(function () {
             // The next app slides into this row; land on its + (unless the
             // user already moved on while the list was loading).
             if (keepFocus && !ctx.focusInPanel()) {
               ctx.refocusListButton(addContainer, index, [0]);
             }
-          });
+          }).catch(function () { /* keep the old list */ });
         }
       });
       const row = createAppRow({
@@ -374,7 +374,7 @@ export function createAppsPane(): PaneHandle {
         checked: showHiddenApps,
         onChange: function (checked) {
           showHiddenApps = checked;
-          void loadAppsLists(ctx, pinnedList, addAppsList);
+          loadAppsLists(ctx, pinnedList, addAppsList).catch(function () { /* keep the old list */ });
         }
       });
       appsSection.appendChild(showHiddenField.row);
@@ -465,7 +465,7 @@ export function createAppsPane(): PaneHandle {
           customAppIdInput.value = '';
           customNameInput.value = '';
 
-          void loadAppsLists(ctx, pinnedList, addAppsList);
+          loadAppsLists(ctx, pinnedList, addAppsList).catch(function () { /* keep the old list */ });
         }
       });
       customSection.appendChild(addCustomBtn);
@@ -531,7 +531,7 @@ export function createAppsPane(): PaneHandle {
               } else {
                 draft = dock.pin(draft, app.id);
               }
-              void loadAppsLists(ctx, pinnedList, addAppsList);
+              loadAppsLists(ctx, pinnedList, addAppsList).catch(function () { /* keep the old list */ });
               renderDiscoverList();
               // The next app slides into this row; land on its +.
               if (keepFocus) ctx.refocusListButton(discoverList, index, [0]);

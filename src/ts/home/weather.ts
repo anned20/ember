@@ -64,7 +64,6 @@ interface WeatherDay {
   rain: number;
 }
 
-/** The cached forecast entry stored in localStorage. */
 /** Open-Meteo's payload: only the fields Ember reads, and every one is optional. */
 interface WeatherPayload {
   utc_offset_seconds?: number;
@@ -82,6 +81,7 @@ interface WeatherPayload {
   };
 }
 
+/** The cached forecast entry stored in localStorage. */
 interface WeatherCache {
   location: WeatherLocation;
   fetchedAt: number;

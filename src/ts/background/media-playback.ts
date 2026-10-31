@@ -12,6 +12,7 @@ import {resolveBackgroundCatalog, resolveBackgroundMedia} from './background-sou
 import {MEDIA_VIDEO, presetGradient, shuffled} from './media.js';
 import type {MediaDescriptor} from './media.js';
 import type {BackgroundConfig, Config} from '@lib/types.js';
+import {errorName} from '@lib/errors.js';
 
 export interface AerialChange {
   id: string;
@@ -251,7 +252,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
       if (myGen !== gen) return false;
       // play() aborted by a pause (the surface hid mid-start) is not a decode
       // failure: keep the element for the resume path, not the gradient.
-      if (err instanceof Error && err.name === 'AbortError') return false;
+      if (errorName(err) === 'AbortError') return false;
       if (!shouldAnimate()) return false;
       handleVideoFailure(attempt, myGen);
       return false;

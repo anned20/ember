@@ -446,7 +446,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     clearClockTimer();
     clockTimer = setInterval(paintClock, 15000);
 
-    void beginContent();
+    beginContent().catch(function () { /* keep whatever is on screen */ });
 
     // Ignore the key/click that might still be settling; arm dismiss shortly.
     // Force previews stay up longer before dismiss is armed (remote bounce).
@@ -585,7 +585,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
       paintClock();
       // Settings changed under the saver: reload so a new source (e.g. aerial)
       // takes over rather than leaving the old content up.
-      void beginContent();
+      beginContent().catch(function () { /* keep whatever is on screen */ });
     } else {
       scheduleIdle();
     }

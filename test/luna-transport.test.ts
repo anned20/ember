@@ -83,7 +83,7 @@ describe('lunaSubscribeOnce', () => {
       request: function (uri, options) {
         sent.push({uri: uri, options: options});
         // Real buses answer asynchronously, after the handle is handed back.
-        Promise.resolve().then(function () {
+        void Promise.resolve().then(function () {
           options.onSuccess!({returnValue: true, launchPoints: [{id: 'a'}]});
         });
         return {cancel: cancel};

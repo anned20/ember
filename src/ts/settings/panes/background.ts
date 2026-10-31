@@ -389,7 +389,7 @@ export function createBackgroundPane(): BackgroundPaneHandle {
           return;
         }
         showUrlStatus(t('background.url.checking'), '');
-        probeImage(jpegForTv(url)).then(function (res) {
+        void probeImage(jpegForTv(url)).then(function (res) {
           if (gen !== urlCheckGen) return;
           if (res.ok) {
             showUrlStatus(t('background.url.ok', {width: res.width, height: res.height}), 'ok');

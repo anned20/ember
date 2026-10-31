@@ -57,13 +57,13 @@ export function isSupportedWebOS(sdkVersion: number): boolean {
 }
 
 /** The Chromium major from a user agent, or 0 when it cannot be read. */
-export function chromiumMajor(userAgent?: string | null): number {
+function chromiumMajor(userAgent?: string | null): number {
   const match = String(userAgent || '').match(/(?:Chromium|Chrome)\/(\d+)/);
   return match ? parseInt(match[1], 10) : 0;
 }
 
 /** The secondary signal: a Chromium engine new enough for the floor. */
-export function isSupportedUserAgent(userAgent?: string | null): boolean {
+function isSupportedUserAgent(userAgent?: string | null): boolean {
   return chromiumMajor(userAgent) >= MIN_CHROMIUM_MAJOR;
 }
 

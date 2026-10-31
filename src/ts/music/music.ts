@@ -8,6 +8,7 @@ import {discoverMusicTracks, isAudioFile} from '@lib/usb.js';
 import {subscribeVolume} from '@luna/luna.js';
 import {BRAND} from '@lib/brand.js';
 import {t} from '@lib/i18n.js';
+import {errorMessage, errorName} from '@lib/errors.js';
 import type {Config, MusicTrack} from '@lib/types.js';
 
 export interface MusicPlayerElements {
@@ -253,10 +254,10 @@ export function createMusicPlayer(
         try {
           if (useMuted) audio.muted = true;
           result = audio.play();
-        } catch (err: any) {
+        } catch (err) {
           try { audio.muted = prevMuted; } catch (e2) { /* ignore */ }
-          const name = err && err.name ? String(err.name) : '';
-          if (name === 'NotAllowedError' || /user|gesture|autoplay/i.test(String(err && err.message || ''))) {
+          const name = errorName(err);
+          if (name === 'NotAllowedError' || /user|gesture|autoplay/i.test(errorMessage(err))) {
             pendingAutoplay = true;
             updateNowPlaying();
             afterPlayAttempt(false);
@@ -268,9 +269,9 @@ export function createMusicPlayer(
 
         result.then(function () {
           afterPlayAttempt(true);
-        }, function (err: any) {
+        }, function (err) {
           try { audio.muted = prevMuted; } catch (e2) { /* ignore */ }
-          const name = err && err.name ? String(err.name) : '';
+          const name = errorName(err);
           if (useMuted) {
             // Muted autoplay failed — try unmuted (may still need gesture).
             invokePlay(false);
@@ -279,7 +280,7 @@ export function createMusicPlayer(
           if (
             name === 'NotAllowedError' ||
             name === 'AbortError' ||
-            /user|gesture|autoplay/i.test(String(err && err.message || ''))
+            /user|gesture|autoplay/i.test(errorMessage(err))
           ) {
             pendingAutoplay = true;
             updateNowPlaying();
@@ -314,7 +315,7 @@ export function createMusicPlayer(
         audio.muted = muted;
       } catch (err) { /* ignore */ }
       audio.volume = muted ? 0 : targetVolume;
-      tryPlay().then(function (ok) {
+      void tryPlay().then(function (ok) {
         if (ok) {
           pendingAutoplay = false;
           updateNowPlaying();
@@ -382,7 +383,7 @@ export function createMusicPlayer(
     function startWhenReady() {
       if (gen !== playGeneration) return;
       clearCanPlayWait();
-      tryPlay().then(function (ok) {
+      void tryPlay().then(function (ok) {
         if (gen !== playGeneration) return;
         if (ok) {
           skipCount = 0;
@@ -574,7 +575,7 @@ export function createMusicPlayer(
       return;
     }
 
-    let discovered: any[] = [];
+    let discovered: MusicTrack[] = [];
 
     try {
       if (music.source === 'builtin') {
@@ -650,7 +651,7 @@ export function createMusicPlayer(
     }
     if (audio.src) {
       audio.volume = muted ? 0 : 0;
-      tryPlay().then(function (ok) {
+      void tryPlay().then(function (ok) {
         if (ok) fadeTo(muted ? 0 : targetVolume, fadeSec);
       });
     } else if (queue.length) {
@@ -661,7 +662,7 @@ export function createMusicPlayer(
   function togglePause() {
     if (!queue.length) {
       // Try reloading tracks if empty (e.g. previous load failed).
-      loadTracks();
+      void loadTracks();
       return;
     }
 

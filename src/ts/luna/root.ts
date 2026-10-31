@@ -8,6 +8,7 @@
 import type { LunaResponse } from '@lib/types.js';
 import { BRAND } from '@lib/brand.js';
 import { execRoot, readExecStdout, TIMEOUTS } from './luna-transport.js';
+import { errorMessage } from '@lib/errors.js';
 
 /** A settings backup found on the TV or a USB drive. */
 export interface SettingsBackup {
@@ -282,8 +283,8 @@ export async function writeSettingsBackup(text: string, usbRoot?: string): Promi
   try {
     await writeFileAsRoot(usbRoot.replace(/\/+$/, '') + '/' + USB_SETTINGS_BACKUP_NAME, text);
     return {usb: true, usbError: ''};
-  } catch (err: any) {
-    return {usb: false, usbError: (err && err.message) || ''};
+  } catch (err) {
+    return {usb: false, usbError: errorMessage(err)};
   }
 }
 

@@ -146,7 +146,7 @@ export const DEFAULT_CONFIG: Config = {
 };
 
 /** Valid gallery screensaver wait times on recent webOS OLEDs. */
-export const SCREENSAVER_MINUTES_ALLOWED = [3, 10, 20, 30];
+const SCREENSAVER_MINUTES_ALLOWED = [3, 10, 20, 30];
 
 /**
  * Snap a stored/UI minutes value to a valid TV enum (or 0 for off).

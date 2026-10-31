@@ -14,6 +14,9 @@
     "sim:setup": "node scripts/simulator.ts setup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p scripts/tsconfig.json",
+    "lint": "oxlint src/ts test scripts && knip",
+    "precommit": "npm run typecheck && npm run lint && npm test",
+    "prepare": "sh scripts/install-hooks.sh",
     "clean": "rm -rf dist",
     "version:set": "node scripts/set-version.ts",
     "version": "node scripts/set-version.ts && git add version.md appinfo.json"
@@ -24,6 +27,9 @@
     "@webos-tools/cli": "^3.2.5",
     "esbuild": "^0.25.0",
     "jsdom": "^30.1.2",
+    "knip": "^6.44.1",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "typescript": "^7.0.2",
     "vitest": "^3.2.7"
   },

@@ -40,7 +40,7 @@ export function digitFromKey(code?: number, key?: string): number {
   return typeof digit === 'number' ? digit : -1;
 }
 
-export const HOME_APP_IDS = [
+const HOME_APP_IDS = [
   'com.webos.app.home',
   'com.webos.app.launcher',
   'com.webos.app.homeupdater',

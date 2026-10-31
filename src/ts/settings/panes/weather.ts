@@ -145,7 +145,7 @@ export function createWeatherPane(): PaneHandle {
         // Short pause so each keystroke doesn't fire a request.
         lookupTimer = setTimeout(function () {
           status.textContent = t('weather.lookingUp', {query: query});
-          ctx.withDeadline(searchPlaces(query, PLACE_RESULT_LIMIT), PLACE_LOOKUP_MS)
+          void ctx.withDeadline(searchPlaces(query, PLACE_RESULT_LIMIT), PLACE_LOOKUP_MS)
             .then(function (places) {
               if (seq !== lookupSeq) return; // a newer keystroke won
               if (!places) {

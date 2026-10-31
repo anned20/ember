@@ -12,6 +12,7 @@ import {resolveBackgroundCatalog, resolveBackgroundMedia} from './background-sou
 import {MEDIA_VIDEO, presetGradient, shuffled} from './media.js';
 import type {MediaDescriptor} from './media.js';
 import type {BackgroundConfig, Config} from '@lib/types.js';
+import {errorName} from '@lib/errors.js';
 
 export interface AerialChange {
   id: string;
@@ -153,7 +154,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
   function onVideoEnded(): void {
     if (!videoSlideshow || videoClips.length <= 1) return;
     videoIndex = (videoIndex + 1) % videoClips.length;
-    playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
+    void playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
   }
 
   // Release the decoder and the network request (source change or teardown).
@@ -219,7 +220,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
       videoEl.removeAttribute('src');
       try { videoEl.load(); } catch (err) { /* ignore */ }
     }
-    playVideoClip(bg, myGen);
+    void playVideoClip(bg, myGen);
   }
 
   // Play videoClips[videoIndex]: looping in Single mode, once in Slideshow (the
@@ -247,11 +248,11 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     }
     try {
       await video.play();
-    } catch (err: any) {
+    } catch (err) {
       if (myGen !== gen) return false;
       // play() aborted by a pause (the surface hid mid-start) is not a decode
       // failure: keep the element for the resume path, not the gradient.
-      if (err && err.name === 'AbortError') return false;
+      if (errorName(err) === 'AbortError') return false;
       if (!shouldAnimate()) return false;
       handleVideoFailure(attempt, myGen);
       return false;
@@ -353,7 +354,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     // A manual pick starts clean: don't inherit a pending failure count.
     videoFailures = 0;
     videoHandledAttempt = 0;
-    playVideoClip(bg, gen);
+    void playVideoClip(bg, gen);
 
     const change = {
       id: clip.id || '',
@@ -380,7 +381,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     }
     if (!videoEl) {
       if (videoClips.length) {
-        playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
+        void playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
       }
       return;
     }
@@ -388,7 +389,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     if (videoEl.error) {
       // The clip broke while we were away: start a fresh attempt (retry/skip)
       // rather than play() the dead element, which would reject silently.
-      playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
+      void playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
       return;
     }
     try {
@@ -397,7 +398,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
         // A source that died while we were away can reject here; if the element
         // now reports an error, make a fresh attempt instead of stalling.
         if (videoEl && videoEl.error) {
-          playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
+          void playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
         }
       });
     } catch (err) { /* ignore */ }

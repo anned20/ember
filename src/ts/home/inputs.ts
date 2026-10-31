@@ -15,7 +15,7 @@ export interface InputDevice {
 }
 
 /** The channel strip inputs.js reads to offer Live TV and the Channels chip. */
-export interface InputRowChannels {
+interface InputRowChannels {
   hasChannels(): boolean;
   isOpen(): boolean;
   available?(): boolean;
@@ -97,7 +97,7 @@ export function createInputRow(
       }
 
       button.addEventListener('click', function () {
-        selectInput(device);
+        void selectInput(device);
       });
 
       container!.appendChild(button);
@@ -194,7 +194,7 @@ export async function fetchInputDevices(hasChannels: boolean, added: string[]): 
  * none). Live TV is also in it whenever `res` is null, as before 0.0.112:
  * without the TV's list we can't tell.
  */
-export function completeInputList(
+function completeInputList(
   res: LunaResponse | null,
   hasChannels: boolean,
   added: string[]

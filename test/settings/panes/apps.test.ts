@@ -283,7 +283,7 @@ describe('apps pane', () => {
     vi.mocked(listLaunchPoints).mockResolvedValue([{id: 'com.lg.one'}]);
     vi.mocked(lgHomeAppsToAdd).mockReturnValue(['com.lg.one']);
 
-    const {pane, ctx} = buildApps();
+    const {pane} = buildApps();
     (pane.querySelector('[data-focus-index="1298"]') as HTMLElement).click();
 
     await waitFor(function () { return pinnedRows(pane).length === 4; });

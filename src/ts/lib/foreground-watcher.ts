@@ -42,7 +42,7 @@ export function shouldInterceptHome(launcher: LauncherConfig | null | undefined)
 }
 
 /** What the watcher reports to Settings -> TV check. */
-export interface ForegroundActivitySink {
+interface ForegroundActivitySink {
   /** A foreground app id was observed. */
   noteForeground(appId: string): void;
   /** We brought ourselves back because stock Home came up. */

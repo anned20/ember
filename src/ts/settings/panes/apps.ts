@@ -17,6 +17,7 @@ import {
   createOptionStepper
 } from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
+import {errorMessage} from '@lib/errors.js';
 import {t, tn} from '@lib/i18n.js';
 import type {AppRecord, CustomApp, LauncherConfig} from '@lib/types.js';
 
@@ -240,7 +241,7 @@ export function createAppsPane(): PaneHandle {
             if (keepFocus && !ctx.focusInPanel()) {
               ctx.refocusListButton(addContainer, index, [0]);
             }
-          });
+          }).catch(function () { /* keep the old list */ });
         }
       });
       const row = createAppRow({
@@ -348,9 +349,9 @@ export function createAppsPane(): PaneHandle {
           toAdd.forEach(function (id) { draft = dock.pin(draft, id); });
           await loadAppsLists(ctx, pinnedList, addAppsList);
           importLgStatus.textContent = tn('apps.lgAdded', toAdd.length);
-        } catch (err: any) {
+        } catch (err) {
           importLgStatus.textContent = t('apps.lgFailed', {
-            reason: (err && err.message) || t('apps.lgRootRequired')
+            reason: errorMessage(err) || t('apps.lgRootRequired')
           });
         } finally {
           importingLg = false;
@@ -373,7 +374,7 @@ export function createAppsPane(): PaneHandle {
         checked: showHiddenApps,
         onChange: function (checked) {
           showHiddenApps = checked;
-          loadAppsLists(ctx, pinnedList, addAppsList);
+          loadAppsLists(ctx, pinnedList, addAppsList).catch(function () { /* keep the old list */ });
         }
       });
       appsSection.appendChild(showHiddenField.row);
@@ -464,7 +465,7 @@ export function createAppsPane(): PaneHandle {
           customAppIdInput.value = '';
           customNameInput.value = '';
 
-          loadAppsLists(ctx, pinnedList, addAppsList);
+          loadAppsLists(ctx, pinnedList, addAppsList).catch(function () { /* keep the old list */ });
         }
       });
       customSection.appendChild(addCustomBtn);
@@ -530,7 +531,7 @@ export function createAppsPane(): PaneHandle {
               } else {
                 draft = dock.pin(draft, app.id);
               }
-              loadAppsLists(ctx, pinnedList, addAppsList);
+              loadAppsLists(ctx, pinnedList, addAppsList).catch(function () { /* keep the old list */ });
               renderDiscoverList();
               // The next app slides into this row; land on its +.
               if (keepFocus) ctx.refocusListButton(discoverList, index, [0]);

@@ -193,7 +193,7 @@ export interface BuiltinMusicEntry {
 /* Backup fit / restore                                                        */
 /* -------------------------------------------------------------------------- */
 
-export type BackupSkipReason = 'type' | 'newer';
+type BackupSkipReason = 'type' | 'newer';
 
 export interface BackupSkip {
   path: string;
@@ -213,6 +213,7 @@ export interface BackupFitResult {
 /* -------------------------------------------------------------------------- */
 
 /** Luna responses are untyped payloads; callers read fields by name. */
+// oxlint-disable-next-line typescript/no-explicit-any -- the declared boundary for every Luna reply; narrowing happens at each read.
 export type LunaResponse = Record<string, any>;
 
 export interface WebOSServiceRequestOptions {
@@ -226,16 +227,16 @@ export interface WebOSServiceHandle {
   cancel?: () => void;
 }
 
-export interface WebOSService {
+interface WebOSService {
   request(uri: string, options: WebOSServiceRequestOptions): WebOSServiceHandle;
 }
 
-export interface WebOS {
+interface WebOS {
   service: WebOSService;
   deviceInfo?: (cb: (info: LunaResponse) => void) => void;
 }
 
-export interface WebOSSystem {
+interface WebOSSystem {
   launchParams?: string;
 }
 

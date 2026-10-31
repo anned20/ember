@@ -20,7 +20,7 @@ import type {TranslationKey} from '@lib/i18n.js';
 import type {Config, LauncherConfig, WebOSServiceHandle} from '@lib/types.js';
 
 /** What the chip paints. `unknown` means there is nothing honest to show yet. */
-export type NetworkState =
+type NetworkState =
   | 'wifi'
   | 'ethernet'
   | 'no-internet'
@@ -196,7 +196,7 @@ export function createNetworkStatus(
     if (!started || !enabled || !options.isActive() || probing) return;
     if (!confirming) clearRetry();
     probing = true;
-    probeInternet().then(function (ok) {
+    void probeInternet().then(function (ok) {
       probing = false;
       if (!started || !enabled) return;
       if (ok) {

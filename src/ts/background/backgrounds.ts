@@ -224,7 +224,7 @@ export async function loadBuiltinManifest(): Promise<BuiltinBackground[]> {
       resolveAppUrl(BUILTIN_MANIFEST),
       APP_VERSION
     );
-    const manifest = await fetchJson(manifestUrl);
+    const manifest = await fetchJson(manifestUrl) as {backgrounds?: unknown} | null;
     const loaded = normalizeManifestList(manifest && manifest.backgrounds);
     builtinCache = loaded || BUILTIN_BACKGROUNDS_FALLBACK.slice();
   } catch (err) {
@@ -243,16 +243,6 @@ export function builtinImageUrl(file: string): string {
   const rel = joinPath(BUILTIN_BASE, file);
   const absolute = resolveAppUrl(rel);
   return withAssetVersion(absolute || rel, APP_VERSION);
-}
-
-export function getBuiltinImageUrl(id: string, manifest?: BuiltinBackground[] | null): string {
-  const list = manifest || builtinCache || BUILTIN_BACKGROUNDS_FALLBACK;
-  const entry = list.find(function (item) {
-    return item.id === id;
-  }) || list[0];
-
-  if (!entry) return '';
-  return builtinImageUrl(entry.file);
 }
 
 export function parseUrlList(text: string): string[] {

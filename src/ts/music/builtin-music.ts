@@ -79,7 +79,7 @@ export async function loadBuiltinMusicManifest(): Promise<BuiltinMusicEntry[]> {
       const url = candidates[i];
       if (!url) continue;
       try {
-        const manifest = await fetchJson(url);
+        const manifest = await fetchJson(url) as {tracks?: unknown} | null;
         const loaded = normalizeManifestList(manifest && manifest.tracks);
         if (loaded && loaded.length) {
           manifestCache = loaded;
@@ -101,7 +101,7 @@ export async function loadBuiltinMusicManifest(): Promise<BuiltinMusicEntry[]> {
 }
 
 /** Preferred URL for a packaged track (absolute file:// when possible). */
-export function builtinTrackUrl(file: string): string {
+function builtinTrackUrl(file: string): string {
   if (!file) return '';
   const rel = joinPath(BUILTIN_BASE, file);
   const absolute = resolveAppUrl(rel);
@@ -126,16 +126,6 @@ export function builtinTrackCandidates(file: string): string[] {
   return out;
 }
 
-export function getBuiltinTrackUrl(id: string, manifest?: BuiltinMusicEntry[] | null): string {
-  const list = manifest || manifestCache || BUILTIN_MUSIC_FALLBACK;
-  const entry = list.find(function (item) {
-    return item.id === id;
-  });
-
-  if (!entry) return '';
-  return builtinTrackUrl(entry.file);
-}
-
 function toTrack(entry: BuiltinMusicEntry): MusicTrack {
   return {
     url: builtinTrackUrl(entry.file),
@@ -146,17 +136,6 @@ function toTrack(entry: BuiltinMusicEntry): MusicTrack {
     id: entry.id,
     file: entry.file
   };
-}
-
-export async function resolveBuiltinTrack(id: string): Promise<MusicTrack | null> {
-  const manifest = await loadBuiltinMusicManifest();
-  const entry = manifest.find(function (item) {
-    return item.id === id;
-  }) || manifest[0];
-
-  if (!entry) return null;
-
-  return toTrack(entry);
 }
 
 /**

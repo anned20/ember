@@ -18,7 +18,7 @@ import type {BackupFitResult, Config} from '@lib/types.js';
 // Layout of the backup file itself. Bump only if the wrapper changes (not for
 // settings changes: those are CONFIG_SCHEMA_VERSION) and keep reading older
 // formats in parseBackup().
-export const BACKUP_FORMAT = 1;
+const BACKUP_FORMAT = 1;
 
 const APP_ID = BRAND.appId;
 // Backups made before the Ember rename carry the Launch Home app id; they stay
@@ -36,7 +36,7 @@ export interface SettingsBackupOptions {
 }
 
 /** A backup file's settings as written by settingsBackupText. */
-export interface SettingsBackupData {
+interface SettingsBackupData {
   app?: string;
   kind?: string;
   format?: number;

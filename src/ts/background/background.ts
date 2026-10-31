@@ -8,7 +8,6 @@ import {resolveLoungePaths} from '@lib/usb.js';
 import {t} from '@lib/i18n.js';
 import type {BackgroundConfig, Config} from '@lib/types.js';
 
-export type {AerialChange} from './media-playback.js';
 
 export interface BackgroundElements {
   backgroundLayer: HTMLElement;

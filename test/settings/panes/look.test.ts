@@ -12,7 +12,7 @@ import {setLanguage, t} from '@lib/i18n.js';
 import {BRAND} from '@lib/brand.js';
 import type {Config} from '@lib/types.js';
 
-function makeConfig(overrides: Record<string, unknown> = {}): Config {
+function makeConfig(): Config {
   return {
     version: 1,
     profile: 'default',

@@ -10,7 +10,7 @@
  */
 
 /** What to do about a launch that may have become the stuck foreground app. */
-export type LaunchRecovery = 'none' | 'reassert' | 'close';
+type LaunchRecovery = 'none' | 'reassert' | 'close';
 
 /** The launch machine needs to know our own app id to spot "not us". */
 export interface LaunchStateOptions {
@@ -19,7 +19,7 @@ export interface LaunchStateOptions {
 }
 
 /** One foreground poll's observation. */
-export interface ForegroundObservation {
+interface ForegroundObservation {
   /** Now, in ms. */
   now: number;
   /** The system foreground app id, '' when unknown. */

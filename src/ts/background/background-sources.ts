@@ -123,10 +123,10 @@ function liteBuiltinImages(images: string[], mode: string): Promise<string[]> {
  */
 function sizeForDisplay(url: string): string {
   const s = String(url || '');
-  if (liteImages && /^https:\/\/pbs\.twimg\.com\/media\//.test(s)) {
+  if (liteImages && s.startsWith('https://pbs.twimg.com/media/')) {
     return s.replace(/([?&])name=[a-z0-9]+/i, '$1name=large');
   }
-  return liteImages && /^https:\/\/images\.unsplash\.com\/photo-/.test(s) &&
+  return liteImages && s.startsWith('https://images.unsplash.com/photo-') &&
     s.indexOf(UNSPLASH_PARAMS_4K) > 0
     ? s.replace(UNSPLASH_PARAMS_4K, UNSPLASH_PARAMS_LITE)
     : s;

@@ -166,7 +166,7 @@ export function lunaSubscribeOnce(
     let settled = false;
     let handle: WebOSServiceHandle | null = null;
 
-    function finish(fn: (value: any) => void, value: any): void {
+    function finish<T>(fn: (value: T) => void, value: T): void {
       if (settled) return;
       settled = true;
       if (handle && typeof handle.cancel === 'function') {

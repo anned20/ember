@@ -6,6 +6,7 @@
  */
 import type {Brand} from './brand.js';
 
+/** @public — `scripts/generate-brand.ts` requires it; knip cannot see require() bindings. */
 export const BRAND_SHELL_PATH = 'scripts/brand.sh';
 
 const GENERATED_BY = 'scripts/generate-brand.ts from src/ts/lib/brand.ts';

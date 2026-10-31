@@ -23,7 +23,7 @@ export interface RepoManifest {
   ipkSize: number;
 }
 
-export interface RepoPackage {
+interface RepoPackage {
   id: string;
   title: string;
   iconUri: string;
@@ -54,7 +54,10 @@ export interface RepoInput {
   ipkSize: number;
 }
 
-/** The manifest's file name in the repository, for `id`. */
+/**
+ * The manifest's file name in the repository, for `id`.
+ * @public — `scripts/build-repo.ts` requires it; knip cannot see require() bindings.
+ */
 export function manifestFileName(id: string): string {
   return id + '.manifest.json';
 }

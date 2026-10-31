@@ -61,7 +61,7 @@ const BUILTIN_APP_TITLES: Record<string, string> = {
 };
 
 /** Same app, different IDs across current webOS releases. */
-export const APP_ID_ALIASES: Record<string, string[]> = {
+const APP_ID_ALIASES: Record<string, string[]> = {
   // LG's Settings app is com.palm.app.settings on every supported release; the
   // com.webos.app.settings id is webOS OSE's (the Simulator).
   'com.palm.app.settings': ['com.webos.app.settings'],

@@ -647,7 +647,7 @@ export function createWeatherPanel(
     // Periodic check: re-renders (rolls "Today" over at midnight) and refetches
     // when stale, only while Ember is on screen.
     timer = setInterval(function () {
-      if (isVisible()) refresh(false);
+      if (isVisible()) void refresh(false);
     }, CHECK_MS);
   }
 

@@ -192,7 +192,7 @@ export function createChannelStrip(
     const first = render();
     if (opts.focusControl) opts.focusControl(first);
     // Pick up a re-tune while the strip is open.
-    load(false).then(function () {
+    void load(false).then(function () {
       if (open && strip!.children.length - 1 !== shown().length) render();
     });
   }

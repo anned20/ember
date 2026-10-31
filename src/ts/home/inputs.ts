@@ -97,7 +97,7 @@ export function createInputRow(
       }
 
       button.addEventListener('click', function () {
-        selectInput(device);
+        void selectInput(device);
       });
 
       container!.appendChild(button);

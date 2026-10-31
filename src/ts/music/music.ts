@@ -314,7 +314,7 @@ export function createMusicPlayer(
         audio.muted = muted;
       } catch (err) { /* ignore */ }
       audio.volume = muted ? 0 : targetVolume;
-      tryPlay().then(function (ok) {
+      void tryPlay().then(function (ok) {
         if (ok) {
           pendingAutoplay = false;
           updateNowPlaying();
@@ -382,7 +382,7 @@ export function createMusicPlayer(
     function startWhenReady() {
       if (gen !== playGeneration) return;
       clearCanPlayWait();
-      tryPlay().then(function (ok) {
+      void tryPlay().then(function (ok) {
         if (gen !== playGeneration) return;
         if (ok) {
           skipCount = 0;
@@ -650,7 +650,7 @@ export function createMusicPlayer(
     }
     if (audio.src) {
       audio.volume = muted ? 0 : 0;
-      tryPlay().then(function (ok) {
+      void tryPlay().then(function (ok) {
         if (ok) fadeTo(muted ? 0 : targetVolume, fadeSec);
       });
     } else if (queue.length) {
@@ -661,7 +661,7 @@ export function createMusicPlayer(
   function togglePause() {
     if (!queue.length) {
       // Try reloading tracks if empty (e.g. previous load failed).
-      loadTracks();
+      void loadTracks();
       return;
     }
 

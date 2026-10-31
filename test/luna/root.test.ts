@@ -35,7 +35,7 @@ function fakeRoot(reply: (command: string, index: number) => string): string[] {
       const command = String((options.parameters || {}).command || '');
       commands.push(command);
       const out = reply(command, commands.length - 1);
-      Promise.resolve().then(function () {
+      void Promise.resolve().then(function () {
         options.onSuccess!({returnValue: true, stdoutString: out});
       });
       return {cancel: vi.fn()};
@@ -310,7 +310,7 @@ describe('the root identity', () => {
     const bytes = btoa('png');
     setLunaAdapter({
       request: function (_uri, options) {
-        Promise.resolve().then(function () {
+        void Promise.resolve().then(function () {
           options.onSuccess!({returnValue: true, stdoutBytes: bytes});
         });
         return {cancel: vi.fn()};

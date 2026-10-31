@@ -320,7 +320,7 @@ export function createApp(): AppLifecycle {
     const launcher = update(config.launcher);
     setConfig(Object.assign({}, config, {launcher: launcher}));
     saveConfig(baseConfig);
-    refreshAll();
+    void refreshAll();
   }
 
   function isAppPinned(app: AppRecord): boolean {
@@ -339,7 +339,7 @@ export function createApp(): AppLifecycle {
   function restartApp(app: AppRecord) {
     allApps.hide();
     // Best-effort close: a stopped app errors "app is not running".
-    closeApp(app.id).catch(function () { /* not running */ }).then(function () {
+    void closeApp(app.id).catch(function () { /* not running */ }).then(function () {
       return apps.launchApp(app);
     });
   }
@@ -353,7 +353,7 @@ export function createApp(): AppLifecycle {
 
   // HDMI / input switch or a TV channel — raise TV volume like launching an app.
   function beforeInputLaunch() {
-    applyAppLaunchVolume();
+    void applyAppLaunchVolume();
     const config = getConfig();
     if (config.music && config.music.pauseOnLaunch) {
       music.fadeOutAndPause();
@@ -465,11 +465,11 @@ export function createApp(): AppLifecycle {
       },
       onSave: function (savedConfig: Config) {
         setConfig(savedConfig);
-        applyHomeVolume();
-        applyScreensaverSetting();
+        void applyHomeVolume();
+        void applyScreensaverSetting();
         customScreensaver.applyConfig();
-        refreshAll();
-        syncRootHooks(savedConfig);
+        void refreshAll();
+        void syncRootHooks(savedConfig);
       },
       onClose: function () {
         // Back on the home control Settings was opened from (the gear).
@@ -500,16 +500,16 @@ export function createApp(): AppLifecycle {
         if (config.music && config.music.pauseOnLaunch) {
           music.fadeOutAndPause();
         }
-        applyAppLaunchVolume();
+        void applyAppLaunchVolume();
       },
       onOpenSettings: function () {
         settings.show();
       },
       onOpenTvSettings: function () {
-        openTvSettings();
+        void openTvSettings();
       },
       onOpenAllApps: function () {
-        allApps.show();
+        void allApps.show();
       },
       onToast: showToast
     });
@@ -584,7 +584,7 @@ export function createApp(): AppLifecycle {
       focus: focus,
       launch: function (app: AppRecord) {
         allApps.hide();
-        apps.launchApp(app);
+        void apps.launchApp(app);
       },
       // Long-press menu actions (all-apps.js); the config and Luna live here.
       isPinned: isAppPinned,
@@ -699,7 +699,7 @@ export function createApp(): AppLifecycle {
     if (config.music && config.music.pauseOnLaunch) {
       music.fadeOutAndPause();
     }
-    applyAppLaunchVolume();
+    void applyAppLaunchVolume();
     // LG's Settings app, with webOS OSE's id as the fallback (see app-icons).
     const ids = getAppIdCandidates('com.palm.app.settings');
     for (let i = 0; i < ids.length; i += 1) {
@@ -749,7 +749,7 @@ export function createApp(): AppLifecycle {
     networkStatus.applyConfig();
     music.applyConfig();
     // Paints the cached forecast at once; the network fetch (if stale) is not awaited.
-    weather.refresh();
+    void weather.refresh();
     // Returning from an app: the wallpaper and playlist stay as they are when
     // their settings haven't changed (see background.refresh, music.loadTracks).
     await background.refresh({reuse: resume});
@@ -834,7 +834,7 @@ export function createApp(): AppLifecycle {
     clearTimeout(resumeTimer ?? undefined);
     resumeTimer = setTimeout(function () {
       const config = getConfig();
-      applyHomeVolume();
+      void applyHomeVolume();
       if (config.music && config.music.resumeOnReturn) {
         music.fadeInAndResume();
       }
@@ -1040,8 +1040,8 @@ export function createApp(): AppLifecycle {
     paint.start();
     networkStatus.start();
 
-    applyHomeVolume();
-    applyScreensaverSetting();
+    void applyHomeVolume();
+    void applyScreensaverSetting();
 
     // Paint the dock from remembered info and hand the remote over before the
     // app list / root work below. On a cold boot we are replacing the stock Home
@@ -1068,7 +1068,7 @@ export function createApp(): AppLifecycle {
       laterTracked(function () { triggerScreensaverPreview('launchParams-retry'); }, 2500);
     }
     // Root-written flag: reliable on TV even when launch params are dropped.
-    takePreviewFlag().then(function (wanted) {
+    void takePreviewFlag().then(function (wanted) {
       if (!wanted) return;
       laterTracked(function () { triggerScreensaverPreview('flag-file'); }, 600);
       laterTracked(function () { triggerScreensaverPreview('flag-file-retry'); }, 2200);
@@ -1133,7 +1133,7 @@ export function createApp(): AppLifecycle {
       autoEnableTerminal().then(function (added) {
         // The idle pass runs after the first dock render; if it pinned the
         // terminal, redraw so the tile shows now instead of next boot.
-        if (added) apps.refresh();
+        if (added) void apps.refresh();
       }).catch(function () { /* optional */ });
       weather.start();
       // The home watcher and boot-launch init.d must be re-written after every

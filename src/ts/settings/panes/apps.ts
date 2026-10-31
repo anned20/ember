@@ -234,7 +234,7 @@ export function createAppsPane(): PaneHandle {
           if (dock.contains(draft, app.id)) return; // second OK before the redraw
           const keepFocus = document.activeElement === addBtn;
           draft = dock.pin(draft, app.id);
-          loadAppsLists(ctx, pinnedListEl, addContainer).then(function () {
+          void loadAppsLists(ctx, pinnedListEl, addContainer).then(function () {
             // The next app slides into this row; land on its + (unless the
             // user already moved on while the list was loading).
             if (keepFocus && !ctx.focusInPanel()) {
@@ -373,7 +373,7 @@ export function createAppsPane(): PaneHandle {
         checked: showHiddenApps,
         onChange: function (checked) {
           showHiddenApps = checked;
-          loadAppsLists(ctx, pinnedList, addAppsList);
+          void loadAppsLists(ctx, pinnedList, addAppsList);
         }
       });
       appsSection.appendChild(showHiddenField.row);
@@ -464,7 +464,7 @@ export function createAppsPane(): PaneHandle {
           customAppIdInput.value = '';
           customNameInput.value = '';
 
-          loadAppsLists(ctx, pinnedList, addAppsList);
+          void loadAppsLists(ctx, pinnedList, addAppsList);
         }
       });
       customSection.appendChild(addCustomBtn);
@@ -530,7 +530,7 @@ export function createAppsPane(): PaneHandle {
               } else {
                 draft = dock.pin(draft, app.id);
               }
-              loadAppsLists(ctx, pinnedList, addAppsList);
+              void loadAppsLists(ctx, pinnedList, addAppsList);
               renderDiscoverList();
               // The next app slides into this row; land on its +.
               if (keepFocus) ctx.refocusListButton(discoverList, index, [0]);

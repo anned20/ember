@@ -196,7 +196,7 @@ export function createNetworkStatus(
     if (!started || !enabled || !options.isActive() || probing) return;
     if (!confirming) clearRetry();
     probing = true;
-    probeInternet().then(function (ok) {
+    void probeInternet().then(function (ok) {
       probing = false;
       if (!started || !enabled) return;
       if (ok) {

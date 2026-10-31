@@ -233,7 +233,7 @@ export function createMusicPane(): PaneHandle {
           return;
         }
         usbScanStatus.textContent = t('music.usbScan.scanning');
-        ctx.withDeadline(discoverMusicTracks(folder), USB_SCAN_MS).then(function (list) {
+        void ctx.withDeadline(discoverMusicTracks(folder), USB_SCAN_MS).then(function (list) {
           if (gen !== usbScanGen || !ctx.isVisible()) return;
           renderUsbTrackList((list || []) as UsbTrack[]);
         });

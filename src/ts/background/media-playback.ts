@@ -153,7 +153,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
   function onVideoEnded(): void {
     if (!videoSlideshow || videoClips.length <= 1) return;
     videoIndex = (videoIndex + 1) % videoClips.length;
-    playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
+    void playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
   }
 
   // Release the decoder and the network request (source change or teardown).
@@ -219,7 +219,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
       videoEl.removeAttribute('src');
       try { videoEl.load(); } catch (err) { /* ignore */ }
     }
-    playVideoClip(bg, myGen);
+    void playVideoClip(bg, myGen);
   }
 
   // Play videoClips[videoIndex]: looping in Single mode, once in Slideshow (the
@@ -353,7 +353,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     // A manual pick starts clean: don't inherit a pending failure count.
     videoFailures = 0;
     videoHandledAttempt = 0;
-    playVideoClip(bg, gen);
+    void playVideoClip(bg, gen);
 
     const change = {
       id: clip.id || '',
@@ -380,7 +380,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     }
     if (!videoEl) {
       if (videoClips.length) {
-        playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
+        void playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
       }
       return;
     }
@@ -388,7 +388,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     if (videoEl.error) {
       // The clip broke while we were away: start a fresh attempt (retry/skip)
       // rather than play() the dead element, which would reject silently.
-      playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
+      void playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
       return;
     }
     try {
@@ -397,7 +397,7 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
         // A source that died while we were away can reject here; if the element
         // now reports an error, make a fresh attempt instead of stalling.
         if (videoEl && videoEl.error) {
-          playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
+          void playVideoClip(normalizeBackgroundConfig(getConfig().background), gen);
         }
       });
     } catch (err) { /* ignore */ }

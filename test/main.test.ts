@@ -66,7 +66,7 @@ function answerEverything(sent: WebOSServiceRequestOptions[]): void {
     request: function (_uri, options) {
       sent.push(options);
       const res = {returnValue: true, apps: [], launchPoints: [], devices: []};
-      if (options.onSuccess) Promise.resolve().then(function () { options.onSuccess!(res); });
+      if (options.onSuccess) void Promise.resolve().then(function () { options.onSuccess!(res); });
       return {cancel: vi.fn()};
     }
   });

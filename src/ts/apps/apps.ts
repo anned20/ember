@@ -150,7 +150,7 @@ export function createAppGrid(
 
     tileApps.set(button, app);
     button.addEventListener('click', function () {
-      openApp(tileApps.get(button) || app);
+      void openApp(tileApps.get(button) || app);
     });
 
     return button;

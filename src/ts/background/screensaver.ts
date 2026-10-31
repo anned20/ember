@@ -247,7 +247,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     const ready: Promise<ProbeResult | null> = item.gradient
       ? Promise.resolve(null)
       : probeImage(item.url);
-    ready.then(function (res) {
+    void ready.then(function (res) {
       if (gen !== slideGen || !active) return;
       if (res && res.image) decodingPhoto = res.image;
       const front = useA ? bgA : bgB;
@@ -407,7 +407,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
       return;
     }
     setReusingWallpaper(false);
-    mediaEngine().play();
+    void mediaEngine().play();
   }
 
   // Load and start whatever the current settings call for; used on show and when
@@ -448,7 +448,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     clearClockTimer();
     clockTimer = setInterval(paintClock, 15000);
 
-    beginContent();
+    void beginContent();
 
     // Ignore the key/click that might still be settling; arm dismiss shortly.
     // Force previews stay up longer before dismiss is armed (remote bounce).
@@ -587,7 +587,7 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
       paintClock();
       // Settings changed under the saver: reload so a new source (e.g. aerial)
       // takes over rather than leaving the old content up.
-      beginContent();
+      void beginContent();
     } else {
       scheduleIdle();
     }

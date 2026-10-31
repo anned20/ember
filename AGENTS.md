@@ -11,6 +11,9 @@ Write **Conventional Commit** messages: `<type>(<scope>): <summary>`.
 
 Example: `feat(aerial): add the aerial-video background source (#11)`
 
+Work on a branch: `main` only moves through a PR (`gh pr merge --merge`), so cut
+`feat/…`, `fix/…` or `refactor/…` before the first commit.
+
 ## Repository layout
 
 Where each module and directory lives, the `@apps`/`@music` import aliases, and

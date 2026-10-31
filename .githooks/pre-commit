@@ -1,0 +1,9 @@
+#!/bin/sh
+# The same checks CI runs, so a green commit means a green build.
+# Skipped before `npm install`: oxlint --type-aware needs oxlint-tsgolint
+# resolvable from node_modules, and a fresh clone has neither.
+if [ ! -d node_modules/oxlint ]; then
+  echo "pre-commit: node_modules missing, skipping checks (run npm install)" >&2
+  exit 0
+fi
+exec npm run --silent precommit

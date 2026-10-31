@@ -55,7 +55,8 @@ export interface RepoInput {
 }
 
 /** The manifest's file name in the repository, for `id`. */
-function manifestFileName(id: string): string {
+/** @public — `scripts/build-repo.ts` requires it; knip cannot see require() bindings. */
+export function manifestFileName(id: string): string {
   return id + '.manifest.json';
 }
 

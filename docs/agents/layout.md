@@ -29,7 +29,7 @@ grouped by domain:
 | `music/` | `@music` | The ambient music player and its built-in track manifest. |
 | `settings/` | `@settings` | The Settings panel (the composition root in `settings.ts`), the panel's key navigation and wheel scrolling (`navigation.ts`), backup/restore, field bindings, the text-field gate (`text-gate.ts`) and the pane seam (`pane.ts`). UI components live in `settings/components/`, category panes in `settings/panes/`. |
 | `focus/` | `@focus` | Focus manager and the row model it moves over. |
-| `home/` | `@home` | Home-screen rows and panels: TV inputs, channels, weather, and the home paint pass. |
+| `home/` | `@home` | Home-screen rows and panels: TV inputs, channels, weather, the network status chip, and the home paint pass. |
 | `config/` | `@config` | The config tree: load, save, normalize, and profiles. |
 | `luna/` | `@luna` | The webOS Luna service transport (`luna-transport.ts`), the service calls (`luna.ts`), the privileged root script (`root.ts`) and platform/device helpers. |
 | `lib/` | `@lib` | Shared vocabulary and utilities: `types.ts`, `compat.ts`, `version.ts`, `usb.ts`, `remote.ts`, and other cross-cutting helpers. |

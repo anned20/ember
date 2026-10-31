@@ -78,8 +78,8 @@ an object with methods plus the config accessor `applyConfig()`. The composition
 root calls those methods. Modules never call each other except through injected
 callbacks. Examples include `BackgroundController`, `MusicPlayer`, `AppGrid`,
 `FocusManager`, `SettingsPanelHandle`, `CustomScreensaver`,
-`WeatherPanelHandle`, `InputRowHandle`, `ChannelStripHandle`, `HomePaint` and
-`AllApps`.
+`WeatherPanelHandle`, `NetworkStatusHandle`, `InputRowHandle`,
+`ChannelStripHandle`, `HomePaint` and `AllApps`.
 
 Cross-cutting callbacks are passed in, such as `onToast`, `focusControl` and
 `onBeforeLaunch`. If a module needs to do something the host owns, add a

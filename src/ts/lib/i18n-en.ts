@@ -117,6 +117,14 @@ export const en = {
   'look.clock.format.24': '24-hour (18:30)',
   'look.clock.format.12': '12-hour (6:30 PM)',
   'look.clock.showDate': 'Show date',
+  'look.network.show': 'Network status',
+  'look.network.hint': 'Shows Wi-Fi or Ethernet and whether the internet is reachable, next to the Settings button.',
+  // Network status chip (home/network-status.ts).
+  'network.wifi': 'Wi-Fi connected',
+  'network.ethernet': 'Ethernet connected',
+  'network.internet': 'Internet connected',
+  'network.noInternet': 'No internet connection',
+  'network.offline': 'No network connection',
   'look.clock.position': 'Clock position',
   'look.clock.position.left': 'Top left',
   'look.clock.position.center': 'Centre top',
@@ -444,6 +452,7 @@ export const en = {
   // ── The page markup (index.html) ──────────────────────────────────────────
   'markup.weather': 'Weather',
   'markup.settings': 'Settings',
+  'markup.network': 'Network status',
   'markup.channels': 'TV channels',
   'markup.inputs': 'Inputs',
   'markup.apps': 'Apps',

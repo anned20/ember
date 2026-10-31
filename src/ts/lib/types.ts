@@ -97,6 +97,8 @@ export interface LauncherConfig {
   channels: string;
   showClock: boolean;
   showDate: boolean;
+  /** Show the Wi-Fi/Ethernet and internet chip next to the Settings gear. */
+  showNetworkStatus: boolean;
   clockFormat: string;
   glassTint: string;
   glassBorder: string;

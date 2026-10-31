@@ -217,6 +217,15 @@ export function createLookPane(options: LookPaneOptions = {}): PaneHandle {
       });
       clockSection.appendChild(showDateField.row);
 
+      const networkField = createToggle({
+        label: t('look.network.show'),
+        focusIndex: '1097',
+        path: 'launcher.showNetworkStatus',
+        binder: ctx.binder
+      });
+      clockSection.appendChild(networkField.row);
+      clockSection.appendChild(createHint(t('look.network.hint')));
+
       const clockAlignSelect = createOptionStepper({
         focusIndex: 1002,
         choices: [

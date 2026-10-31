@@ -22,6 +22,8 @@ import {createCustomScreensaver} from '@background/screensaver.js';
 import type {CustomScreensaver} from '@background/screensaver.js';
 import {createWeatherPanel} from '@home/weather.js';
 import type {WeatherPanelHandle} from '@home/weather.js';
+import {createNetworkStatus} from '@home/network-status.js';
+import type {NetworkStatusHandle} from '@home/network-status.js';
 import {createHomePaint} from '@home/paint.js';
 import type {HomePaint} from '@home/paint.js';
 import {
@@ -67,6 +69,7 @@ interface HomeElements {
   clockDate: HTMLElement | null;
   clockWeather: HTMLElement | null;
   appSettingsBtn: HTMLElement | null;
+  networkStatusBtn: HTMLElement | null;
   inputRow: HTMLElement | null;
   channelStrip: HTMLElement | null;
   launcher: Element | null;
@@ -116,7 +119,7 @@ function whenIdle(fn: () => void) {
   }
 }
 
-function launchSystemApp(id: string) {
+function launchSystemApp(id: string, params?: Record<string, unknown>) {
   return new Promise(function (resolve, reject) {
     let settled = false;
     let failures = 0;
@@ -141,7 +144,7 @@ function launchSystemApp(id: string) {
       launchAppViaRoot(id).then(succeed, failOne);
     }
     rootTimer = setTimeout(startRoot, SYSTEM_APP_ROOT_AFTER_MS);
-    launchApp(id).then(succeed, function () {
+    launchApp(id, params).then(succeed, function () {
       clearTimeout(rootTimer);
       failOne();
       startRoot();
@@ -216,6 +219,7 @@ export function createApp(): AppLifecycle {
     clockDate: document.getElementById('clock-date'),
     clockWeather: document.getElementById('clock-weather'),
     appSettingsBtn: document.getElementById('app-settings-btn'),
+    networkStatusBtn: document.getElementById('network-status'),
     inputRow: document.getElementById('input-row'),
     channelStrip: document.getElementById('channel-strip'),
     launcher: document.querySelector('.launcher'),
@@ -237,6 +241,7 @@ export function createApp(): AppLifecycle {
   // an unsupported TV never constructs them (some subscribe to the Luna bus on
   // construction). The handles are assigned before any callback can run.
   let weather!: WeatherPanelHandle;
+  let networkStatus!: NetworkStatusHandle;
   let background!: BackgroundController;
   let music!: MusicPlayer;
   let focus!: FocusManager;
@@ -279,6 +284,7 @@ export function createApp(): AppLifecycle {
   function applyMarkupLabels() {
     if (elements.weatherPanel) elements.weatherPanel.setAttribute('aria-label', t('markup.weather'));
     if (elements.appSettingsBtn) elements.appSettingsBtn.setAttribute('aria-label', t('markup.settings'));
+    if (elements.networkStatusBtn) elements.networkStatusBtn.setAttribute('aria-label', t('markup.network'));
     if (elements.channelStrip) elements.channelStrip.setAttribute('aria-label', t('markup.channels'));
     if (elements.inputRow) elements.inputRow.setAttribute('aria-label', t('markup.inputs'));
     if (elements.appGrid) elements.appGrid.setAttribute('aria-label', t('markup.apps'));
@@ -378,6 +384,15 @@ export function createApp(): AppLifecycle {
     weather = createWeatherPanel(elements.weatherPanel, getConfig, {
       isVisible: function () { return visible; },
       inlineEls: [elements.clockWeather, elements.screensaverWeather]
+    });
+    networkStatus = createNetworkStatus(elements.networkStatusBtn, {
+      getConfig: getConfig,
+      isActive: function () {
+        return visible &&
+          !customScreensaver.isActive() &&
+          !document.body.classList.contains('app-inactive');
+      },
+      onOpenNetworkSettings: openNetworkSettings
     });
     background = createBackgroundController(elements, getConfig);
     music = createMusicPlayer(getConfig, Object.assign({}, elements, {
@@ -675,7 +690,7 @@ export function createApp(): AppLifecycle {
     ]);
   }
 
-  async function openTvSettings() {
+  async function openTvSettings(target?: string): Promise<boolean> {
     // TV Settings opens as a panel over Ember, which stays on screen
     // underneath: pause its animations now rather than waiting for a blur event
     // (older webOS may not send one). Any key back in Ember clears it.
@@ -689,13 +704,21 @@ export function createApp(): AppLifecycle {
     const ids = getAppIdCandidates('com.palm.app.settings');
     for (let i = 0; i < ids.length; i += 1) {
       try {
-        await launchSystemApp(ids[i]);
-        return;
+        await launchSystemApp(ids[i], target ? {target: target} : undefined);
+        return true;
       } catch (err) {
         // Try the next candidate id.
       }
     }
+    // A deep-link attempt that the TV rejects falls back to the plain launch.
+    if (target) return false;
     showToast(t('apps.tvSettingsFailed'));
+    return false;
+  }
+
+  async function openNetworkSettings() {
+    // The TV may ignore the target page; the plain launch is the fallback.
+    if (!(await openTvSettings('network'))) await openTvSettings();
   }
 
   async function applyUsbOverrides() {
@@ -723,6 +746,7 @@ export function createApp(): AppLifecycle {
   async function refreshAll(opts?: {resume?: boolean}) {
     const resume = !!(opts && opts.resume);
     paint.apply();
+    networkStatus.applyConfig();
     music.applyConfig();
     // Paints the cached forecast at once; the network fetch (if stale) is not awaited.
     weather.refresh();
@@ -1014,6 +1038,7 @@ export function createApp(): AppLifecycle {
     await applyUsbOverrides();
     if (stopped) return;
     paint.start();
+    networkStatus.start();
 
     applyHomeVolume();
     applyScreensaverSetting();
@@ -1141,6 +1166,7 @@ export function createApp(): AppLifecycle {
     pendingTimers.length = 0;
     foregroundWatcher.stop();
     paint.stop();
+    networkStatus.stop();
     if (settings.isVisible()) settings.hide();
     weather.stop();
     customScreensaver.stop();

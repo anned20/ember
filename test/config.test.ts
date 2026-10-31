@@ -64,6 +64,18 @@ describe('config migration registry', () => {
     expect(hidden.launcher.tvSettingsTile).toBe(false);
   });
 
+  it('backfills the network status chip without overruling an explicit choice (v29)', () => {
+    const missing = configAt(28);
+    delete (missing.launcher as Partial<Config['launcher']>).showNetworkStatus;
+    migrateConfig(missing);
+    expect(missing.launcher.showNetworkStatus).toBe(true);
+
+    const hidden = configAt(28);
+    hidden.launcher.showNetworkStatus = false;
+    migrateConfig(hidden);
+    expect(hidden.launcher.showNetworkStatus).toBe(false);
+  });
+
   it('collapses the old weather and saver toggles into the new settings (v26)', () => {
     const off = configAt(25);
     delete (off.weather as Partial<Config['weather']>).style;
@@ -178,6 +190,16 @@ describe('first-run import', () => {
     ]);
     expect(result?.launcher.glassTint).toBe('blue');
     expect(result?.version).toBe(CONFIG_SCHEMA_VERSION);
+  });
+
+  it('fills the network status field in a backup that predates it', () => {
+    const config = configAt(28);
+    delete (config.launcher as Partial<Config['launcher']>).showNetworkStatus;
+
+    const fit = configFromBackup(config, DEFAULT_CONFIG);
+
+    expect(fit?.older).toBe(true);
+    expect(fit?.config.launcher.showNetworkStatus).toBe(true);
   });
 
   it('does not import when Ember already has a stored config', async () => {

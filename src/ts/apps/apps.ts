@@ -496,7 +496,6 @@ export async function listInstalledApps(options?: {includeHidden?: boolean}): Pr
     const res = await listApps();
     return (res.apps || [])
       .filter(function (app) {
-        const id = (app && (app.id || app.appId)) || '';
         if (includeHidden) return true;
         const record = (app && app.appInfo) || app || {};
         return record.visible !== false;

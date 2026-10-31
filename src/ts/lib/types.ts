@@ -213,6 +213,7 @@ export interface BackupFitResult {
 /* -------------------------------------------------------------------------- */
 
 /** Luna responses are untyped payloads; callers read fields by name. */
+// oxlint-disable-next-line typescript/no-explicit-any -- the declared boundary for every Luna reply; narrowing happens at each read.
 export type LunaResponse = Record<string, any>;
 
 export interface WebOSServiceRequestOptions {

@@ -15,7 +15,7 @@ function isoDay(offset: number): string {
   return new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
 }
 
-function forecast(): any {
+function forecast(): Record<string, unknown> {
   return {
     utc_offset_seconds: 0,
     current: {temperature_2m: 12, weather_code: 3, is_day: 1},

@@ -32,19 +32,19 @@ export const PROFILE_PRESETS: Record<string, DeepPartial<Config>> = {
   }
 };
 
-function deepMerge(target: any, source: any): any {
-  const out = Object.assign({}, target);
-  if (!source || typeof source !== 'object') return out;
+function deepMerge<T>(target: unknown, source: unknown): T {
+  const out: Record<string, unknown> = Object.assign({}, target);
+  if (!source || typeof source !== 'object') return out as T;
 
-  for (const key of Object.keys(source)) {
-    const value = source[key];
+  for (const key of Object.keys(source as Record<string, unknown>)) {
+    const value = (source as Record<string, unknown>)[key];
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       out[key] = deepMerge(out[key] || {}, value);
     } else {
       out[key] = value;
     }
   }
-  return out;
+  return out as T;
 }
 
 export function getProfileOverrides(config: Config): DeepPartial<Config> {
@@ -53,11 +53,11 @@ export function getProfileOverrides(config: Config): DeepPartial<Config> {
 
   const custom = (config && config.profiles && config.profiles[profileId]) || {};
   const preset = PROFILE_PRESETS[profileId] || {};
-  return deepMerge(preset, custom);
+  return deepMerge<DeepPartial<Config>>(preset, custom);
 }
 
 export function applyActiveProfile(config: Config): Config {
-  const base = deepMerge({}, config);
+  const base = deepMerge<Config>({}, config);
   const overrides = getProfileOverrides(config);
-  return deepMerge(base, overrides);
+  return deepMerge<Config>(base, overrides);
 }

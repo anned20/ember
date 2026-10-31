@@ -65,10 +65,27 @@ interface WeatherDay {
 }
 
 /** The cached forecast entry stored in localStorage. */
+/** Open-Meteo's payload: only the fields Ember reads, and every one is optional. */
+interface WeatherPayload {
+  utc_offset_seconds?: number;
+  current?: {
+    temperature_2m?: number;
+    weather_code?: number;
+    is_day?: number;
+  };
+  daily?: {
+    time?: string[];
+    weather_code?: number[];
+    temperature_2m_max?: number[];
+    temperature_2m_min?: number[];
+    precipitation_probability_max?: number[];
+  };
+}
+
 interface WeatherCache {
   location: WeatherLocation;
   fetchedAt: number;
-  data: any;
+  data: WeatherPayload;
 }
 
 /** A raw Open-Meteo geocoding result. */
@@ -304,7 +321,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-function getJson(url: string): Promise<any> {
+function getJson(url: string): Promise<WeatherPayload> {
   return withTimeout(fetch(url), FETCH_TIMEOUT_MS).then(function (res) {
     if (!res || !res.ok) throw new Error('HTTP ' + (res && res.status));
     return res.text();
@@ -421,7 +438,7 @@ function formatTemp(celsius: unknown, units: string): string {
 }
 
 /** "YYYY-MM-DD" for right now at the forecast location. */
-function locationToday(data: any): string {
+function locationToday(data: WeatherPayload): string {
   const offset = (data && typeof data.utc_offset_seconds === 'number') ? data.utc_offset_seconds : 0;
   return new Date(Date.now() + offset * 1000).toISOString().slice(0, 10);
 }
@@ -452,7 +469,7 @@ function rainChance(pct: unknown): string {
   return '<span class="weather-rain">' + Math.round(pct) + '%</span>';
 }
 
-function buildDays(data: any): {days: WeatherDay[]; isToday: boolean} {
+function buildDays(data: WeatherPayload): {days: WeatherDay[]; isToday: boolean} {
   const daily = (data && data.daily) || {};
   const times = daily.time || [];
   let start = times.indexOf(locationToday(data));
@@ -470,7 +487,7 @@ function buildDays(data: any): {days: WeatherDay[]; isToday: boolean} {
   return {days: out, isToday: times[start] === locationToday(data)};
 }
 
-function renderPanel(el: HTMLElement | null, data: any, cfg: WeatherConfig): boolean {
+function renderPanel(el: HTMLElement | null, data: WeatherPayload, cfg: WeatherConfig): boolean {
   const built = buildDays(data);
   const days = built.days;
   if (!days.length) return false;
@@ -480,7 +497,8 @@ function renderPanel(el: HTMLElement | null, data: any, cfg: WeatherConfig): boo
   const current = (data && data.current) || {};
   // Current conditions only make sense while the cache still covers today.
   const hasCurrent = built.isToday && typeof current.temperature_2m === 'number';
-  const nowCode = hasCurrent ? current.weather_code : today.code;
+  const nowTemp = typeof current.temperature_2m === 'number' ? current.temperature_2m : today.high;
+  const nowCode = typeof current.weather_code === 'number' ? current.weather_code : today.code;
   const nowIsDay = hasCurrent ? current.is_day !== 0 : true;
 
   // Place gets its own line across the panel so the country always fits.
@@ -492,7 +510,7 @@ function renderPanel(el: HTMLElement | null, data: any, cfg: WeatherConfig): boo
     '</div>' +
     '<div class="weather-today-main">' +
       weatherGlyphSvg(nowCode, nowIsDay) +
-      '<span class="weather-now">' + formatTemp(hasCurrent ? current.temperature_2m : today.high, units) + '</span>' +
+      '<span class="weather-now">' + formatTemp(nowTemp, units) + '</span>' +
     '</div>' +
     '<div class="weather-today-detail">' +
       '<span class="weather-condition">' + escapeHtml(conditionLabel(nowCode, nowIsDay)) + '</span>' +
@@ -525,18 +543,19 @@ function renderPanel(el: HTMLElement | null, data: any, cfg: WeatherConfig): boo
 }
 
 /** The one-line form for the clock block: glyph · city · temp condition · H/L. */
-function inlineHtml(built: {days: WeatherDay[]; isToday: boolean}, data: any, cfg: WeatherConfig): string {
+function inlineHtml(built: {days: WeatherDay[]; isToday: boolean}, data: WeatherPayload, cfg: WeatherConfig): string {
   const today = built.days[0];
   const current = (data && data.current) || {};
   // Current conditions only make sense while the cache still covers today.
   const hasCurrent = built.isToday && typeof current.temperature_2m === 'number';
-  const nowCode = hasCurrent ? current.weather_code : today.code;
+  const nowTemp = typeof current.temperature_2m === 'number' ? current.temperature_2m : today.high;
+  const nowCode = typeof current.weather_code === 'number' ? current.weather_code : today.code;
   const nowIsDay = hasCurrent ? current.is_day !== 0 : true;
   const units = cfg.units;
   return weatherGlyphSvg(nowCode, nowIsDay) +
     '<span class="weather-inline-place">' + escapeHtml(cityName(cfg.location.name)) + '</span>' +
     '<span class="weather-inline-sep" aria-hidden="true">·</span>' +
-    '<span class="weather-inline-temp">' + formatTemp(hasCurrent ? current.temperature_2m : today.high, units) + '</span>' +
+    '<span class="weather-inline-temp">' + formatTemp(nowTemp, units) + '</span>' +
     '<span class="weather-inline-condition">' + escapeHtml(conditionLabel(nowCode, nowIsDay)) + '</span>' +
     '<span class="weather-inline-sep" aria-hidden="true">·</span>' +
     '<span class="weather-inline-hilo">H ' + formatTemp(today.high, units) +
@@ -572,7 +591,7 @@ export function createWeatherPanel(
   }
 
   /** Paint whichever style is selected. Returns false when there was nothing to draw. */
-  function paint(data: any, c: WeatherConfig): boolean {
+  function paint(data: WeatherPayload, c: WeatherConfig): boolean {
     if (c.style === 'off') {
       hide();
       return false;

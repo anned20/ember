@@ -224,7 +224,7 @@ export async function loadBuiltinManifest(): Promise<BuiltinBackground[]> {
       resolveAppUrl(BUILTIN_MANIFEST),
       APP_VERSION
     );
-    const manifest = await fetchJson(manifestUrl);
+    const manifest = await fetchJson(manifestUrl) as {backgrounds?: unknown} | null;
     const loaded = normalizeManifestList(manifest && manifest.backgrounds);
     builtinCache = loaded || BUILTIN_BACKGROUNDS_FALLBACK.slice();
   } catch (err) {

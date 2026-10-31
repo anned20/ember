@@ -152,9 +152,9 @@ function launchSystemApp(id: string, params?: Record<string, unknown>) {
   });
 }
 
-function parseLaunchParamsObject(raw: unknown): Record<string, any> | null {
+function parseLaunchParamsObject(raw: unknown): Record<string, unknown> | null {
   if (!raw) return null;
-  if (typeof raw === 'object') return raw as Record<string, any>;
+  if (typeof raw === 'object') return raw as Record<string, unknown>;
   try { return JSON.parse(String(raw)); } catch (err) { return null; }
 }
 
@@ -796,7 +796,7 @@ export function createApp(): AppLifecycle {
       elements.settingsPanel.hidden = true;
     }
     try { window.focus(); } catch (err) { /* ignore */ }
-    try { document.body && document.body.focus && document.body.focus(); } catch (err) { /* ignore */ }
+    try { if (document.body && document.body.focus) document.body.focus(); } catch (err) { /* ignore */ }
     try {
       const active = document.activeElement as HTMLElement | null;
       if (active) {

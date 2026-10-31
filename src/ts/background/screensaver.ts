@@ -115,7 +115,6 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
   let dismissArmed = false;
   let loadGen = 0;
   let slideGen = 0;
-  let decodingPhoto: HTMLImageElement | null = null;
   let usbBackgroundPath = '';
   // The shared video state machine (aerial clips). Created on first use and
   // destroyed with the module; `stop`/`hide` release the decoder via it.
@@ -247,9 +246,8 @@ export function createCustomScreensaver(options: CustomScreensaverOptions): Cust
     const ready: Promise<ProbeResult | null> = item.gradient
       ? Promise.resolve(null)
       : probeImage(item.url);
-    void ready.then(function (res) {
+    void ready.then(function () {
       if (gen !== slideGen || !active) return;
-      if (res && res.image) decodingPhoto = res.image;
       const front = useA ? bgA : bgB;
       const back = useA ? bgB : bgA;
       applyLayer(back, item.url, item.gradient);

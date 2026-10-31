@@ -4,11 +4,16 @@
     "typeAware": true
   },
   "categories": {
-    "correctness": "off"
+    "correctness": "error"
   },
   "rules": {
     "typescript/no-floating-promises": "error",
-    "typescript/no-explicit-any": "error"
+    "typescript/no-explicit-any": "error",
+    "eslint/no-unused-vars": ["error", {"caughtErrors": "none"}],
+    "eslint/no-irregular-whitespace": ["error", {"skipComments": true}],
+    "typescript/no-base-to-string": "off",
+    "typescript/unbound-method": "off",
+    "typescript/no-redundant-type-constituents": "off"
   },
   "overrides": [
     {

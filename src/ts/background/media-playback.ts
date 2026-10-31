@@ -247,11 +247,11 @@ export function createMediaPlayback(options: MediaPlaybackOptions): MediaPlaybac
     }
     try {
       await video.play();
-    } catch (err: any) {
+    } catch (err) {
       if (myGen !== gen) return false;
       // play() aborted by a pause (the surface hid mid-start) is not a decode
       // failure: keep the element for the resume path, not the gradient.
-      if (err && err.name === 'AbortError') return false;
+      if (err instanceof Error && err.name === 'AbortError') return false;
       if (!shouldAnimate()) return false;
       handleVideoFailure(attempt, myGen);
       return false;

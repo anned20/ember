@@ -79,7 +79,7 @@ export async function loadBuiltinMusicManifest(): Promise<BuiltinMusicEntry[]> {
       const url = candidates[i];
       if (!url) continue;
       try {
-        const manifest = await fetchJson(url);
+        const manifest = await fetchJson(url) as {tracks?: unknown} | null;
         const loaded = normalizeManifestList(manifest && manifest.tracks);
         if (loaded && loaded.length) {
           manifestCache = loaded;

@@ -17,6 +17,7 @@ import {
   createOptionStepper
 } from '@settings/components/index.js';
 import type {PaneHandle, SettingsContext} from '@settings/pane.js';
+import {errorMessage} from '@lib/errors.js';
 import {t, tn} from '@lib/i18n.js';
 import type {AppRecord, CustomApp, LauncherConfig} from '@lib/types.js';
 
@@ -348,9 +349,9 @@ export function createAppsPane(): PaneHandle {
           toAdd.forEach(function (id) { draft = dock.pin(draft, id); });
           await loadAppsLists(ctx, pinnedList, addAppsList);
           importLgStatus.textContent = tn('apps.lgAdded', toAdd.length);
-        } catch (err: any) {
+        } catch (err) {
           importLgStatus.textContent = t('apps.lgFailed', {
-            reason: (err && err.message) || t('apps.lgRootRequired')
+            reason: errorMessage(err) || t('apps.lgRootRequired')
           });
         } finally {
           importingLg = false;

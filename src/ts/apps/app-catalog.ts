@@ -19,6 +19,7 @@ interface KeptIcon {
 }
 
 /** The app fields an icon can be resolved from (TV app records are untyped). */
+// oxlint-disable-next-line typescript/no-explicit-any -- LG's app records are untyped; every read narrows locally.
 type RawApp = Record<string, any>;
 
 // Cache of resolved native icons (file:// path -> data URI) so repeated

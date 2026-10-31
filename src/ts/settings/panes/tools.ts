@@ -10,6 +10,8 @@ import {
   appendRootFile, readSettingsBackups, runTvCheck, writeAutoBackup, writeSettingsBackup
 } from '@luna/root.js';
 import {findLoungeRoots} from '@lib/usb.js';
+import type {ParsedBackup} from '@settings/settings-backup.js';
+import {errorMessage} from '@lib/errors.js';
 import {qrSvgMarkup} from '@lib/qr-svg.js';
 import {RELEASE_PAGE_URL, fetchLatestRelease, updateVerdict} from '@lib/update-check.js';
 import {BRAND} from '@lib/brand.js';
@@ -27,18 +29,6 @@ const ROOTS_DEADLINE_MS = 4000;
 
 /** Where diagnostics.sh saves its full report on the TV. */
 const DIAGNOSTICS_FILE = BRAND.tmpPrefix + '-diagnostics.txt';
-
-/** An Ember backup file as parsed by settings-backup.js. */
-interface BackupRecord {
-  data: {config: any; savedAt?: string; updatedTo?: string};
-  where: string;
-  time: number;
-  format: number;
-  schema: number;
-  appVersion: string;
-  reason: string;
-  readable: boolean;
-}
 
 /**
  * The Tools pane: Backup & restore (back up, pick a backup, restore, with the
@@ -82,7 +72,7 @@ export function createToolsPane(): PaneHandle {
       backupActions.appendChild(restoreBtn);
       backupSection.appendChild(backupActions);
       // Which backup to restore: shown once Restore has found them.
-      let backupsFound: BackupRecord[] = [];
+      let backupsFound: ParsedBackup[] = [];
       const backupPicker = createOptionStepper({
         focusIndex: 1592,
         choices: [],
@@ -100,7 +90,7 @@ export function createToolsPane(): PaneHandle {
       ctx.panes.tools.appendChild(backupSection);
 
       let backupBusy = false;
-      function chosenBackup(): BackupRecord | null {
+      function chosenBackup(): ParsedBackup | null {
         return backupsFound[parseInt(backupPicker.value, 10)] || null;
       }
       function showChosenBackup(): void {
@@ -142,9 +132,9 @@ export function createToolsPane(): PaneHandle {
             (res.usb === false ? t('tools.usbWriteFailed') +
               (res.usbError ? t('tools.usbError', {detail: res.usbError}) : '') + '.' : '') +
             (res.usb === null ? t('tools.noUsb') : '');
-        } catch (err: any) {
+        } catch (err) {
           backupStatus.textContent = t('tools.backupFailed', {
-            detail: (err && err.message) || t('tools.needsRoot')
+            detail: errorMessage(err) || t('tools.needsRoot')
           });
         } finally {
           backupBusy = false;
@@ -161,7 +151,7 @@ export function createToolsPane(): PaneHandle {
             restoreBtn.textContent = t('tools.looking');
             backupStatus.textContent = t('tools.lookingForBackups');
             const roots = (await ctx.withDeadline(findLoungeRoots(), ROOTS_DEADLINE_MS)) || [];
-            backupsFound = listBackups(await readSettingsBackups(roots)) as BackupRecord[];
+            backupsFound = listBackups(await readSettingsBackups(roots)) as ParsedBackup[];
             if (!backupsFound.length) {
               restoreBtn.textContent = t('tools.restore');
               backupStatus.textContent = t('tools.noBackupFound');
@@ -183,10 +173,11 @@ export function createToolsPane(): PaneHandle {
           try {
             await writeAutoBackup('before-restore.json',
               settingsBackupText(loadConfig(), {reason: 'before-restore'}));
-          } catch (err: any) {
+          } catch (err) {
+            const detail = errorMessage(err);
             restoreBtn.textContent = t('tools.restoreThis');
             backupStatus.textContent = t('tools.keepCopyFailed', {
-              detail: err && err.message ? ': ' + err.message : '.'
+              detail: detail ? ': ' + detail : '.'
             });
             return;
           }
@@ -200,10 +191,10 @@ export function createToolsPane(): PaneHandle {
           if (ctx.options.onSave) ctx.options.onSave(result.config);
           restoreNote = restoreReport(chosen, result);
           ctx.redraw();
-        } catch (err: any) {
+        } catch (err) {
           closeBackupPicker();
           backupStatus.textContent = t('tools.lookFailed', {
-            detail: (err && err.message) || t('tools.needsRoot')
+            detail: errorMessage(err) || t('tools.needsRoot')
           });
         } finally {
           backupBusy = false;
@@ -271,9 +262,9 @@ export function createToolsPane(): PaneHandle {
           tvCheckStatus.textContent = (stuck ? t('tools.tvCheckStuck') : t('tools.tvCheckDone')) +
             t('tools.tvCheckScan', {file: DIAGNOSTICS_FILE});
           ctx.focusNow(tvCheckResult);
-        } catch (err: any) {
+        } catch (err) {
           tvCheckStatus.textContent = t('tools.tvCheckFailed', {
-            detail: (err && err.message) || t('tools.needsRoot')
+            detail: errorMessage(err) || t('tools.needsRoot')
           });
         } finally {
           checking = false;

@@ -103,7 +103,7 @@ export async function fetchText(url: string): Promise<string> {
   return res.text();
 }
 
-export async function fetchJson(url: string): Promise<any> {
+export async function fetchJson(url: string): Promise<unknown> {
   const text = await fetchText(url);
   return JSON.parse(text);
 }

@@ -1026,7 +1026,13 @@ export function createApp(): AppLifecycle {
     try {
       await launchApp(LG_HOME_ID);
     } catch (err) {
-      return false;
+      // A sandboxed launch of a system app id can be refused: ask as root.
+      try {
+        await launchAppViaRoot(LG_HOME_ID);
+      } catch (rootErr) {
+        console.error(rootErr);
+        return false;
+      }
     }
     void closeApp(BRAND.appId).catch(function () { /* the other copy has the screen */ });
     return true;

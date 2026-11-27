@@ -20,7 +20,7 @@
 #
 # Run as root via Homebrew Channel:
 #   home-takeover.sh enable [stub|full]  install the boot hook and apply  -> "takeover" | "unsupported <why>"
-#   home-takeover.sh disable   remove the hook and give LG's Home back -> "disabled"
+#   home-takeover.sh disable   remove the hook and give LG's Home back -> "disabled" (the mode is kept)
 #   home-takeover.sh boot      what the hook runs
 
 . "$(dirname "$0")/brand.sh"
@@ -295,7 +295,7 @@ EOF
     echo "$out"
     ;;
   disable)
-    rm -f "$INITD" "$MODE_FILE"
+    rm -f "$INITD"
     release
     echo disabled
     ;;

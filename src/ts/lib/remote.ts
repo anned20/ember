@@ -1,3 +1,4 @@
+import {BRAND} from './brand.js';
 export const REMOTE_KEY = {
   LEFT: 37,
   UP: 38,
@@ -40,8 +41,11 @@ export function digitFromKey(code?: number, key?: string): number {
   return typeof digit === 'number' ? digit : -1;
 }
 
+/** LG's Home app, whose id the Home takeover mounts Ember under. */
+export const LG_HOME_ID = 'com.webos.app.home';
+
 const HOME_APP_IDS = [
-  'com.webos.app.home',
+  LG_HOME_ID,
   'com.webos.app.launcher',
   'com.webos.app.homeupdater',
   'com.webos.app.dashboard',
@@ -53,4 +57,11 @@ const HOME_APP_IDS = [
 export function isHomeApp(appId?: string | null): boolean {
   if (!appId) return false;
   return HOME_APP_IDS.indexOf(appId) >= 0;
+}
+/**
+ * Whether sam's `getAppInfo` for LG's Home id describes Ember itself (the Home
+ * takeover's full mode), not LG's Home or the takeover's stub.
+ */
+export function isEmberHome(info?: {vendor?: string; title?: string} | null): boolean {
+  return !!info && info.vendor === BRAND.vendor && info.title !== BRAND.homeStubTitle;
 }

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import {describe, expect, it} from 'vitest';
-import {REMOTE_KEY, digitFromKey} from '@lib/remote.js';
+import {BRAND} from '@lib/brand.js';
+import {REMOTE_KEY, digitFromKey, isEmberHome} from '@lib/remote.js';
 
 describe('remote key table', () => {
   it('defines the Channel Up / Channel Down keycodes', () => {
@@ -43,5 +44,17 @@ describe('digitFromKey', () => {
   it('falls back to the code when the key is not a digit character', () => {
     // Shift+1 reports key "!" but the digit-row code 49.
     expect(digitFromKey(49, '!')).toBe(1);
+  });
+});
+
+describe('isEmberHome', () => {
+  it('recognises Ember mounted under LG\'s Home id', () => {
+    expect(isEmberHome({vendor: BRAND.vendor, title: BRAND.name})).toBe(true);
+  });
+
+  it('is false for LG\'s Home, the takeover stub and a missing answer', () => {
+    expect(isEmberHome({vendor: 'LG Electronics', title: 'Home'})).toBe(false);
+    expect(isEmberHome({vendor: BRAND.vendor, title: BRAND.homeStubTitle})).toBe(false);
+    expect(isEmberHome(null)).toBe(false);
   });
 });

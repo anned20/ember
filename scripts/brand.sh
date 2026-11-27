@@ -3,6 +3,7 @@
 BRAND_NAME='Ember'
 BRAND_TAGLINE='Warm, bright, yours.'
 BRAND_VENDOR='ember'
+BRAND_STUB_TITLE='Ember Home'
 APP_ID='com.ember.launcher'
 BRAND_SLUG='ember'
 APPS_DIR='/media/developer/apps/usr/palm/applications'

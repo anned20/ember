@@ -28,6 +28,9 @@ export const BRAND = {
   name: NAME,
   tagline: 'Warm, bright, yours.',
   vendor: 'ember',
+  // The title of the Home takeover's stub app (scripts/home-takeover.sh), which
+  // tells it apart from Ember itself mounted under LG's Home id.
+  homeStubTitle: NAME + ' Home',
 
   appId: APP_ID,
   slug: SLUG,

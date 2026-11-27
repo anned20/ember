@@ -27,6 +27,7 @@ import type {NetworkStatusHandle} from '@home/network-status.js';
 import {createHomePaint} from '@home/paint.js';
 import type {HomePaint} from '@home/paint.js';
 import {
+  getAppInfo,
   getForegroundApp,
   launchApp,
   launchAppViaRoot,
@@ -49,6 +50,7 @@ import {
 import {createForegroundWatcher, shouldInterceptHome} from '@lib/foreground-watcher.js';
 import type {ForegroundWatcher} from '@lib/foreground-watcher.js';
 import {getSdkVersion, isSupportedPlatform, ownAppId} from '@luna/platform.js';
+import {isEmberHome, LG_HOME_ID} from '@lib/remote.js';
 import {describeDetectedPlatform, renderUnsupportedSurface} from '@lib/unsupported-surface.js';
 import {isTerminalAppId, getAppIdCandidates} from '@apps/app-icons.js';
 import {setPreferBundledIcons} from '@apps/app-catalog.js';
@@ -1012,6 +1014,24 @@ export function createApp(): AppLifecycle {
     pendingTimers.push(setTimeout(function () { fn(); }, ms));
   }
 
+  async function handOffToEmberHome(): Promise<boolean> {
+    if (ownAppId() !== BRAND.appId) return false;
+    // After an update this copy is the new code and the mounted one the old: the
+    // takeover remounts when Ember's directory changed, so re-assert it first.
+    if (shouldInterceptHome(baseConfig.launcher)) {
+      await enableHomeWatcher().catch(function () { /* the takeover may be off */ });
+    }
+    const res = await getAppInfo(LG_HOME_ID).catch(function () { return null; });
+    if (!res || !isEmberHome(res.appInfo)) return false;
+    try {
+      await launchApp(LG_HOME_ID);
+    } catch (err) {
+      return false;
+    }
+    void closeApp(BRAND.appId).catch(function () { /* the other copy has the screen */ });
+    return true;
+  }
+
   async function init() {
     // Platform gate, step 0: an unsupported TV never starts a module, the
     // Luna ladder, root hooks or the foreground watcher. Fail closed, visibly.
@@ -1026,6 +1046,11 @@ export function createApp(): AppLifecycle {
       renderUnsupportedSurface(describeDetectedPlatform(sdkVersion));
       return;
     }
+
+    // Full Home takeover: Ember also runs under LG's Home id. A second copy under
+    // its own id would fight it for the foreground, so hand over to that one.
+    if (await handOffToEmberHome()) return;
+    if (stopped) return;
 
     await importLegacyOnFirstRun();
     if (stopped) return;

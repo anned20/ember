@@ -67,7 +67,7 @@ stage_stub() {
   "vendor": "$BRAND_VENDOR",
   "type": "web",
   "main": "index.html",
-  "title": "$BRAND_NAME Home",
+  "title": "$BRAND_STUB_TITLE",
   "icon": "assets/icon-80-v9.png",
   "largeIcon": "assets/icon-130-v9.png",
   "bgColor": "#000000",

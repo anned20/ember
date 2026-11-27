@@ -26,6 +26,7 @@ function rows(brand: Brand): Row[] {
     {shell: 'BRAND_NAME', value: brand.name},
     {shell: 'BRAND_TAGLINE', value: brand.tagline},
     {shell: 'BRAND_VENDOR', value: brand.vendor},
+    {shell: 'BRAND_STUB_TITLE', value: brand.homeStubTitle},
     {shell: 'APP_ID', value: brand.appId},
     {shell: 'BRAND_SLUG', value: brand.slug},
     {shell: 'APPS_DIR', value: brand.appsDir},

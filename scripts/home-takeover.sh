@@ -47,7 +47,6 @@ webos_major() {
 # reaches it at the next enable or boot.
 stage() {
   mkdir -p "$STAGE/assets" || return 1
-  cp "$APP_DIR/webOS.js" "$STAGE/webOS.js" || return 1
   cp "$APP_DIR"/assets/icon-*-v9.png "$STAGE/assets/" 2>/dev/null
   cat >"$STAGE/appinfo.json" <<EOF
 {
@@ -71,7 +70,6 @@ EOF
 <style>html,body{margin:0;height:100%;background:#000;color:#6b665e;font:2.4vh sans-serif}
 #m{position:absolute;top:62vh;width:100%;text-align:center}</style></head>
 <body><div id="m"></div>
-<script src="webOS.js"></script>
 <script>
 (function () {
   var last = 0;
@@ -79,15 +77,20 @@ EOF
     var now = Date.now();
     if (now - last < 800) return;
     last = now;
-    webOS.service.request('luna://com.webos.applicationManager', {
-      method: 'launch',
-      parameters: {id: '$APP_ID'},
-      onSuccess: function () { document.getElementById('m').textContent = ''; },
-      onFailure: function () {
+    // The bridge directly: no library to load and parse before the first launch.
+    var b = new PalmServiceBridge();
+    b.onservicecallback = function (msg) {
+      var r = {};
+      try { r = JSON.parse(msg); } catch (e) { r.returnValue = false; }
+      b.cancel();
+      if (r.returnValue === false || r.errorCode) {
         document.getElementById('m').textContent = '$BRAND_NAME did not open. Retrying...';
         setTimeout(go, 1500);
+      } else {
+        document.getElementById('m').textContent = '';
       }
-    });
+    };
+    b.call('luna://com.webos.applicationManager/launch', JSON.stringify({id: '$APP_ID'}));
   }
   document.addEventListener('webOSRelaunch', go);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) go(); });

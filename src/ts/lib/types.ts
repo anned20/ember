@@ -122,6 +122,8 @@ export interface LauncherConfig {
   bootOnStart: boolean;
   returnOnAppExit: boolean;
   launchOnHome: boolean;
+  /** How the Home button is taken over: a stub app, or Ember itself under LG's Home id. */
+  homeTakeover: 'stub' | 'full';
   volumeAtHome: number | null;
   volumeOnAppLaunch: number | null;
   screensaverMinutes: number;

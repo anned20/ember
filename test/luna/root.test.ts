@@ -209,8 +209,16 @@ describe('the root Home watcher and boot hook', () => {
 
     expect(commands).toHaveLength(2);
     expect(commands[0]).toContain('home-takeover.sh');
-    expect(commands[0]).toMatch(/enable$/);
+    expect(commands[0]).toMatch(/enable stub$/);
     expect(commands[1]).toContain('disable-home-watcher.sh');
+  });
+
+  it('passes the takeover mode to the script', async () => {
+    const commands = fakeRoot((command) => command.includes('home-takeover.sh') ? 'takeover' : 'disabled');
+
+    await enableHomeWatcher('full');
+
+    expect(commands[0]).toMatch(/enable full$/);
   });
 
   it('falls back to the watcher when the TV refuses the takeover', async () => {

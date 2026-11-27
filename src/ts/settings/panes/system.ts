@@ -112,9 +112,22 @@ export function createSystemPane(): PaneHandle {
 
       section.appendChild(createHint(t('system.launchOnHomeHint', {brand: BRAND.name})));
 
+      const homeTakeoverSelect = createOptionStepper({
+        focusIndex: 1011,
+        choices: [
+          {value: 'stub', label: t('system.homeTakeover.stub')},
+          {value: 'full', label: t('system.homeTakeover.full', {brand: BRAND.name})}
+        ],
+        path: 'launcher.homeTakeover',
+        parse: function (raw) { return raw === 'full' ? 'full' : 'stub'; },
+        binder: ctx.binder
+      });
+      section.appendChild(labeledControl(t('system.homeTakeover'), homeTakeoverSelect));
+      section.appendChild(createHint(t('system.homeTakeoverHint', {brand: BRAND.name})));
+
       const bootField = createToggle({
         label: t('system.bootOnStart'),
-        focusIndex: '1011',
+        focusIndex: '1012',
         path: 'launcher.bootOnStart',
         binder: ctx.binder
       });

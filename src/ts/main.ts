@@ -657,8 +657,8 @@ export function createApp(): AppLifecycle {
     const quiet = opts && opts.quiet;
     const on = !!(config && config.launcher &&
       (config.launcher.launchOnHome || config.launcher.returnOnAppExit));
-    const apply = on ? enableHomeWatcher : disableHomeWatcher;
-    return apply().then(function () {
+    const mode = config && config.launcher && config.launcher.homeTakeover === 'full' ? 'full' : 'stub';
+    return (on ? enableHomeWatcher(mode) : disableHomeWatcher()).then(function () {
       if (on && !quiet) showToast(t('system.homeActive', {brand: BRAND.name}));
     }).catch(function (err: ErrorLike) {
       console.error(err);
@@ -1076,7 +1076,7 @@ export function createApp(): AppLifecycle {
     // After an update this copy is the new code and the mounted one the old: the
     // takeover remounts when Ember's directory changed, so re-assert it first.
     if (shouldInterceptHome(baseConfig.launcher)) {
-      await enableHomeWatcher().catch(function () { /* the takeover may be off */ });
+      await enableHomeWatcher(baseConfig.launcher.homeTakeover).catch(function () { /* the takeover may be off */ });
     }
     if (!(await homeTakeoverIsFull().catch(function () { return false; }))) return false;
     // This copy may hold the newest settings: share them before it goes.

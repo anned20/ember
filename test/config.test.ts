@@ -77,6 +77,18 @@ describe('config migration registry', () => {
     expect(hidden.launcher.showNetworkStatus).toBe(false);
   });
 
+  it('backfills the Home takeover method without overruling an explicit choice (v30)', () => {
+    const missing = configAt(29);
+    delete (missing.launcher as Partial<Config['launcher']>).homeTakeover;
+    migrateConfig(missing);
+    expect(missing.launcher.homeTakeover).toBe('stub');
+
+    const full = configAt(29);
+    full.launcher.homeTakeover = 'full';
+    migrateConfig(full);
+    expect(full.launcher.homeTakeover).toBe('full');
+  });
+
   it('collapses the old weather and saver toggles into the new settings (v26)', () => {
     const off = configAt(25);
     delete (off.weather as Partial<Config['weather']>).style;

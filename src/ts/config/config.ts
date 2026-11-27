@@ -11,7 +11,7 @@ const SAVED_AT_KEY = BRAND.storage.configSavedAt;
 // means, its type or its name? Bump this and add an entry to CONFIG_MIGRATIONS
 // keyed by the new version: stored settings and restored backups from older
 // versions both run through those steps (see migrateConfig / configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 29;
+export const CONFIG_SCHEMA_VERSION = 30;
 
 export const DEFAULT_CONFIG: Config = {
   version: CONFIG_SCHEMA_VERSION,
@@ -128,6 +128,8 @@ export const DEFAULT_CONFIG: Config = {
     // When true, press of the Home button (stock home coming to the
     // foreground after another app) relaunches Ember. Off by default.
     launchOnHome: false,
+    // 'stub' (a light stand-in under LG's Home id) or 'full' (Ember itself there).
+    homeTakeover: 'stub',
     // TV system volume (0–100) while Ember is in the foreground.
     // null = don't change it (new installs); existing configs keep their level.
     volumeAtHome: null,
@@ -490,6 +492,13 @@ export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
   29: function addNetworkStatus(config) {
     if (typeof config.launcher.showNetworkStatus !== 'boolean') {
       config.launcher.showNetworkStatus = true;
+    }
+  },
+
+  // v30: how the Home takeover is done (stub or Ember itself under LG's Home id).
+  30: function addHomeTakeover(config) {
+    if (config.launcher.homeTakeover !== 'stub' && config.launcher.homeTakeover !== 'full') {
+      config.launcher.homeTakeover = 'stub';
     }
   }
 };

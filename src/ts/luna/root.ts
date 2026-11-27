@@ -106,9 +106,12 @@ function shQuote(text: unknown): string {
   return "'" + String(text).replace(/'/g, "'\\''") + "'";
 }
 
+export type HomeTakeoverMode = 'stub' | 'full';
+
 /** Run `home-takeover.sh <verb>` as root and return what it printed. */
-function homeTakeover(verb: 'enable' | 'disable' | 'status', timeout: number) {
-  const cmd = 'chmod 755 ' + shQuote(HOME_TAKEOVER) + ' 2>/dev/null; sh ' + shQuote(HOME_TAKEOVER) + ' ' + verb;
+function homeTakeover(verb: 'enable' | 'disable' | 'status', timeout: number, mode?: HomeTakeoverMode) {
+  const cmd = 'chmod 755 ' + shQuote(HOME_TAKEOVER) + ' 2>/dev/null; sh ' + shQuote(HOME_TAKEOVER) + ' ' + verb +
+    (mode ? ' ' + mode : '');
   return rootScriptOutput(execRoot(cmd, timeout));
 }
 
@@ -151,10 +154,10 @@ function disableWatcher() {
  * joined steps with ";" after a background `&`, which busybox ash rejects as
  * `unexpected ";"`.
  */
-export async function enableHomeWatcher() {
+export async function enableHomeWatcher(mode: HomeTakeoverMode = 'stub') {
   let out = '';
   try {
-    out = await homeTakeover('enable', TIMEOUTS.rootHomeTakeover);
+    out = await homeTakeover('enable', TIMEOUTS.rootHomeTakeover, mode);
   } catch (err) {
     // Not rooted for it, or the script is missing: the watcher is the fallback.
   }

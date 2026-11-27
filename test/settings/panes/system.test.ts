@@ -15,7 +15,8 @@ function makeConfig(): Config {
       perfMode: false,
       launchOnHome: false,
       returnOnAppExit: false,
-      bootOnStart: false
+      bootOnStart: false,
+      homeTakeover: 'stub'
     }
   } as unknown as Config;
 }
@@ -64,7 +65,7 @@ describe('system pane', () => {
     expect(toggles.length).toBe(3);
     expect((toggles[0] as HTMLElement).dataset.focusIndex).toBe('1009');
     expect((toggles[1] as HTMLElement).dataset.focusIndex).toBe('1010');
-    expect((toggles[2] as HTMLElement).dataset.focusIndex).toBe('1011');
+    expect((toggles[2] as HTMLElement).dataset.focusIndex).toBe('1012');
     expect((toggles[0] as HTMLInputElement).checked).toBe(false);
     expect(pane.textContent).toContain('Volume in ' + BRAND.name);
     expect(pane.textContent).toContain('Boot on TV start');
@@ -80,6 +81,7 @@ describe('system pane', () => {
     toggles[0].checked = true;
     toggles[1].checked = true;
     toggles[2].checked = true;
+    stepper(pane, '1011').setValue('full');
 
     ctx.binder.collect(config);
 
@@ -89,6 +91,7 @@ describe('system pane', () => {
     expect(config.launcher.launchOnHome).toBe(true);
     expect(config.launcher.returnOnAppExit).toBe(true);
     expect(config.launcher.bootOnStart).toBe(true);
+    expect(config.launcher.homeTakeover).toBe('full');
   });
 
   it('shows the Home toggle on when only the legacy key is set', () => {

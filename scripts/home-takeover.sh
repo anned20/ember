@@ -47,6 +47,8 @@ webos_major() {
 # reaches it at the next enable or boot.
 stage() {
   mkdir -p "$STAGE/assets" || return 1
+  # The first version of the stub loaded the library; drop that leftover.
+  rm -f "$STAGE/webOS.js"
   cp "$APP_DIR"/assets/icon-*-v9.png "$STAGE/assets/" 2>/dev/null
   cat >"$STAGE/appinfo.json" <<EOF
 {

@@ -237,11 +237,11 @@ release() {
 apply() {
   [ -f "$APP_DIR/appinfo.json" ] || { echo "unsupported app_not_installed"; return 1; }
   [ "$(webos_major)" -ge 7 ] || { echo "unsupported webos_$(webos_major)"; return 1; }
-  before=$(cat "$STAGE/appinfo.json" "$STAGE/index.html" 2>/dev/null | cksum)
+  before=$(cat "$STAGE/appinfo.json" "$STAGE/index.html" 2>/dev/null | md5sum)
   stage_$MODE || { echo "unsupported stage_failed"; return 1; }
   # The staged files changed (an update, or a switch of mode): a loaded page
   # keeps its old code and sam its old manifest, so toggle it off and on.
-  if [ "$before" != "$(cat "$STAGE/appinfo.json" "$STAGE/index.html" 2>/dev/null | cksum)" ]; then
+  if [ "$before" != "$(cat "$STAGE/appinfo.json" "$STAGE/index.html" 2>/dev/null | md5sum)" ]; then
     log "stub changed, remounting"
     release
   fi

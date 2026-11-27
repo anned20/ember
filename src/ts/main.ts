@@ -27,7 +27,6 @@ import type {NetworkStatusHandle} from '@home/network-status.js';
 import {createHomePaint} from '@home/paint.js';
 import type {HomePaint} from '@home/paint.js';
 import {
-  getAppInfo,
   getForegroundApp,
   launchApp,
   launchAppViaRoot,
@@ -45,12 +44,13 @@ import {
   writeAutoBackup,
   readSettingsBackups,
   setScreensaverTimeout,
-  takePreviewFlag
+  takePreviewFlag,
+  homeTakeoverIsFull
 } from '@luna/root.js';
 import {createForegroundWatcher, shouldInterceptHome} from '@lib/foreground-watcher.js';
 import type {ForegroundWatcher} from '@lib/foreground-watcher.js';
 import {getSdkVersion, isSupportedPlatform, ownAppId} from '@luna/platform.js';
-import {isEmberHome, LG_HOME_ID} from '@lib/remote.js';
+import {LG_HOME_ID} from '@lib/remote.js';
 import {describeDetectedPlatform, renderUnsupportedSurface} from '@lib/unsupported-surface.js';
 import {isTerminalAppId, getAppIdCandidates} from '@apps/app-icons.js';
 import {setPreferBundledIcons} from '@apps/app-catalog.js';
@@ -1021,8 +1021,7 @@ export function createApp(): AppLifecycle {
     if (shouldInterceptHome(baseConfig.launcher)) {
       await enableHomeWatcher().catch(function () { /* the takeover may be off */ });
     }
-    const res = await getAppInfo(LG_HOME_ID).catch(function () { return null; });
-    if (!res || !isEmberHome(res.appInfo)) return false;
+    if (!(await homeTakeoverIsFull().catch(function () { return false; }))) return false;
     try {
       await launchApp(LG_HOME_ID);
     } catch (err) {

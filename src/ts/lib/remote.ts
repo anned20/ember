@@ -1,4 +1,3 @@
-import {BRAND} from './brand.js';
 export const REMOTE_KEY = {
   LEFT: 37,
   UP: 38,
@@ -57,11 +56,4 @@ const HOME_APP_IDS = [
 export function isHomeApp(appId?: string | null): boolean {
   if (!appId) return false;
   return HOME_APP_IDS.indexOf(appId) >= 0;
-}
-/**
- * Whether sam's `getAppInfo` for LG's Home id describes Ember itself (the Home
- * takeover's full mode), not LG's Home or the takeover's stub.
- */
-export function isEmberHome(info?: {vendor?: string; title?: string} | null): boolean {
-  return !!info && info.vendor === BRAND.vendor && info.title !== BRAND.homeStubTitle;
 }

@@ -21,6 +21,7 @@
 # Run as root via Homebrew Channel:
 #   home-takeover.sh enable [stub|full]  install the boot hook and apply  -> "takeover" | "unsupported <why>"
 #   home-takeover.sh disable   remove the hook and give LG's Home back -> "disabled" (the mode is kept)
+#   home-takeover.sh status    "full" while Ember itself is mounted under the Home id, else "none"
 #   home-takeover.sh boot      what the hook runs
 
 . "$(dirname "$0")/brand.sh"
@@ -298,6 +299,9 @@ EOF
     rm -f "$INITD"
     release
     echo disabled
+    ;;
+  status)
+    if [ "$MODE" = full ] && mounted; then echo full; else echo none; fi
     ;;
   boot)
     # LS2 answers once sam is up; apply() then waits for sam's own first scan.

@@ -107,7 +107,7 @@ function shQuote(text: unknown): string {
 }
 
 /** Run `home-takeover.sh <verb>` as root and return what it printed. */
-function homeTakeover(verb: 'enable' | 'disable', timeout: number) {
+function homeTakeover(verb: 'enable' | 'disable' | 'status', timeout: number) {
   const cmd = 'chmod 755 ' + shQuote(HOME_TAKEOVER) + ' 2>/dev/null; sh ' + shQuote(HOME_TAKEOVER) + ' ' + verb;
   return rootScriptOutput(execRoot(cmd, timeout));
 }
@@ -163,6 +163,12 @@ export async function enableHomeWatcher() {
     return true;
   }
   return enableWatcher();
+}
+
+/** Whether Ember itself is mounted under LG's Home id (the takeover's full mode). */
+export async function homeTakeoverIsFull(): Promise<boolean> {
+  const out = await homeTakeover('status', TIMEOUTS.rootDefault);
+  return out.split('\n').pop() === 'full';
 }
 
 /** Stop the takeover (LG's Home comes back) and the root watcher. */

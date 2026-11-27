@@ -8,6 +8,7 @@ import {
   enableHomeWatcher,
   getTvChannelNow,
   getTvChannels,
+  homeTakeoverIsFull,
   openTvChannel,
   readFileAsDataUrl,
   readSettingsBackups,
@@ -212,6 +213,14 @@ describe('the root Home watcher and boot hook', () => {
 
     expect(commands[0]).toMatch(/home-takeover\.sh' disable$/);
     expect(commands[1]).toContain('disable-home-watcher.sh');
+  });
+
+  it('reads whether Ember itself is mounted under LG\'s Home id', async () => {
+    fakeRoot(() => 'full');
+    await expect(homeTakeoverIsFull()).resolves.toBe(true);
+
+    fakeRoot(() => 'none');
+    await expect(homeTakeoverIsFull()).resolves.toBe(false);
   });
 
   it('translates a missing boot script', async () => {

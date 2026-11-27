@@ -196,7 +196,14 @@ release() {
 apply() {
   [ -f "$APP_DIR/appinfo.json" ] || { echo "unsupported app_not_installed"; return 1; }
   [ "$(webos_major)" -ge 7 ] || { echo "unsupported webos_$(webos_major)"; return 1; }
+  before=$(cat "$STAGE/appinfo.json" "$STAGE/index.html" 2>/dev/null | cksum)
   stage || { echo "unsupported stage_failed"; return 1; }
+  # An update changed the stub: a loaded stub keeps its old page and sam its old
+  # manifest, so toggle it off and on (release, then mount below).
+  if [ "$before" != "$(cat "$STAGE/appinfo.json" "$STAGE/index.html" | cksum)" ]; then
+    log "stub changed, remounting"
+    release
+  fi
   # Already in place (Ember re-asserts its hooks at each start): nothing to redo.
   if mounted && sam_reports '"type": *"web"' 1; then
     echo takeover

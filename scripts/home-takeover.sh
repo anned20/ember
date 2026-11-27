@@ -75,7 +75,9 @@ EOF
   var last = 0;
   function go() {
     var now = Date.now();
-    if (now - last < 800) return;
+    // Only folds the events one relaunch stacks (webOSRelaunch + visibility): a
+    // longer window swallowed a second Home press and left the stub black.
+    if (now - last < 200) return;
     last = now;
     // The bridge directly: no library to load and parse before the first launch.
     var b = new PalmServiceBridge();

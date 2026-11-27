@@ -61,6 +61,7 @@ export const BRAND = {
   // voice assistant any more: the one-shot teardown of the assistant an earlier
   // Ember installed removes exactly this hook (scripts/cleanup-voice.sh).
   hooks: {
+    homeTakeover: '35-' + SLUG + '-home',
     homeWatcher: '40-' + SLUG + '-watcher',
     voice: '45-' + SLUG + '-voice',
     boot: '50-' + SLUG + '-boot'

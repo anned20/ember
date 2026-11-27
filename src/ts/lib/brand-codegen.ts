@@ -37,6 +37,7 @@ function rows(brand: Brand): Row[] {
     {shell: 'FILE_MARK', value: brand.fileMark},
     {shell: 'USB_FOLDER', value: brand.usbFolder},
     {shell: 'USB_SETTINGS_FILE', value: brand.usbSettingsFile},
+    {shell: 'HOOK_HOME_TAKEOVER', value: brand.hooks.homeTakeover},
     {shell: 'HOOK_HOME_WATCHER', value: brand.hooks.homeWatcher},
     {shell: 'HOOK_VOICE', value: brand.hooks.voice},
     {shell: 'HOOK_BOOT', value: brand.hooks.boot},

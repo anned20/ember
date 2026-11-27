@@ -185,6 +185,35 @@ describe('the root Home watcher and boot hook', () => {
     await expect(enableHomeWatcher()).resolves.toBe(true);
   });
 
+  it('prefers the Home takeover and stops the watcher', async () => {
+    const commands = fakeRoot((command) => command.includes('home-takeover.sh') ? 'takeover' : 'disabled');
+
+    await expect(enableHomeWatcher()).resolves.toBe(true);
+
+    expect(commands).toHaveLength(2);
+    expect(commands[0]).toContain('home-takeover.sh');
+    expect(commands[0]).toMatch(/enable$/);
+    expect(commands[1]).toContain('disable-home-watcher.sh');
+  });
+
+  it('falls back to the watcher when the TV refuses the takeover', async () => {
+    const commands = fakeRoot((command) =>
+      command.includes('home-takeover.sh') ? 'unsupported sam_refused' : 'enabled');
+
+    await expect(enableHomeWatcher()).resolves.toBe(true);
+
+    expect(commands[commands.length - 1]).toContain('enable-home-watcher.sh');
+  });
+
+  it('gives LG\'s Home back and stops the watcher on disable', async () => {
+    const commands = fakeRoot(() => 'disabled');
+
+    await expect(disableHomeWatcher()).resolves.toBe(true);
+
+    expect(commands[0]).toMatch(/home-takeover\.sh' disable$/);
+    expect(commands[1]).toContain('disable-home-watcher.sh');
+  });
+
   it('translates a missing boot script', async () => {
     fakeRoot(() => 'missing_boot_script');
 

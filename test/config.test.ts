@@ -1,6 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
 import {
-  CONFIG_MIGRATIONS, CONFIG_SCHEMA_VERSION, DEFAULT_CONFIG, configFromBackup, loadConfig, migrateConfig
+  CONFIG_MIGRATIONS, CONFIG_SCHEMA_VERSION, DEFAULT_CONFIG, configFromBackup, configSavedAt, loadConfig,
+  migrateConfig, onConfigSaved, saveConfig, storeMirrored
 } from '@config/config.js';
 import {importLegacySettings, parseBackup} from '@settings/settings-backup.js';
 import {BRAND} from '@lib/brand.js';
@@ -289,5 +290,40 @@ describe('the Language setting', () => {
 
     const fitted = configFromBackup(backup, current);
     expect(fitted?.config.launcher.language).toBe('nl');
+  });
+});
+
+describe('config save time', () => {
+  beforeEach(() => { localStorage.clear(); });
+
+  it('stamps every save and tells the listeners', () => {
+    const seen: Config[] = [];
+    onConfigSaved((config) => seen.push(config));
+    const before = Date.now();
+
+    saveConfig(DEFAULT_CONFIG);
+
+    expect(configSavedAt()).toBeGreaterThanOrEqual(before);
+    expect(seen).toContain(DEFAULT_CONFIG);
+  });
+
+  it('keeps the mirror\'s time for settings adopted from it, without echoing them', () => {
+    const seen: Config[] = [];
+    onConfigSaved((config) => seen.push(config));
+    const adopted = configAt(CONFIG_SCHEMA_VERSION);
+
+    storeMirrored(adopted, 1234);
+
+    expect(configSavedAt()).toBe(1234);
+    expect(seen).not.toContain(adopted);
+  });
+
+  it('does not stamp a migration written back on load', () => {
+    const old = configAt(1);
+    localStorage.setItem(BRAND.storage.config, JSON.stringify(old));
+
+    loadConfig();
+
+    expect(configSavedAt()).toBe(0);
   });
 });

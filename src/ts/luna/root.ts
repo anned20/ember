@@ -294,6 +294,20 @@ async function readJsonFilesAsRoot(dir: string): Promise<IndexedFile[]> {
   });
 }
 
+// The settings mirror (settings/config-mirror.ts): outside the app folder, so
+// it survives reinstalling Ember.
+const CONFIG_MIRROR_FILE = BRAND.configDir + '/config-mirror.json';
+
+/** The settings mirror's text, or null when there is none yet. */
+export function readConfigMirror(): Promise<string | null> {
+  return readFileAsRoot(CONFIG_MIRROR_FILE);
+}
+
+/** Replace the settings mirror with `text` (ASCII, as settingsBackupText writes it). */
+export function writeConfigMirror(text: string): Promise<void> {
+  return writeFileAsRoot(CONFIG_MIRROR_FILE, text);
+}
+
 /**
  * Keep an automatic backup on the TV, `name` being e.g. before-restore.json
  * or before-update-to-0.0.111.json; only the newest few update copies stay.

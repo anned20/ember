@@ -52,6 +52,7 @@ export const BRAND = {
   storagePrefix: STORAGE_PREFIX,
   storage: {
     config: STORAGE_PREFIX + '.config.v1',
+    configSavedAt: STORAGE_PREFIX + '.config.savedAt',
     apps: STORAGE_PREFIX + '.apps.v1',
     appIcons: STORAGE_PREFIX + '.appIcons.v1',
     weather: STORAGE_PREFIX + '.weather.v1',

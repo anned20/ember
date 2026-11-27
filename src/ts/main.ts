@@ -1,6 +1,8 @@
 import {createAllApps} from '@apps/all-apps.js';
 import type {AllApps} from '@apps/all-apps.js';
-import {loadConfig, saveConfig, applyUsbConfig, readStoredConfigText} from '@config/config.js';
+import {
+  loadConfig, saveConfig, applyUsbConfig, readStoredConfigText, onConfigSaved, configSavedAt, storeMirrored
+} from '@config/config.js';
 import {applyActiveProfile} from '@config/profiles.js';
 import {resolveLoungePaths, findLoungeRoots} from '@lib/usb.js';
 import {createBackgroundController} from '@background/background.js';
@@ -45,7 +47,9 @@ import {
   readSettingsBackups,
   setScreensaverTimeout,
   takePreviewFlag,
-  homeTakeoverIsFull
+  homeTakeoverIsFull,
+  readConfigMirror,
+  writeConfigMirror
 } from '@luna/root.js';
 import {createForegroundWatcher, shouldInterceptHome} from '@lib/foreground-watcher.js';
 import type {ForegroundWatcher} from '@lib/foreground-watcher.js';
@@ -57,6 +61,7 @@ import {setPreferBundledIcons} from '@apps/app-catalog.js';
 import {setLiteImages} from '@background/background-sources.js';
 import {activity, noteForeground} from '@lib/activity.js';
 import {settingsBackupText, importLegacySettings} from '@settings/settings-backup.js';
+import {decideMirror} from '@settings/config-mirror.js';
 import {APP_VERSION} from '@lib/version.js';
 import {BRAND} from '@lib/brand.js';
 import {setLanguage, t} from '@lib/i18n.js';
@@ -1014,6 +1019,58 @@ export function createApp(): AppLifecycle {
     pendingTimers.push(setTimeout(function () { fn(); }, ms));
   }
 
+  // The settings mirror (settings/config-mirror.ts): Ember's two copies share
+  // one set of settings through a file on the TV.
+  const MIRROR_READ_WAIT_MS = 1500;
+  const MIRROR_PUBLISH_DELAY_MS = 1500;
+  let mirrorTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function publishMirror(config: Config) {
+    return writeConfigMirror(settingsBackupText(config, {reason: 'mirror'})).catch(function () {
+      // Not rooted: there is no second copy to share with.
+    });
+  }
+
+  onConfigSaved(function (config) {
+    if (mirrorTimer !== null) clearTimeout(mirrorTimer);
+    mirrorTimer = setTimeout(function () {
+      mirrorTimer = null;
+      if (!stopped) void publishMirror(config);
+    }, MIRROR_PUBLISH_DELAY_MS);
+  });
+
+  // Adopt the mirror when it is newer, publish this copy's settings when they
+  // are. True when the mirror's settings were adopted.
+  async function syncMirror(): Promise<boolean> {
+    let text: string | null;
+    let waitTimer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const read = await Promise.race([
+        readConfigMirror(),
+        new Promise<'timeout'>(function (resolve) {
+          waitTimer = setTimeout(function () { resolve('timeout'); }, MIRROR_READ_WAIT_MS);
+        })
+      ]);
+      if (read === 'timeout') return false;
+      text = read;
+    } catch (err) {
+      return false;
+    } finally {
+      clearTimeout(waitTimer);
+    }
+    const action = decideMirror(text, configSavedAt(), baseConfig);
+    if (action.kind === 'adopt') {
+      setConfig(action.config);
+      storeMirrored(action.config, action.savedAt);
+      return true;
+    }
+    if (action.kind === 'publish') {
+      storeMirrored(baseConfig, Date.now());
+      void publishMirror(baseConfig);
+    }
+    return false;
+  }
+
   async function handOffToEmberHome(): Promise<boolean> {
     if (ownAppId() !== BRAND.appId) return false;
     // After an update this copy is the new code and the mounted one the old: the
@@ -1022,6 +1079,8 @@ export function createApp(): AppLifecycle {
       await enableHomeWatcher().catch(function () { /* the takeover may be off */ });
     }
     if (!(await homeTakeoverIsFull().catch(function () { return false; }))) return false;
+    // This copy may hold the newest settings: share them before it goes.
+    await syncMirror();
     try {
       await launchApp(LG_HOME_ID);
     } catch (err) {
@@ -1057,7 +1116,14 @@ export function createApp(): AppLifecycle {
     if (await handOffToEmberHome()) return;
     if (stopped) return;
 
-    await importLegacyOnFirstRun();
+    const adopted = await syncMirror();
+    if (stopped) return;
+    if (adopted) {
+      // A copy with no settings of its own that took the mirror's.
+      if (!storedSettingsAtStart) importedPreviousSettings = true;
+    } else {
+      await importLegacyOnFirstRun();
+    }
     if (stopped) return;
     // An imported backup may carry its own language setting.
     setLanguage(baseConfig.launcher.language);
@@ -1188,6 +1254,7 @@ export function createApp(): AppLifecycle {
     stopped = true;
     if (!built) return;
     clearTimeout(toastTimer);
+    if (mirrorTimer !== null) clearTimeout(mirrorTimer);
     clearTimeout(resumeTimer ?? undefined);
     clearTimeout(reclaimTimer1);
     clearTimeout(reclaimTimer2);

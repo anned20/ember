@@ -10,6 +10,7 @@ import {
   getTvChannels,
   homeTakeoverIsFull,
   openTvChannel,
+  readConfigMirror,
   readFileAsDataUrl,
   readSettingsBackups,
   runTvCheck,
@@ -18,6 +19,7 @@ import {
   takePreviewFlag,
   whoAmI,
   writeAutoBackup,
+  writeConfigMirror,
   writeSettingsBackup
 } from '@luna/root.js';
 import {setLunaAdapter} from '@luna/luna-transport.js';
@@ -164,6 +166,20 @@ describe('the root screensaver timer', () => {
     await expect(setScreensaverTimeout(20)).resolves.toEqual({
       returnValue: false, value: '20', enabled: true
     });
+  });
+});
+
+describe('the settings mirror file', () => {
+  it('is written to the config folder and read back, null when missing', async () => {
+    const commands = fakeRoot(() => 'written');
+    await writeConfigMirror('{"a":1}');
+    expect(commands[0]).toContain(BRAND.configDir + '/config-mirror.json.part');
+
+    fakeRoot(() => '__missing__');
+    await expect(readConfigMirror()).resolves.toBeNull();
+
+    fakeRoot(() => '{"a":1}');
+    await expect(readConfigMirror()).resolves.toBe('{"a":1}');
   });
 });
 

@@ -8,7 +8,9 @@ import {
   enableHomeWatcher,
   getTvChannelNow,
   getTvChannels,
+  homeTakeoverIsFull,
   openTvChannel,
+  readConfigMirror,
   readFileAsDataUrl,
   readSettingsBackups,
   runTvCheck,
@@ -17,6 +19,7 @@ import {
   takePreviewFlag,
   whoAmI,
   writeAutoBackup,
+  writeConfigMirror,
   writeSettingsBackup
 } from '@luna/root.js';
 import {setLunaAdapter} from '@luna/luna-transport.js';
@@ -166,6 +169,20 @@ describe('the root screensaver timer', () => {
   });
 });
 
+describe('the settings mirror file', () => {
+  it('is written to the config folder and read back, null when missing', async () => {
+    const commands = fakeRoot(() => 'written');
+    await writeConfigMirror('{"a":1}');
+    expect(commands[0]).toContain(BRAND.configDir + '/config-mirror.json.part');
+
+    fakeRoot(() => '__missing__');
+    await expect(readConfigMirror()).resolves.toBeNull();
+
+    fakeRoot(() => '{"a":1}');
+    await expect(readConfigMirror()).resolves.toBe('{"a":1}');
+  });
+});
+
 describe('the root Home watcher and boot hook', () => {
   it('translates a missing watcher script', async () => {
     fakeRoot(() => 'missing_watcher');
@@ -183,6 +200,51 @@ describe('the root Home watcher and boot hook', () => {
     fakeRoot(() => 'enabled');
 
     await expect(enableHomeWatcher()).resolves.toBe(true);
+  });
+
+  it('prefers the Home takeover and stops the watcher', async () => {
+    const commands = fakeRoot((command) => command.includes('home-takeover.sh') ? 'takeover' : 'disabled');
+
+    await expect(enableHomeWatcher()).resolves.toBe(true);
+
+    expect(commands).toHaveLength(2);
+    expect(commands[0]).toContain('home-takeover.sh');
+    expect(commands[0]).toMatch(/enable stub$/);
+    expect(commands[1]).toContain('disable-home-watcher.sh');
+  });
+
+  it('passes the takeover mode to the script', async () => {
+    const commands = fakeRoot((command) => command.includes('home-takeover.sh') ? 'takeover' : 'disabled');
+
+    await enableHomeWatcher('full');
+
+    expect(commands[0]).toMatch(/enable full$/);
+  });
+
+  it('falls back to the watcher when the TV refuses the takeover', async () => {
+    const commands = fakeRoot((command) =>
+      command.includes('home-takeover.sh') ? 'unsupported sam_refused' : 'enabled');
+
+    await expect(enableHomeWatcher()).resolves.toBe(true);
+
+    expect(commands[commands.length - 1]).toContain('enable-home-watcher.sh');
+  });
+
+  it('gives LG\'s Home back and stops the watcher on disable', async () => {
+    const commands = fakeRoot(() => 'disabled');
+
+    await expect(disableHomeWatcher()).resolves.toBe(true);
+
+    expect(commands[0]).toMatch(/home-takeover\.sh' disable$/);
+    expect(commands[1]).toContain('disable-home-watcher.sh');
+  });
+
+  it('reads whether Ember itself is mounted under LG\'s Home id', async () => {
+    fakeRoot(() => 'full');
+    await expect(homeTakeoverIsFull()).resolves.toBe(true);
+
+    fakeRoot(() => 'none');
+    await expect(homeTakeoverIsFull()).resolves.toBe(false);
   });
 
   it('translates a missing boot script', async () => {

@@ -36,6 +36,8 @@ export const TIMEOUTS = {
   rootLaunch: 5000,
   rootAppRemove: 15000,
   rootInputs: 7000,
+  rootHomeTakeover: 45000,
+  rootHomeTakeoverStop: 20000,
   rootHomeWatcher: 20000,
   rootHomeWatcherStop: 8000,
   rootBootLaunchEnable: 12000,

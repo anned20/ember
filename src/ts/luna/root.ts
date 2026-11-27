@@ -90,6 +90,7 @@ export function readFileAsDataUrl(path: string) {
 }
 
 const HOME_WATCHER_APP_DIR = BRAND.appDir;
+const HOME_TAKEOVER = HOME_WATCHER_APP_DIR + '/home-takeover.sh';
 const HOME_WATCHER_APP_PATH = HOME_WATCHER_APP_DIR + '/home-watcher.sh';
 const HOME_WATCHER_ENABLE = HOME_WATCHER_APP_DIR + '/enable-home-watcher.sh';
 const HOME_WATCHER_DISABLE = HOME_WATCHER_APP_DIR + '/disable-home-watcher.sh';
@@ -105,15 +106,16 @@ function shQuote(text: unknown): string {
   return "'" + String(text).replace(/'/g, "'\\''") + "'";
 }
 
-/**
- * Install + start the root Home-button watcher so Home opens Ember even when
- * this web app is suspended.
- *
- * Runs a packaged enable script (not an inline command string). The previous
- * inline path joined steps with ";" after a background `&`, which busybox ash
- * rejects as `unexpected ";"` — enable always failed with "Home watcher failed".
- */
-export function enableHomeWatcher() {
+export type HomeTakeoverMode = 'stub' | 'full';
+
+/** Run `home-takeover.sh <verb>` as root and return what it printed. */
+function homeTakeover(verb: 'enable' | 'disable' | 'status', timeout: number, mode?: HomeTakeoverMode) {
+  const cmd = 'chmod 755 ' + shQuote(HOME_TAKEOVER) + ' 2>/dev/null; sh ' + shQuote(HOME_TAKEOVER) + ' ' + verb +
+    (mode ? ' ' + mode : '');
+  return rootScriptOutput(execRoot(cmd, timeout));
+}
+
+function enableWatcher() {
   const cmd =
     'chmod 755 ' + shQuote(HOME_WATCHER_ENABLE) + ' ' + shQuote(HOME_WATCHER_APP_PATH) +
     ' 2>/dev/null; sh ' + shQuote(HOME_WATCHER_ENABLE);
@@ -131,10 +133,7 @@ export function enableHomeWatcher() {
   });
 }
 
-/**
- * Stop and remove the root Home-button watcher.
- */
-export function disableHomeWatcher() {
+function disableWatcher() {
   const cmd =
     'chmod 755 ' + shQuote(HOME_WATCHER_DISABLE) + ' 2>/dev/null; sh ' +
     shQuote(HOME_WATCHER_DISABLE);
@@ -143,6 +142,48 @@ export function disableHomeWatcher() {
   }).catch(function () {
     return false;
   });
+}
+
+/**
+ * Make the Home button open Ember. First choice is the takeover: a stub app
+ * mounted over LG's Home, so stock Home never shows (scripts/home-takeover.sh).
+ * Where the TV refuses it, the root watcher reacts to stock Home instead, which
+ * works when this web app is suspended but lets Home flash first.
+ *
+ * Runs packaged enable scripts (not inline command strings). An inline path
+ * joined steps with ";" after a background `&`, which busybox ash rejects as
+ * `unexpected ";"`.
+ */
+export async function enableHomeWatcher(mode: HomeTakeoverMode = 'stub') {
+  let out = '';
+  try {
+    out = await homeTakeover('enable', TIMEOUTS.rootHomeTakeover, mode);
+  } catch (err) {
+    // Not rooted for it, or the script is missing: the watcher is the fallback.
+  }
+  if (out.split('\n').pop() === 'takeover') {
+    await disableWatcher();
+    return true;
+  }
+  return enableWatcher();
+}
+
+/** Whether Ember itself is mounted under LG's Home id (the takeover's full mode). */
+export async function homeTakeoverIsFull(): Promise<boolean> {
+  const out = await homeTakeover('status', TIMEOUTS.rootDefault);
+  return out.split('\n').pop() === 'full';
+}
+
+/** Stop the takeover (LG's Home comes back) and the root watcher. */
+export async function disableHomeWatcher() {
+  let takeover = false;
+  try {
+    takeover = (await homeTakeover('disable', TIMEOUTS.rootHomeTakeoverStop)).indexOf('disabled') >= 0;
+  } catch (err) {
+    // Report below.
+  }
+  const watcher = await disableWatcher();
+  return takeover && watcher;
 }
 
 /**
@@ -254,6 +295,20 @@ async function readJsonFilesAsRoot(dir: string): Promise<IndexedFile[]> {
     const cut = chunk.indexOf('\n');
     return {path: chunk.slice(0, cut), text: chunk.slice(cut + 1)};
   });
+}
+
+// The settings mirror (settings/config-mirror.ts): outside the app folder, so
+// it survives reinstalling Ember.
+const CONFIG_MIRROR_FILE = BRAND.configDir + '/config-mirror.json';
+
+/** The settings mirror's text, or null when there is none yet. */
+export function readConfigMirror(): Promise<string | null> {
+  return readFileAsRoot(CONFIG_MIRROR_FILE);
+}
+
+/** Replace the settings mirror with `text` (ASCII, as settingsBackupText writes it). */
+export function writeConfigMirror(text: string): Promise<void> {
+  return writeFileAsRoot(CONFIG_MIRROR_FILE, text);
 }
 
 /**

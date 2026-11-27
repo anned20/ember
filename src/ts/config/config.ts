@@ -5,12 +5,13 @@ import type {TranslationKey} from '@lib/i18n.js';
 import type {BackgroundConfig, BackupFitResult, BackupSkip, Config, MusicConfig} from '@lib/types.js';
 
 const STORAGE_KEY = BRAND.storage.config;
+const SAVED_AT_KEY = BRAND.storage.configSavedAt;
 
 // Layout version of the settings (config.version). Changing what a setting
 // means, its type or its name? Bump this and add an entry to CONFIG_MIGRATIONS
 // keyed by the new version: stored settings and restored backups from older
 // versions both run through those steps (see migrateConfig / configFromBackup).
-export const CONFIG_SCHEMA_VERSION = 29;
+export const CONFIG_SCHEMA_VERSION = 30;
 
 export const DEFAULT_CONFIG: Config = {
   version: CONFIG_SCHEMA_VERSION,
@@ -127,6 +128,8 @@ export const DEFAULT_CONFIG: Config = {
     // When true, press of the Home button (stock home coming to the
     // foreground after another app) relaunches Ember. Off by default.
     launchOnHome: false,
+    // 'stub' (a light stand-in under LG's Home id) or 'full' (Ember itself there).
+    homeTakeover: 'stub',
     // TV system volume (0–100) while Ember is in the foreground.
     // null = don't change it (new installs); existing configs keep their level.
     volumeAtHome: null,
@@ -490,6 +493,13 @@ export const CONFIG_MIGRATIONS: Record<number, ConfigMigration> = {
     if (typeof config.launcher.showNetworkStatus !== 'boolean') {
       config.launcher.showNetworkStatus = true;
     }
+  },
+
+  // v30: how the Home takeover is done (stub or Ember itself under LG's Home id).
+  30: function addHomeTakeover(config) {
+    if (config.launcher.homeTakeover !== 'stub' && config.launcher.homeTakeover !== 'full') {
+      config.launcher.homeTakeover = 'stub';
+    }
   }
 };
 
@@ -555,7 +565,8 @@ export function loadConfig(): Config {
     config.music = normalizeMusicConfig(config.music);
     const before = JSON.stringify(config);
     migrateConfig(config);
-    if (raw && JSON.stringify(config) !== before) saveConfig(config);
+    // A migration is not a change the user made: it must not look newer than the mirror.
+    if (raw && JSON.stringify(config) !== before) localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
     return config;
   } catch (err) {
     const config = deepMerge<Config>({}, DEFAULT_CONFIG);
@@ -681,8 +692,28 @@ export function configFromBackup(data: unknown, current: Config): BackupFitResul
   };
 }
 
+const savedListeners: Array<(config: Config) => void> = [];
+
+/** Call `fn` after every saveConfig (the settings mirror publishes from it). */
+export function onConfigSaved(fn: (config: Config) => void): void {
+  savedListeners.push(fn);
+}
+
+/** When (ms since the epoch) the stored settings were last saved, 0 when never. */
+export function configSavedAt(): number {
+  return Number(localStorage.getItem(SAVED_AT_KEY)) || 0;
+}
+
 export function saveConfig(config: Config): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  localStorage.setItem(SAVED_AT_KEY, String(Date.now()));
+  savedListeners.forEach(function (fn) { fn(config); });
+}
+
+/** Store settings adopted from the mirror as saved at `savedAt`, without echoing them back. */
+export function storeMirrored(config: Config, savedAt: number): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  localStorage.setItem(SAVED_AT_KEY, String(savedAt));
 }
 
 export function applyUsbConfig(config: Config, usbConfig: unknown): Config {

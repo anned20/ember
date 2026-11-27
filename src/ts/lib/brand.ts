@@ -28,6 +28,9 @@ export const BRAND = {
   name: NAME,
   tagline: 'Warm, bright, yours.',
   vendor: 'ember',
+  // The title of the Home takeover's stub app (scripts/home-takeover.sh), which
+  // tells it apart from Ember itself mounted under LG's Home id.
+  homeStubTitle: NAME + ' Home',
 
   appId: APP_ID,
   slug: SLUG,
@@ -49,6 +52,7 @@ export const BRAND = {
   storagePrefix: STORAGE_PREFIX,
   storage: {
     config: STORAGE_PREFIX + '.config.v1',
+    configSavedAt: STORAGE_PREFIX + '.config.savedAt',
     apps: STORAGE_PREFIX + '.apps.v1',
     appIcons: STORAGE_PREFIX + '.appIcons.v1',
     weather: STORAGE_PREFIX + '.weather.v1',
@@ -61,6 +65,7 @@ export const BRAND = {
   // voice assistant any more: the one-shot teardown of the assistant an earlier
   // Ember installed removes exactly this hook (scripts/cleanup-voice.sh).
   hooks: {
+    homeTakeover: '35-' + SLUG + '-home',
     homeWatcher: '40-' + SLUG + '-watcher',
     voice: '45-' + SLUG + '-voice',
     boot: '50-' + SLUG + '-boot'

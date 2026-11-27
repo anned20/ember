@@ -40,8 +40,11 @@ export function digitFromKey(code?: number, key?: string): number {
   return typeof digit === 'number' ? digit : -1;
 }
 
+/** LG's Home app, whose id the Home takeover mounts Ember under. */
+export const LG_HOME_ID = 'com.webos.app.home';
+
 const HOME_APP_IDS = [
-  'com.webos.app.home',
+  LG_HOME_ID,
   'com.webos.app.launcher',
   'com.webos.app.homeupdater',
   'com.webos.app.dashboard',

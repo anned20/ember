@@ -77,6 +77,10 @@ Vitest with the jsdom environment (`vitest.config.mjs`). Tests mirror `src/ts/`:
 - `simulator.ts` installs LG's webOS TV Simulator and launches `dist/` on it
   (`npm run sim:setup`, `npm run sim`), the laptop route to a running Ember. See
   `simulator.md`.
+- `home-takeover.sh` mounts a stub app over LG's Home (`com.webos.app.home`) so
+  the Home button opens Ember with no stock-Home flash; `home-watcher.sh` is the
+  fallback when the TV refuses it. `enableHomeWatcher()` in `luna/root.ts` tries
+  the takeover first.
 - The `*.sh` root helpers (`home-watcher.sh`, `boot-launch.sh`,
   `cleanup-voice.sh` and the rest) ship inside the IPK and run on the TV.
 - `generate-aerials.ts` regenerates `src/ts/background/aerials.ts`. The output is

@@ -124,6 +124,7 @@ async function build() {
   [
     // Generated from src/ts/lib/brand.ts; the shipped scripts below source it.
     'brand.sh',
+    'home-takeover.sh',
     'home-watcher.sh',
     'enable-home-watcher.sh',
     'disable-home-watcher.sh',

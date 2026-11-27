@@ -1,3 +1,4 @@
+import {BRAND} from '@lib/brand.js';
 import {lunaRequest} from './luna-transport.js';
 
 /**
@@ -80,4 +81,13 @@ export function isSupportedPlatform(
   const sdk = parseSdkVersion(rawSdkVersion);
   if (sdk > 0) return isSupportedWebOS(sdk);
   return isSupportedUserAgent(userAgent);
+}
+
+/**
+ * The id this web app is running under. Ember's own, except when the Home
+ * takeover's full mode mounts it under LG's Home id (scripts/home-takeover.sh).
+ */
+export function ownAppId(): string {
+  const webos = window.webOS;
+  return (webos && webos.fetchAppId && webos.fetchAppId()) || BRAND.appId;
 }

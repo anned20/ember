@@ -3,12 +3,14 @@ import {
   getSdkVersion,
   isSupportedPlatform,
   isSupportedWebOS,
+  ownAppId,
   parseSdkVersion,
   resetSdkVersionCache
 } from '@luna/platform.js';
 import {setLunaAdapter} from '@luna/luna-transport.js';
 import type {LunaAdapter} from '@luna/luna-transport.js';
 import type {WebOSServiceRequestOptions} from '@lib/types.js';
+import {BRAND} from '@lib/brand.js';
 
 const CHROMIUM_86 = 'Mozilla/5.0 (Linux) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.0 Safari/537.36';
 const CHROMIUM_87 = 'Mozilla/5.0 (Linux) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36';
@@ -86,5 +88,19 @@ describe('getSdkVersion', () => {
     });
 
     await expect(getSdkVersion()).resolves.toBe(0);
+  });
+});
+
+describe('ownAppId', () => {
+  it('is the id the TV runs the app under, such as LG Home\'s when mounted in its place', () => {
+    (window as {webOS?: unknown}).webOS = {fetchAppId: () => 'com.webos.app.home'};
+
+    expect(ownAppId()).toBe('com.webos.app.home');
+  });
+
+  it('falls back to Ember\'s own id', () => {
+    expect(ownAppId()).toBe(BRAND.appId);
+    (window as {webOS?: unknown}).webOS = {fetchAppId: () => ''};
+    expect(ownAppId()).toBe(BRAND.appId);
   });
 });

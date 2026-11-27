@@ -22,7 +22,7 @@ A fullscreen home screen for rooted LG webOS TVs. Pick an app, switch inputs, an
 - Ember icon set for popular apps, or switch it off to use each app’s own TV icon (needs root)
 - Dedicated app settings button and a TV Settings tile for quick access to system settings
 - **Add all apps from LG's home screen** in one press (Settings → Apps → Add an app), in LG's order, or pick installed apps one by one; no app ids to type
-- **Launch on Home button** — root watcher reopens Ember when stock Home appears
+- **Launch on Home button** — a stub mounted over LG's Home opens Ember straight away (webOS 22+); where the TV refuses it, a root watcher reopens Ember when stock Home appears
 - **Boot on TV start** — root init.d script launches Ember after power-on
 - **Backup & restore** — Settings → Tools saves all your Ember settings to the TV (kept when you reinstall Ember) and to a plugged-in USB drive (`ember/ember-settings.json`) to move them to another TV. Ember also keeps its own copy before each restore and each update, and backups made by other versions restore as far as they fit, telling you what didn't (see [Backup & restore](#backup--restore)); needs root
 - Remote-friendly navigation. Settings is a category list (Look, Music, Screensaver, Apps, Inputs & channels, Weather, System, Tools): Up/Down picks a category, Right or OK enters it, Left or Back returns to the list

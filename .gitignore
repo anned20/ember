@@ -40,3 +40,6 @@ dist
 node_modules
 
 /.scratch
+
+# npm run shot
+ember-shot.png

@@ -24,6 +24,7 @@ them.
 | `npm run sim` | Builds, then runs `dist/` on LG's webOS TV Simulator. |
 | `npm run sim:setup` | Installs that Simulator (once). |
 | `npm run deploy` | Packs, copies the IPK over SSH, installs and launches it on the TV. |
+| `npm run shot` | Saves a PNG of what the TV is showing (`-- out.png` to name it). |
 | `npm test` | Vitest, jsdom. |
 | `npm run typecheck` | `tsc --noEmit` for the app and for `scripts/`. |
 | `npm run brand` | Re-renders `scripts/brand.sh` from `src/ts/lib/brand.ts`. |

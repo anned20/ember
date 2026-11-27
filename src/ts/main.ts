@@ -48,7 +48,7 @@ import {
 } from '@luna/root.js';
 import {createForegroundWatcher, shouldInterceptHome} from '@lib/foreground-watcher.js';
 import type {ForegroundWatcher} from '@lib/foreground-watcher.js';
-import {getSdkVersion, isSupportedPlatform} from '@luna/platform.js';
+import {getSdkVersion, isSupportedPlatform, ownAppId} from '@luna/platform.js';
 import {describeDetectedPlatform, renderUnsupportedSurface} from '@lib/unsupported-surface.js';
 import {isTerminalAppId, getAppIdCandidates} from '@apps/app-icons.js';
 import {setPreferBundledIcons} from '@apps/app-catalog.js';
@@ -875,7 +875,7 @@ export function createApp(): AppLifecycle {
   // launch recovery and the home intercept. The poll loop, its state and its
   // cadence live in lib/foreground-watcher.js; every side effect is injected.
   foregroundWatcher = createForegroundWatcher({
-    selfAppId: BRAND.appId,
+    selfAppId: ownAppId(),
     getForegroundApp: getForegroundApp,
     launchApp: launchApp,
     launchAppViaRoot: launchAppViaRoot,

@@ -23,6 +23,13 @@ uptime_s() {
 
 log "boot-launch start (uptime $(uptime_s)s)"
 
+# In full Home takeover mode Ember runs under LG's Home id, which is not mounted
+# yet: home-takeover.sh launches it once it is.
+if [ "$(cat "$CONFIG_DIR/home-takeover.mode" 2>/dev/null)" = full ]; then
+  log "full takeover: home-takeover.sh launches Ember"
+  exit 0
+fi
+
 luna_once() {
   uri=$1
   payload=$2

@@ -234,6 +234,7 @@ interface WebOSService {
 interface WebOS {
   service: WebOSService;
   deviceInfo?: (cb: (info: LunaResponse) => void) => void;
+  fetchAppId?: () => string;
 }
 
 interface WebOSSystem {

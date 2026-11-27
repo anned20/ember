@@ -11,8 +11,15 @@
 # The approach and the sam reread calls are ported from Glasshouse
 # (rorygallagher2024/glasshouse, MIT: server/lib/home-takeover.js, 50-tvweb.sh).
 #
+# Two modes (kept in $CONFIG_DIR/home-takeover.mode):
+#   stub  the default: the staged app is a black page that launches Ember.
+#   full  Ember's own app directory is mounted under the Home id, with only its
+#         appinfo.json swapped for one naming com.webos.app.home. Home opens
+#         Ember itself, with no hop. Experimental: the Home-id copy keeps its own
+#         localStorage, so it starts from the newest settings backup.
+#
 # Run as root via Homebrew Channel:
-#   home-takeover.sh enable    install the boot hook and apply  -> "takeover" | "unsupported <why>"
+#   home-takeover.sh enable [stub|full]  install the boot hook and apply  -> "takeover" | "unsupported <why>"
 #   home-takeover.sh disable   remove the hook and give LG's Home back -> "disabled"
 #   home-takeover.sh boot      what the hook runs
 
@@ -21,6 +28,9 @@
 LG_HOME=com.webos.app.home
 HOME_APP=/usr/palm/applications/$LG_HOME
 STAGE="$CONFIG_DIR/home-takeover"
+MODE_FILE="$CONFIG_DIR/home-takeover.mode"
+MODE=$(cat "$MODE_FILE" 2>/dev/null)
+[ "$MODE" = full ] || MODE=stub
 INITD="$INITD_DIR/$HOOK_HOME_TAKEOVER"
 LOG="$TMP_PREFIX-takeover.log"
 SELF="$APP_DIR/home-takeover.sh"
@@ -45,7 +55,7 @@ webos_major() {
 # The stub: a black page that launches Ember (and again each time Home is
 # pressed while the stub is still loaded). Written fresh so an update of Ember
 # reaches it at the next enable or boot.
-stage() {
+stage_stub() {
   mkdir -p "$STAGE/assets" || return 1
   # The first version of the stub loaded the library; drop that leftover.
   rm -f "$STAGE/webOS.js"
@@ -104,8 +114,36 @@ EOF
 EOF
 }
 
+# Ember's own appinfo.json, renamed to LG's Home id.
+stage_full() {
+  mkdir -p "$STAGE" || return 1
+  python3 - "$APP_DIR/appinfo.json" "$STAGE/appinfo.json" "$LG_HOME" <<'PY' || return 1
+import json, sys
+d = json.load(open(sys.argv[1]))
+d['id'] = sys.argv[3]
+d['visible'] = False
+d['appCategory'] = ['home']
+json.dump(d, open(sys.argv[2], 'w'), indent=2)
+PY
+}
+
+# A mount at LG's Home path that is Ember's (LG's own app is never mounted
+# there; another tool's carries another vendor).
+ours() {
+  grep -q " $HOME_APP " /proc/mounts 2>/dev/null &&
+    grep -q "\"vendor\": *\"$BRAND_VENDOR\"" "$HOME_APP/appinfo.json" 2>/dev/null
+}
+
+# Ours, and the mount this mode wants (an update replaces Ember's directory, so
+# a full mount of the old one no longer matches).
 mounted() {
-  [ -d "$STAGE" ] && [ "$(stat -c %d:%i "$HOME_APP" 2>/dev/null)" = "$(stat -c %d:%i "$STAGE" 2>/dev/null)" ]
+  ours || return 1
+  here=$(stat -c %d:%i "$HOME_APP" 2>/dev/null)
+  if [ "$MODE" = full ]; then
+    [ "$here" = "$(stat -c %d:%i "$APP_DIR" 2>/dev/null)" ]
+  else
+    [ "$here" = "$(stat -c %d:%i "$STAGE" 2>/dev/null)" ]
+  fi
 }
 
 # Whether sam's getAppInfo for LG's Home matches $1, polled up to $2 times
@@ -187,7 +225,8 @@ lg_home_pids() {
 # LG's Home back: unmount, have sam read LG's manifest again, then end the stub
 # (sam must not hold a running web page under a native manifest).
 release() {
-  if mounted; then
+  if ours; then
+    umount "$HOME_APP/appinfo.json" 2>/dev/null
     umount "$HOME_APP" 2>/dev/null || umount -l "$HOME_APP" 2>/dev/null
     reread
     luna_once luna://com.palm.webappmanager/killApp "{\"appId\":\"$LG_HOME\"}" >/dev/null
@@ -199,11 +238,16 @@ apply() {
   [ -f "$APP_DIR/appinfo.json" ] || { echo "unsupported app_not_installed"; return 1; }
   [ "$(webos_major)" -ge 7 ] || { echo "unsupported webos_$(webos_major)"; return 1; }
   before=$(cat "$STAGE/appinfo.json" "$STAGE/index.html" 2>/dev/null | cksum)
-  stage || { echo "unsupported stage_failed"; return 1; }
-  # An update changed the stub: a loaded stub keeps its old page and sam its old
-  # manifest, so toggle it off and on (release, then mount below).
-  if [ "$before" != "$(cat "$STAGE/appinfo.json" "$STAGE/index.html" | cksum)" ]; then
+  stage_$MODE || { echo "unsupported stage_failed"; return 1; }
+  # The staged files changed (an update, or a switch of mode): a loaded page
+  # keeps its old code and sam its old manifest, so toggle it off and on.
+  if [ "$before" != "$(cat "$STAGE/appinfo.json" "$STAGE/index.html" 2>/dev/null | cksum)" ]; then
     log "stub changed, remounting"
+    release
+  fi
+  # A mount of the other mode, or of Ember's directory from before an update.
+  if ours && ! mounted; then
+    log "stale mount, remounting"
     release
   fi
   # Already in place (Ember re-asserts its hooks at each start): nothing to redo.
@@ -212,7 +256,12 @@ apply() {
     return 0
   fi
   if ! mounted; then
-    mount --bind "$STAGE" "$HOME_APP" 2>/dev/null || { echo "unsupported mount_failed"; return 1; }
+    if [ "$MODE" = full ]; then
+      mount --bind "$APP_DIR" "$HOME_APP" 2>/dev/null &&
+        mount --bind "$STAGE/appinfo.json" "$HOME_APP/appinfo.json" 2>/dev/null
+    else
+      mount --bind "$STAGE" "$HOME_APP" 2>/dev/null
+    fi || { release; echo "unsupported mount_failed"; return 1; }
   fi
   if reread && sam_reports '"type": *"web"'; then
     for pid in $(lg_home_pids); do kill "$pid" 2>/dev/null; done
@@ -228,6 +277,9 @@ apply() {
 
 case "$1" in
   enable)
+    case "$2" in
+      stub|full) MODE=$2; echo "$MODE" >"$MODE_FILE" ;;
+    esac
     out=$(apply)
     case "$out" in
       takeover)
@@ -243,7 +295,7 @@ EOF
     echo "$out"
     ;;
   disable)
-    rm -f "$INITD"
+    rm -f "$INITD" "$MODE_FILE"
     release
     echo disabled
     ;;
@@ -255,7 +307,13 @@ EOF
       i=$((i + 1))
       sleep 1
     done
-    apply >>"$LOG" 2>&1
+    out=$(apply)
+    echo "$out" >>"$LOG"
+    # Ember's boot launch would open the Home-id copy's twin before the mount is
+    # there, so in full mode this hook opens it, once it is.
+    if [ "$out" = takeover ] && [ "$MODE" = full ] && [ -f "$INITD_DIR/$HOOK_BOOT" ]; then
+      luna_once luna://com.webos.applicationManager/launch "{\"id\":\"$LG_HOME\"}" >>"$LOG" 2>&1
+    fi
     ;;
   *)
     echo "usage: $0 enable|disable|boot" >&2
